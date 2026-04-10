@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Institution Shirt Order Manager
 
-## Getting Started
+A production-ready web app for managing shirt orders for schools and government institutions.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 15** (App Router, TypeScript)
+- **Tailwind CSS** + **shadcn/ui**
+- **Supabase** (PostgreSQL database + Auth)
+- **Stripe** (Checkout Sessions, Webhooks)
+- **Recharts** (Dashboard charts)
+
+## Setup Instructions
+
+### 1. Install Dependencies
+
+```bash
+cd shirt-order-manager
+npm install
+```
+
+### 2. Configure Environment Variables
+
+```bash
+cp .env.local.example .env.local
+```
+
+Fill in `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://fsomozssvpnlkqfbjupy.supabase.co
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzb21venNzdnBubGtxZmJqdXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjkwMDksImV4cCI6MjA5MTM0NTAwOX0.zIdm7_BuOVi5RnX9NUmxRRZf0R52h_7h-EhQDqrPk9I
+
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzb21venNzdnBubGtxZmJqdXB5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTc2OTAwOSwiZXhwIjoyMDkxMzQ1MDA5fQ.SrO7T1XNASUgS2kTcbmkqZP9o2sTbi8UTsaQy5r8wYU
+
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### 3. Set Up Supabase Database
+
+1. Go to your Supabase project > **SQL Editor**
+2. Paste and run the contents of `supabase/migrations/001_initial_schema.sql`
+
+### 4. Create Admin User
+
+1. In Supabase: **Authentication > Users > Add user**
+2. Use those credentials at `/admin/login`
+
+### 5. Set Up Stripe Webhooks (Local Dev)
+
+```bash
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+Copy the webhook secret to `STRIPE_WEBHOOK_SECRET` in `.env.local`.
+
+### 6. Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Pages
 
-## Learn More
+### Public
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page |
+| `/order` | Order form |
+| `/order/checkout` | Payment page |
+| `/order/confirmation` | Receipt |
 
-To learn more about Next.js, take a look at the following resources:
+### Admin
+| Route | Description |
+|-------|-------------|
+| `/admin/login` | Sign in |
+| `/admin/dashboard` | Stats & charts |
+| `/admin/orders` | All orders (search/filter/sort) |
+| `/admin/orders/[id]` | Order detail + audit trail |
+| `/admin/reports` | Reports + CSV export |
+| `/admin/settings` | App configuration |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## What Needs Manual Setup
 
-## Deploy on Vercel
+| Item | Where |
+|------|-------|
+| Supabase project | supabase.com |
+| Run SQL migration | Supabase SQL Editor |
+| Create admin user | Supabase Auth > Users |
+| Stripe account | stripe.com |
+| Stripe webhook | Stripe Dashboard or CLI |
+| Fill .env.local | .env.local file |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stripe Webhook Events to Register
+
+- `checkout.session.completed`
+- `checkout.session.expired`
+- `charge.refunded`
+
+For production, set your webhook URL to: `https://your-domain.com/api/stripe/webhook`

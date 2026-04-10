@@ -1,0 +1,310 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  GraduationCap, Plus, Copy, Check, Trash2, ToggleLeft, ToggleRight,
+  ExternalLink, Link2, Users
+} from 'lucide-react'
+import type { SchoolLink } from '@/types'
+
+export default function SchoolsPage() {
+  const [schools, setSchools] = useState<SchoolLink[]>([])
+  const [loading, setLoading] = useState(true)
+  const [adding, setAdding] = useState(false)
+  const [newSchoolName, setNewSchoolName] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+
+  const fetchSchools = async () => {
+    try {
+      const res = await fetch('/api/admin/schools')
+      const json = await res.json()
+      if (json.schools) setSchools(json.schools)
+    } catch {
+      toast.error('Failed to load schools')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchSchools() }, [])
+
+  const getLink = (slug: string) => `${window.location.origin}/order/${slug}`
+
+  const handleCopy = async (school: SchoolLink) => {
+    try {
+      await navigator.clipboard.writeText(getLink(school.slug))
+      setCopiedId(school.id)
+      toast.success('Link copied to clipboard!')
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch {
+      toast.error('Failed to copy link')
+    }
+  }
+
+  const handleToggle = async (school: SchoolLink) => {
+    setTogglingId(school.id)
+    try {
+      const res = await fetch(`/api/admin/schools/${school.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !school.is_active }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success(`School link ${school.is_active ? 'deactivated' : 'activated'}`)
+      setSchools(prev => prev.map(s => s.id === school.id ? { ...s, is_active: !s.is_active } : s))
+    } catch {
+      toast.error('Failed to update school')
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
+  const handleDelete = async (school: SchoolLink) => {
+    if (!confirm(`Delete "${school.school_name}"? This cannot be undone.`)) return
+    setDeletingId(school.id)
+    try {
+      const res = await fetch(`/api/admin/schools/${school.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      toast.success('School deleted')
+      setSchools(prev => prev.filter(s => s.id !== school.id))
+    } catch {
+      toast.error('Failed to delete school')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newSchoolName.trim()) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/admin/schools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ school_name: newSchoolName.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || 'Failed to create school')
+        return
+      }
+      toast.success(`School link created for "${json.school.school_name}"`)
+      setSchools(prev => [{ ...json.school, order_count: 0 }, ...prev])
+      setNewSchoolName('')
+      setAdding(false)
+    } catch {
+      toast.error('Failed to create school')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Schools</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            Generate unique order links for each school
+          </p>
+        </div>
+        {!adding && (
+          <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
+            <Plus className="w-4 h-4 mr-2" /> Add School
+          </Button>
+        )}
+      </div>
+
+      {/* Add school form */}
+      {adding && (
+        <Card className="border-blue-200 dark:border-blue-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-blue-600" />
+              New School Link
+            </CardTitle>
+            <CardDescription>Enter the school name to generate a unique shareable order link.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdd} className="flex gap-3">
+              <Input
+                autoFocus
+                placeholder="e.g. Rizal Elementary School"
+                value={newSchoolName}
+                onChange={e => setNewSchoolName(e.target.value)}
+                className="flex-1"
+                disabled={submitting}
+              />
+              <Button type="submit" disabled={submitting || !newSchoolName.trim()} className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
+                {submitting ? 'Creating...' : 'Create Link'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => { setAdding(false); setNewSchoolName('') }} disabled={submitting}>
+                Cancel
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Schools list */}
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-72" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : schools.length === 0 ? (
+        <Card>
+          <CardContent className="py-16 flex flex-col items-center text-center">
+            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+              <GraduationCap className="w-6 h-6 text-gray-400" />
+            </div>
+            <p className="font-medium text-gray-900 dark:text-white">No schools yet</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Add a school to generate a unique order link.</p>
+            <Button onClick={() => setAdding(true)} className="mt-4 text-white">
+              <Plus className="w-4 h-4 mr-2" /> Add First School
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {schools.map(school => {
+            const link = typeof window !== 'undefined' ? getLink(school.slug) : `/order/${school.slug}`
+            return (
+              <Card key={school.id} className={!school.is_active ? 'opacity-60' : ''}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    {/* Icon */}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${school.is_active ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                      <GraduationCap className={`w-5 h-5 ${school.is_active ? 'text-blue-600' : 'text-gray-400'}`} />
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-900 dark:text-white">{school.school_name}</span>
+                        <Badge variant={school.is_active ? 'default' : 'secondary'} className={school.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0' : 'bg-gray-100 text-gray-500 border-0'}>
+                          {school.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                        {(school.order_count ?? 0) > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                            <Users className="w-3 h-3" />
+                            {school.order_count} {school.order_count === 1 ? 'order' : 'orders'}
+                          </span>
+                        )}
+                      </div>
+                      {/* Link display */}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <Link2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">/order/{school.slug}</span>
+                      </div>
+                      {/* Created date */}
+                      <p className="text-xs text-gray-400 mt-1">
+                        Created {new Date(school.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Copy link */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopy(school)}
+                        className="gap-1.5"
+                        disabled={!school.is_active}
+                        title={school.is_active ? 'Copy shareable link' : 'Link is inactive'}
+                      >
+                        {copiedId === school.id ? (
+                          <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</>
+                        ) : (
+                          <><Copy className="w-3.5 h-3.5" /> Copy Link</>
+                        )}
+                      </Button>
+
+                      {/* Open link */}
+                      {school.is_active && (
+                        <a
+                          href={`/order/${school.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button size="sm" variant="outline" title="Open order form">
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Button>
+                        </a>
+                      )}
+
+                      {/* Toggle active */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggle(school)}
+                        disabled={togglingId === school.id}
+                        title={school.is_active ? 'Deactivate link' : 'Activate link'}
+                        className={school.is_active ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}
+                      >
+                        {togglingId === school.id ? (
+                          <span className="text-xs">...</span>
+                        ) : school.is_active ? (
+                          <ToggleRight className="w-4 h-4" />
+                        ) : (
+                          <ToggleLeft className="w-4 h-4" />
+                        )}
+                      </Button>
+
+                      {/* Delete */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDelete(school)}
+                        disabled={deletingId === school.id}
+                        title="Delete school"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        {deletingId === school.id ? (
+                          <span className="text-xs">...</span>
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Info card */}
+      {schools.length > 0 && (
+        <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+          <CardContent className="p-4 flex gap-3">
+            <Link2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Each school link opens an order form pre-filled with the school name and institution type. Share it with teachers or parents so orders are automatically attributed to the correct school.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}

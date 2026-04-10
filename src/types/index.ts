@@ -1,0 +1,137 @@
+export type InstitutionType = 'school' | 'government'
+
+export type ShirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL'
+
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'manual'
+
+export type OrderStatus = 'new' | 'processing' | 'ready' | 'completed' | 'cancelled'
+
+export type DeliveryStatus = 'not_delivered' | 'partially_delivered' | 'delivered'
+
+export interface Order {
+  id: string
+  order_number: string
+  full_name: string
+  email: string
+  phone: string | null
+  institution_type: InstitutionType
+  school_name: string | null
+  grade: string | null
+  classroom: string | null
+  organization_name: string | null
+  department_office: string | null
+  shirt_size: ShirtSize
+  quantity: number
+  unit_price: number
+  total_amount: number
+  payment_status: PaymentStatus
+  order_status: OrderStatus
+  delivery_status: DeliveryStatus
+  stripe_payment_intent_id: string | null
+  stripe_checkout_session_id: string | null
+  date_submitted: string
+  date_paid: string | null
+  date_delivered: string | null
+  notes: string | null
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface OrderFormData {
+  full_name: string
+  email: string
+  phone?: string
+  institution_type: InstitutionType
+  school_name?: string
+  grade?: string
+  classroom?: string
+  organization_name?: string
+  department_office?: string
+  shirt_size: ShirtSize
+  quantity: number
+  notes?: string
+}
+
+export interface AppSettings {
+  id: string
+  app_name: string
+  logo_url: string | null
+  shirt_price: number
+  available_sizes: ShirtSize[]
+  school_orders_enabled: boolean
+  government_orders_enabled: boolean
+  manual_payment_enabled: boolean
+  confirmation_message: string
+  admin_email: string | null
+  email_notifications_enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface AuditLog {
+  id: string
+  order_id: string
+  field_changed: string
+  old_value: string | null
+  new_value: string | null
+  changed_by: string
+  changed_at: string
+}
+
+export interface DashboardStats {
+  total_orders: number
+  total_shirts: number
+  total_revenue: number
+  paid_orders: number
+  unpaid_orders: number
+  delivered_orders: number
+  pending_deliveries: number
+  orders_by_institution: { institution_type: string; count: number }[]
+  orders_by_size: { shirt_size: string; count: number }[]
+  revenue_by_date: { date: string; revenue: number }[]
+}
+
+export interface OrderFilters {
+  search?: string
+  institution_type?: InstitutionType | ''
+  payment_status?: PaymentStatus | ''
+  delivery_status?: DeliveryStatus | ''
+  shirt_size?: ShirtSize | ''
+  date_from?: string
+  date_to?: string
+  sort?: 'newest' | 'oldest' | 'paid' | 'unpaid' | 'delivered' | 'not_delivered'
+  page?: number
+  limit?: number
+}
+
+export interface PaginatedOrders {
+  orders: Order[]
+  total: number
+  page: number
+  limit: number
+  total_pages: number
+}
+
+export type UserRole = 'owner' | 'admin' | 'staff'
+
+export interface TeamMember {
+  id: string
+  user_id: string | null
+  email: string
+  full_name: string | null
+  role: UserRole
+  is_active: boolean
+  invited_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SchoolLink {
+  id: string
+  school_name: string
+  slug: string
+  is_active: boolean
+  created_at: string
+  order_count?: number
+}

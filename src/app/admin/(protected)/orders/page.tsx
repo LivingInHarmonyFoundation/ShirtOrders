@@ -1,0 +1,349 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table'
+import { Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw } from 'lucide-react'
+import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
+import { formatCurrency, formatDate } from '@/lib/utils'
+import type { Order, PaginatedOrders } from '@/types'
+import { toast } from 'sonner'
+
+export default function AdminOrdersPage() {
+  const [data, setData] = useState<PaginatedOrders | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [institutionType, setInstitutionType] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState('')
+  const [deliveryStatus, setDeliveryStatus] = useState('')
+  const [shirtSize, setShirtSize] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [sort, setSort] = useState('newest')
+  const [page, setPage] = useState(1)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [bulkStatus, setBulkStatus] = useState('')
+
+  const fetchOrders = useCallback(async () => {
+    setLoading(true)
+    const params = new URLSearchParams({
+      search, institution_type: institutionType, payment_status: paymentStatus,
+      delivery_status: deliveryStatus, shirt_size: shirtSize,
+      date_from: dateFrom, date_to: dateTo, sort, page: page.toString(), limit: '20',
+    })
+    try {
+      const res = await fetch(`/api/admin/orders?${params}`)
+      const json = await res.json()
+      setData(json)
+    } catch {
+      toast.error('Failed to load orders')
+    } finally {
+      setLoading(false)
+    }
+  }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, sort, page])
+
+  useEffect(() => {
+    const t = setTimeout(fetchOrders, search ? 400 : 0)
+    return () => clearTimeout(t)
+  }, [fetchOrders, search])
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
+  }
+
+  const toggleSelectAll = () => {
+    if (!data) return
+    if (selectedIds.length === data.orders.length) setSelectedIds([])
+    else setSelectedIds(data.orders.map(o => o.id))
+  }
+
+  const handleBulkUpdate = async () => {
+    if (!bulkStatus || selectedIds.length === 0) return
+    const [field, value] = bulkStatus.split(':')
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds, updates: { [field]: value } }),
+      })
+      if (res.ok) {
+        toast.success(`Updated ${selectedIds.length} orders`)
+        setSelectedIds([])
+        setBulkStatus('')
+        fetchOrders()
+      }
+    } catch {
+      toast.error('Bulk update failed')
+    }
+  }
+
+  const clearFilters = () => {
+    setSearch(''); setInstitutionType(''); setPaymentStatus('')
+    setDeliveryStatus(''); setShirtSize(''); setDateFrom(''); setDateTo('')
+    setSort('newest'); setPage(1)
+  }
+
+  const hasFilters = search || institutionType || paymentStatus || deliveryStatus || shirtSize || dateFrom || dateTo
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Orders</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
+            {data ? `${data.total} total orders` : 'Loading...'}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={fetchOrders}>
+          <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search by name, email, order #, school..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1) }}
+                className="pl-9"
+              />
+            </div>
+            <Select value={sort} onValueChange={v => { setSort(v ?? 'newest'); setPage(1) }}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="not_delivered">Not Delivered</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Select value={institutionType} onValueChange={v => { setInstitutionType(!v || v === 'all' ? '' : v); setPage(1) }}>
+              <SelectTrigger className="w-36 h-8 text-xs">
+                <Filter className="w-3 h-3 mr-1" />
+                <SelectValue placeholder="Institution" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Institutions</SelectItem>
+                <SelectItem value="school">School</SelectItem>
+                <SelectItem value="government">Government</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={paymentStatus} onValueChange={v => { setPaymentStatus(!v || v === 'all' ? '' : v); setPage(1) }}>
+              <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectValue placeholder="Payment" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Payments</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="refunded">Refunded</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={deliveryStatus} onValueChange={v => { setDeliveryStatus(!v || v === 'all' ? '' : v); setPage(1) }}>
+              <SelectTrigger className="w-40 h-8 text-xs">
+                <SelectValue placeholder="Delivery" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Deliveries</SelectItem>
+                <SelectItem value="not_delivered">Not Delivered</SelectItem>
+                <SelectItem value="partially_delivered">Partially Delivered</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={shirtSize} onValueChange={v => { setShirtSize(!v || v === 'all' ? '' : v); setPage(1) }}>
+              <SelectTrigger className="w-28 h-8 text-xs">
+                <SelectValue placeholder="Size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sizes</SelectItem>
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={e => { setDateFrom(e.target.value); setPage(1) }}
+              className="w-36 h-8 text-xs"
+              placeholder="From"
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={e => { setDateTo(e.target.value); setPage(1) }}
+              className="w-36 h-8 text-xs"
+              placeholder="To"
+            />
+
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs text-gray-500">
+                Clear filters
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bulk actions */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-[#EFF8E8] dark:bg-green-900/20 rounded-lg border border-[#8DC63F]/40">
+          <span className="text-sm font-medium text-[#1B4D2E] dark:text-green-400">{selectedIds.length} selected</span>
+          <Select value={bulkStatus} onValueChange={v => setBulkStatus(v ?? '')}>
+            <SelectTrigger className="w-52 h-8 text-xs">
+              <SelectValue placeholder="Bulk action..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="delivery_status:delivered">Mark as Delivered</SelectItem>
+              <SelectItem value="delivery_status:partially_delivered">Mark Partially Delivered</SelectItem>
+              <SelectItem value="payment_status:manual">Mark as Manual Payment</SelectItem>
+              <SelectItem value="order_status:processing">Mark as Processing</SelectItem>
+              <SelectItem value="order_status:completed">Mark as Completed</SelectItem>
+              <SelectItem value="order_status:cancelled">Mark as Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={handleBulkUpdate} disabled={!bulkStatus} className="h-8 text-xs">Apply</Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="h-8 text-xs">Cancel</Button>
+        </div>
+      )}
+
+      {/* Table */}
+      <Card>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 dark:bg-gray-900/50">
+                <TableHead className="w-10 pl-4">
+                  <Checkbox
+                    checked={data ? selectedIds.length === data.orders.length && data.orders.length > 0 : false}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
+                <TableHead className="text-xs font-semibold">Order #</TableHead>
+                <TableHead className="text-xs font-semibold">Customer</TableHead>
+                <TableHead className="text-xs font-semibold">Institution</TableHead>
+                <TableHead className="text-xs font-semibold">Size / Qty</TableHead>
+                <TableHead className="text-xs font-semibold">Total</TableHead>
+                <TableHead className="text-xs font-semibold">Payment</TableHead>
+                <TableHead className="text-xs font-semibold">Order</TableHead>
+                <TableHead className="text-xs font-semibold">Delivery</TableHead>
+                <TableHead className="text-xs font-semibold">Date</TableHead>
+                <TableHead className="w-10"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 11 }).map((_, j) => (
+                      <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : data?.orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={11} className="text-center py-12 text-gray-400">
+                    No orders found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data?.orders.map((order: Order) => (
+                  <TableRow key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/30">
+                    <TableCell className="pl-4">
+                      <Checkbox
+                        checked={selectedIds.includes(order.id)}
+                        onCheckedChange={() => toggleSelect(order.id)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-gray-600 dark:text-gray-400">
+                      {order.order_number}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-sm text-gray-900 dark:text-white">{order.full_name}</p>
+                        <p className="text-xs text-gray-400">{order.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <InstitutionBadge type={order.institution_type} />
+                        {order.institution_type === 'school' && order.school_name && (
+                          <p className="text-xs text-gray-400 max-w-[120px] truncate">{order.school_name}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm font-medium">
+                      {order.shirt_size} × {order.quantity}
+                    </TableCell>
+                    <TableCell className="font-semibold text-sm">{formatCurrency(order.total_amount)}</TableCell>
+                    <TableCell><PaymentStatusBadge status={order.payment_status} /></TableCell>
+                    <TableCell><OrderStatusBadge status={order.order_status} /></TableCell>
+                    <TableCell><DeliveryStatusBadge status={order.delivery_status} /></TableCell>
+                    <TableCell className="text-xs text-gray-400">{formatDate(order.created_at)}</TableCell>
+                    <TableCell>
+                      <Link href={`/admin/orders/${order.id}`}>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {data && data.total_pages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Page {data.page} of {data.total_pages} ({data.total} orders)
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline" size="sm"
+              disabled={data.page <= 1}
+              onClick={() => setPage(p => p - 1)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline" size="sm"
+              disabled={data.page >= data.total_pages}
+              onClick={() => setPage(p => p + 1)}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
