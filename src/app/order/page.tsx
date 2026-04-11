@@ -16,7 +16,7 @@ import { School, Building2, ArrowRight, Loader2, CheckCircle2, ShoppingBag } fro
 import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
-import type { AppSettings, InstitutionType, ShirtSize, ShirtCatalogItem } from '@/types'
+import type { AppSettings, InstitutionType, ShirtSize, ShirtCatalogItem, GovOrg } from '@/types'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
@@ -50,6 +50,7 @@ export default function OrderPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
+  const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [institutionType, setInstitutionType] = useState<InstitutionType | ''>('')
 
@@ -73,6 +74,11 @@ export default function OrderPage() {
       .then(({ items }) => {
         if (items?.length > 0) setCatalog(items)
       })
+      .catch(() => {})
+
+    fetch('/api/government-orgs')
+      .then(r => r.json())
+      .then(({ orgs }) => { if (orgs?.length > 0) setGovOrgs(orgs) })
       .catch(() => {})
   }, [])
 
@@ -292,7 +298,20 @@ export default function OrderPage() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="organization_name">Organization Name *</Label>
-                  <Input id="organization_name" {...register('organization_name')} placeholder="Department of Education" className="mt-1" />
+                  {govOrgs.length > 0 ? (
+                    <select
+                      id="organization_name"
+                      {...register('organization_name')}
+                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <option value="">Select an organization...</option>
+                      {govOrgs.map(org => (
+                        <option key={org.id} value={org.name}>{org.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input id="organization_name" {...register('organization_name')} placeholder="Department of Education" className="mt-1" />
+                  )}
                   {errors.organization_name && <p className="text-red-500 text-xs mt-1">{errors.organization_name.message}</p>}
                 </div>
                 <div>
