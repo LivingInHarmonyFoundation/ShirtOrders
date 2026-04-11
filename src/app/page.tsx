@@ -4,15 +4,19 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { School, Building2, CheckCircle, Shield, CreditCard, FileText, ShoppingBag } from 'lucide-react'
+import { createAdminClient } from '@/lib/supabase/server'
 import type { ShirtCatalogItem } from '@/types'
 
 async function getCatalog(): Promise<ShirtCatalogItem[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    const res = await fetch(`${baseUrl.replace(/\/$/, '')}/api/catalog`, { next: { revalidate: 60 } })
-    if (!res.ok) return []
-    const { items } = await res.json()
-    return items || []
+    const admin = await createAdminClient()
+    const { data } = await admin
+      .from('shirt_catalog')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: true })
+    return data || []
   } catch {
     return []
   }
