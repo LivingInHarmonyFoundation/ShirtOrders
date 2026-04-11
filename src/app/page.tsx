@@ -4,8 +4,22 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { School, Building2, CheckCircle, Shield, CreditCard, FileText, ShoppingBag } from 'lucide-react'
+import type { ShirtCatalogItem } from '@/types'
 
-export default function LandingPage() {
+async function getCatalog(): Promise<ShirtCatalogItem[]> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const res = await fetch(`${baseUrl.replace(/\/$/, '')}/api/catalog`, { next: { revalidate: 60 } })
+    if (!res.ok) return []
+    const { items } = await res.json()
+    return items || []
+  } catch {
+    return []
+  }
+}
+
+export default async function LandingPage() {
+  const catalog = await getCatalog()
   const features = [
     { icon: ShoppingBag, title: 'Easy Ordering',    desc: 'Simple form for placing shirt orders' },
     { icon: CreditCard,  title: 'Secure Payment',   desc: 'Pay safely with Stripe-powered checkout' },
@@ -58,6 +72,61 @@ export default function LandingPage() {
             </Link>
           </div>
         </section>
+
+        {/* Shirt Catalog */}
+        {catalog.length > 0 && (
+          <section className="py-20 px-4 bg-white">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-12">
+                <Badge className="mb-3 border-[#8DC63F]/50 text-[#1B4D2E]" style={{ backgroundColor: '#d4edda' }}>
+                  Available Styles
+                </Badge>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Our Shirts</h2>
+                <p className="text-gray-500 mt-3 max-w-xl mx-auto">
+                  Choose from our selection of quality shirts available for your institution.
+                </p>
+              </div>
+              <div className={`grid gap-6 ${
+                catalog.length === 1 ? 'max-w-xs mx-auto' :
+                catalog.length === 2 ? 'sm:grid-cols-2 max-w-2xl mx-auto' :
+                catalog.length === 3 ? 'sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto' :
+                'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              }`}>
+                {catalog.map(item => (
+                  <div key={item.id} className="group">
+                    <div className="relative aspect-square rounded-2xl overflow-hidden bg-[#EFF8E8] mb-4 shadow-sm group-hover:shadow-md transition-shadow">
+                      {item.image_url ? (
+                        <Image
+                          src={item.image_url}
+                          alt={item.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <ShoppingBag className="w-16 h-16 text-[#8DC63F]/50" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-1">
+                      <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-center mt-12">
+                <Link href="/order">
+                  <Button size="lg" className="text-white px-10 h-12 text-base font-semibold shadow-md" style={{ backgroundColor: '#1B4D2E' }}>
+                    Order Now
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Who can order */}
         <section className="py-16 px-4 bg-white">
