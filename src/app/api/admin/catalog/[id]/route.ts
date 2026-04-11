@@ -20,14 +20,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const admin = await createAdminClient()
-  const { data, error } = await admin
+  const { error } = await admin
     .from('shirt_catalog')
     .update(updates)
     .eq('id', id)
-    .select()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Fetch updated record separately to avoid RLS blocking the returning select
+  const { data, error: fetchError } = await admin
+    .from('shirt_catalog')
+    .select('*')
+    .eq('id', id)
     .single()
 
-  if (error) return NextResponse.json({ error: 'Failed to update item' }, { status: 500 })
+  if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 })
   return NextResponse.json({ item: data })
 }
 
