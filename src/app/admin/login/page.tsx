@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2, Lock } from 'lucide-react'
 import Image from 'next/image'
 
-export default function AdminLoginPage() {
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const inviteError = searchParams.get('error') === 'invite_expired'
@@ -34,6 +34,63 @@ export default function AdminLoginPage() {
   }
 
   return (
+    <Card className="shadow-lg border-0">
+      <CardHeader className="text-center pb-2">
+        <div className="w-10 h-10 bg-[#EFF8E8] rounded-xl flex items-center justify-center mx-auto mb-2">
+          <Lock className="w-5 h-5 text-[#1B4D2E]" />
+        </div>
+        <CardTitle className="text-xl">Admin Login</CardTitle>
+        <CardDescription>Sign in to access the admin dashboard</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {inviteError && (
+          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            Your invite link has expired or is invalid. Please ask to be re-invited.
+          </div>
+        )}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="admin@example.com"
+              required
+              autoComplete="email"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+              className="mt-1"
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full text-white font-semibold"
+            style={{ backgroundColor: '#1B4D2E' }}
+          >
+            {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</> : 'Sign In'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function AdminLoginPage() {
+  return (
     <div className="min-h-screen bg-[#F5F4F0] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Brand */}
@@ -47,58 +104,9 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <Card className="shadow-lg border-0">
-          <CardHeader className="text-center pb-2">
-            <div className="w-10 h-10 bg-[#EFF8E8] rounded-xl flex items-center justify-center mx-auto mb-2">
-              <Lock className="w-5 h-5 text-[#1B4D2E]" />
-            </div>
-            <CardTitle className="text-xl">Admin Login</CardTitle>
-            <CardDescription>Sign in to access the admin dashboard</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {inviteError && (
-              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                Your invite link has expired or is invalid. Please ask to be re-invited.
-              </div>
-            )}
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
-                  required
-                  autoComplete="email"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  autoComplete="current-password"
-                  className="mt-1"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full text-white font-semibold"
-                style={{ backgroundColor: '#1B4D2E' }}
-              >
-                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</> : 'Sign In'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <Suspense fallback={<div className="h-64 bg-white rounded-2xl shadow-lg animate-pulse" />}>
+          <LoginForm />
+        </Suspense>
 
         <p className="text-center text-xs text-gray-400 mt-4">
           Admin access only. Unauthorized access is prohibited.
