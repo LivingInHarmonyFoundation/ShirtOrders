@@ -90,6 +90,8 @@ export interface DashboardStats {
   orders_by_institution: { institution_type: string; count: number }[]
   orders_by_size: { shirt_size: string; count: number }[]
   revenue_by_date: { date: string; revenue: number }[]
+  orders_by_catalog_item: { name: string; orders: number; shirts: number }[]
+  has_catalog_breakdown: boolean
 }
 
 export interface OrderFilters {

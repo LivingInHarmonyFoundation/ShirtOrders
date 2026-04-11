@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data: orders } = await adminSupabase
     .from('orders')
-    .select('quantity, total_amount, payment_status, delivery_status, institution_type, shirt_size, created_at')
+    .select('quantity, total_amount, payment_status, delivery_status, institution_type, shirt_size, created_at, catalog_item_name')
 
   if (!orders) return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
 
@@ -52,6 +52,20 @@ export async function GET() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-30)
 
+  // Orders by shirt style (catalog item)
+  const catalogMap = new Map<string, { orders: number; shirts: number }>()
+  orders.forEach(o => {
+    const name = o.catalog_item_name || 'Unspecified'
+    const existing = catalogMap.get(name) || { orders: 0, shirts: 0 }
+    catalogMap.set(name, { orders: existing.orders + 1, shirts: existing.shirts + o.quantity })
+  })
+  const orders_by_catalog_item = Array.from(catalogMap.entries())
+    .map(([name, { orders, shirts }]) => ({ name, orders, shirts }))
+    .sort((a, b) => b.shirts - a.shirts)
+
+  const has_catalog_breakdown = orders_by_catalog_item.length > 1 ||
+    (orders_by_catalog_item.length === 1 && orders_by_catalog_item[0].name !== 'Unspecified')
+
   return NextResponse.json({
     total_orders,
     total_shirts,
@@ -63,5 +77,7 @@ export async function GET() {
     orders_by_institution,
     orders_by_size,
     revenue_by_date,
+    orders_by_catalog_item,
+    has_catalog_breakdown,
   })
 }

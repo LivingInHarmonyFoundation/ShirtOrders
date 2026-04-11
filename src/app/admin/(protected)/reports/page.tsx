@@ -10,16 +10,18 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Download, FileText, Printer, Filter } from 'lucide-react'
+import { Download, FileText, Printer, Filter, Shirt } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Order } from '@/types'
+import type { Order, DashboardStats } from '@/types'
 import { toast } from 'sonner'
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
   const [totalRevenue, setTotalRevenue] = useState(0)
+  const [catalogBreakdown, setCatalogBreakdown] = useState<DashboardStats['orders_by_catalog_item']>([])
+  const [hasCatalog, setHasCatalog] = useState(false)
 
   const [institutionType, setInstitutionType] = useState('')
   const [paymentStatus, setPaymentStatus] = useState('')
@@ -57,6 +59,17 @@ export default function ReportsPage() {
           .filter(o => o.payment_status === 'paid' || o.payment_status === 'manual')
           .reduce((sum, o) => sum + Number(o.total_amount), 0)
       )
+      // Build catalog breakdown from this filtered set
+      const cmap = new Map<string, { orders: number; shirts: number }>()
+      orderList.forEach((o: Order & { catalog_item_name?: string }) => {
+        const name = o.catalog_item_name || null
+        if (!name) return
+        const ex = cmap.get(name) || { orders: 0, shirts: 0 }
+        cmap.set(name, { orders: ex.orders + 1, shirts: ex.shirts + o.quantity })
+      })
+      const breakdown = Array.from(cmap.entries()).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.shirts - a.shirts)
+      setCatalogBreakdown(breakdown)
+      setHasCatalog(breakdown.length > 0)
     } catch {
       toast.error('Failed to generate report')
     } finally {
@@ -207,6 +220,46 @@ export default function ReportsPage() {
         </Card>
       </div>
 
+      {/* Shirt style breakdown */}
+      {hasCatalog && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-[#EFF8E8] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Shirt className="w-4 h-4 text-[#1B4D2E]" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-semibold">Shirts by Style</CardTitle>
+                <CardDescription className="text-xs">Based on current filtered results</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {catalogBreakdown.map(({ name, orders: o, shirts: s }, i) => {
+                const colors = ['#1B4D2E', '#2D6A4F', '#8DC63F', '#5fa832', '#0D2E1A']
+                return (
+                  <div key={name} className="rounded-xl border p-4 flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+                      style={{ backgroundColor: colors[i % colors.length] }}
+                    >
+                      {name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        <span className="font-bold text-[#1B4D2E]">{s}</span> shirts &middot; {o} order{o !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Orders table */}
       <Card>
         <CardContent className="p-0 overflow-x-auto">
@@ -216,6 +269,7 @@ export default function ReportsPage() {
                 <TableHead className="text-xs font-semibold pl-4">Order #</TableHead>
                 <TableHead className="text-xs font-semibold">Name</TableHead>
                 <TableHead className="text-xs font-semibold">Institution</TableHead>
+                {hasCatalog && <TableHead className="text-xs font-semibold">Style</TableHead>}
                 <TableHead className="text-xs font-semibold">Size</TableHead>
                 <TableHead className="text-xs font-semibold">Qty</TableHead>
                 <TableHead className="text-xs font-semibold">Total</TableHead>
@@ -236,7 +290,7 @@ export default function ReportsPage() {
                 ))
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-gray-400">
+                  <TableCell colSpan={hasCatalog ? 11 : 10} className="text-center py-8 text-gray-400">
                     No orders match the current filters
                   </TableCell>
                 </TableRow>
@@ -251,6 +305,11 @@ export default function ReportsPage() {
                       </div>
                     </TableCell>
                     <TableCell><InstitutionBadge type={order.institution_type} /></TableCell>
+                    {hasCatalog && (
+                      <TableCell className="text-xs font-medium text-gray-700">
+                        {(order as Order & { catalog_item_name?: string }).catalog_item_name || <span className="text-gray-300">—</span>}
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{order.shirt_size}</TableCell>
                     <TableCell>{order.quantity}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(order.total_amount)}</TableCell>

@@ -11,8 +11,9 @@ import { formatCurrency } from '@/lib/utils'
 import type { DashboardStats } from '@/types'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Legend
+  LineChart, Line, PieChart, Pie, Cell, Legend, LabelList
 } from 'recharts'
+import { Shirt } from 'lucide-react'
 
 const COLORS = ['#1B4D2E', '#8DC63F', '#2D6A4F', '#5fa832', '#0D2E1A', '#4a8a28', '#3d7a20']
 
@@ -70,6 +71,52 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* Shirt style breakdown — only when multiple catalog items exist */}
+      {(loading || stats?.has_catalog_breakdown) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-[#EFF8E8] rounded-lg flex items-center justify-center">
+                <Shirt className="w-4 h-4 text-[#1B4D2E]" />
+              </div>
+              <CardTitle className="text-sm font-semibold">Shirts Ordered by Style</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-40 w-full" />
+            ) : stats?.orders_by_catalog_item && stats.orders_by_catalog_item.length > 0 ? (
+              <div className="space-y-3">
+                {stats.orders_by_catalog_item.map(({ name, orders, shirts }, i) => {
+                  const maxShirts = Math.max(...stats.orders_by_catalog_item.map(x => x.shirts))
+                  const pct = maxShirts > 0 ? Math.round((shirts / maxShirts) * 100) : 0
+                  return (
+                    <div key={name}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-800 truncate max-w-[60%]">{name}</span>
+                        <div className="flex items-center gap-3 text-xs text-gray-500 flex-shrink-0">
+                          <span>{orders} order{orders !== 1 ? 's' : ''}</span>
+                          <span className="font-bold text-[#1B4D2E] text-sm">{shirts} shirts</span>
+                        </div>
+                      </div>
+                      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: COLORS[i % COLORS.length] }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+                <p className="text-xs text-gray-400 pt-1">
+                  Total: {stats.orders_by_catalog_item.reduce((s, x) => s + x.shirts, 0)} shirts across {stats.orders_by_catalog_item.length} styles
+                </p>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Revenue by date */}
