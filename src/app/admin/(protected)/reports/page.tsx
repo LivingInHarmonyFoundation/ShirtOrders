@@ -61,7 +61,7 @@ export default function ReportsPage() {
       )
       // Build catalog breakdown from this filtered set
       const cmap = new Map<string, { orders: number; shirts: number }>()
-      orderList.forEach((o: Order & { catalog_item_name?: string }) => {
+      orderList.forEach((o: Order) => {
         const name = o.catalog_item_name || null
         if (!name) return
         const ex = cmap.get(name) || { orders: 0, shirts: 0 }
