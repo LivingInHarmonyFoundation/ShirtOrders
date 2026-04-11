@@ -2,6 +2,8 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -93,6 +95,13 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-[#F5F4F0] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
+        {/* Back button */}
+        <div className="mb-6">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1B4D2E] transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to home
+          </Link>
+        </div>
+
         {/* Brand */}
         <div className="flex flex-col items-center gap-3 mb-8">
           <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center p-2 shadow-md border border-gray-100">

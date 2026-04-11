@@ -37,6 +37,11 @@ export default function LandingPage() {
         {/* Hero */}
         <section className="py-20 px-4" style={{ background: 'linear-gradient(135deg, #EFF8E8 0%, #d4edda 100%)' }}>
           <div className="max-w-4xl mx-auto text-center">
+            <div className="flex justify-center mb-5">
+              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center p-2 shadow-md border border-white/60">
+                <Image src="/logo.png" alt="Living in Harmony Foundation" width={64} height={64} className="object-contain" />
+              </div>
+            </div>
             <Badge className="mb-4 border-[#8DC63F]/50 text-[#1B4D2E]" style={{ backgroundColor: '#d4edda' }}>
               Official Order Portal
             </Badge>
