@@ -10,34 +10,44 @@ CREATE TABLE IF NOT EXISTS shirt_catalog (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Auto-update updated_at
-CREATE TRIGGER shirt_catalog_updated_at
-  BEFORE UPDATE ON shirt_catalog
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Auto-update updated_at (only create trigger if it doesn't exist)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'shirt_catalog_updated_at'
+  ) THEN
+    CREATE TRIGGER shirt_catalog_updated_at
+      BEFORE UPDATE ON shirt_catalog
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
--- RLS: public can read active items, only service role can write
+-- RLS: public can read active items
 ALTER TABLE shirt_catalog ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public can view active shirt catalog" ON shirt_catalog;
 CREATE POLICY "Public can view active shirt catalog"
   ON shirt_catalog FOR SELECT
   USING (is_active = true);
 
--- Storage bucket for shirt images
+-- Storage bucket for shirt images (public)
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('shirt-images', 'shirt-images', true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Allow public to read images
+-- Storage policies (drop first to avoid conflicts)
+DROP POLICY IF EXISTS "Public can view shirt images" ON storage.objects;
 CREATE POLICY "Public can view shirt images"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'shirt-images');
 
--- Allow authenticated users to upload/delete images
+DROP POLICY IF EXISTS "Authenticated users can upload shirt images" ON storage.objects;
 CREATE POLICY "Authenticated users can upload shirt images"
   ON storage.objects FOR INSERT
   TO authenticated
   WITH CHECK (bucket_id = 'shirt-images');
 
+DROP POLICY IF EXISTS "Authenticated users can delete shirt images" ON storage.objects;
 CREATE POLICY "Authenticated users can delete shirt images"
   ON storage.objects FOR DELETE
   TO authenticated
