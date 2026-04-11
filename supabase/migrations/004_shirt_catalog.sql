@@ -30,6 +30,24 @@ CREATE POLICY "Public can view active shirt catalog"
   ON shirt_catalog FOR SELECT
   USING (is_active = true);
 
+DROP POLICY IF EXISTS "Authenticated can insert shirt catalog" ON shirt_catalog;
+CREATE POLICY "Authenticated can insert shirt catalog"
+  ON shirt_catalog FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated can update shirt catalog" ON shirt_catalog;
+CREATE POLICY "Authenticated can update shirt catalog"
+  ON shirt_catalog FOR UPDATE
+  TO authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "Authenticated can delete shirt catalog" ON shirt_catalog;
+CREATE POLICY "Authenticated can delete shirt catalog"
+  ON shirt_catalog FOR DELETE
+  TO authenticated
+  USING (true);
+
 -- Storage bucket for shirt images (public)
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('shirt-images', 'shirt-images', true)
