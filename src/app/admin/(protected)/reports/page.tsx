@@ -269,7 +269,7 @@ export default function ReportsPage() {
                 <TableHead className="text-xs font-semibold pl-4">Order #</TableHead>
                 <TableHead className="text-xs font-semibold">Name</TableHead>
                 <TableHead className="text-xs font-semibold">Institution</TableHead>
-                {hasCatalog && <TableHead className="text-xs font-semibold">Style</TableHead>}
+                <TableHead className="text-xs font-semibold">Shirt Style</TableHead>
                 <TableHead className="text-xs font-semibold">Size</TableHead>
                 <TableHead className="text-xs font-semibold">Qty</TableHead>
                 <TableHead className="text-xs font-semibold">Total</TableHead>
@@ -283,14 +283,14 @@ export default function ReportsPage() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 10 }).map((_, j) => (
+                    {Array.from({ length: 11 }).map((_, j) => (
                       <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={hasCatalog ? 11 : 10} className="text-center py-8 text-gray-400">
+                  <TableCell colSpan={11} className="text-center py-8 text-gray-400">
                     No orders match the current filters
                   </TableCell>
                 </TableRow>
@@ -304,12 +304,22 @@ export default function ReportsPage() {
                         <p className="text-xs text-gray-400">{order.email}</p>
                       </div>
                     </TableCell>
-                    <TableCell><InstitutionBadge type={order.institution_type} /></TableCell>
-                    {hasCatalog && (
-                      <TableCell className="text-xs font-medium text-gray-700">
-                        {(order as Order & { catalog_item_name?: string }).catalog_item_name || <span className="text-gray-300">—</span>}
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      <div className="space-y-1">
+                        <InstitutionBadge type={order.institution_type} />
+                        {order.institution_type === 'school' && order.school_name && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.school_name}</p>
+                        )}
+                        {order.institution_type === 'government' && order.organization_name && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.organization_name}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-700">
+                      {order.catalog_item_name
+                        ? <span className="font-medium">{order.catalog_item_name}</span>
+                        : <span className="text-gray-300">—</span>}
+                    </TableCell>
                     <TableCell className="font-medium">{order.shirt_size}</TableCell>
                     <TableCell>{order.quantity}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(order.total_amount)}</TableCell>

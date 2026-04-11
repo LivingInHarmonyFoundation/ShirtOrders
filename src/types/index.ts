@@ -32,6 +32,8 @@ export interface Order {
   date_submitted: string
   date_paid: string | null
   date_delivered: string | null
+  catalog_item_id: string | null
+  catalog_item_name: string | null
   notes: string | null
   admin_notes: string | null
   created_at: string

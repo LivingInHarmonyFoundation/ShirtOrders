@@ -247,6 +247,7 @@ export default function AdminOrdersPage() {
                 <TableHead className="text-xs font-semibold">Order #</TableHead>
                 <TableHead className="text-xs font-semibold">Customer</TableHead>
                 <TableHead className="text-xs font-semibold">Institution</TableHead>
+                <TableHead className="text-xs font-semibold">Shirt Style</TableHead>
                 <TableHead className="text-xs font-semibold">Size / Qty</TableHead>
                 <TableHead className="text-xs font-semibold">Total</TableHead>
                 <TableHead className="text-xs font-semibold">Payment</TableHead>
@@ -260,14 +261,14 @@ export default function AdminOrdersPage() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 11 }).map((_, j) => (
+                    {Array.from({ length: 12 }).map((_, j) => (
                       <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : data?.orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-12 text-gray-400">
+                  <TableCell colSpan={12} className="text-center py-12 text-gray-400">
                     No orders found
                   </TableCell>
                 </TableRow>
@@ -293,9 +294,17 @@ export default function AdminOrdersPage() {
                       <div className="space-y-1">
                         <InstitutionBadge type={order.institution_type} />
                         {order.institution_type === 'school' && order.school_name && (
-                          <p className="text-xs text-gray-400 max-w-[120px] truncate">{order.school_name}</p>
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.school_name}</p>
+                        )}
+                        {order.institution_type === 'government' && order.organization_name && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.organization_name}</p>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-700">
+                      {order.catalog_item_name
+                        ? <span className="font-medium">{order.catalog_item_name}</span>
+                        : <span className="text-gray-300">—</span>}
                     </TableCell>
                     <TableCell className="text-sm font-medium">
                       {order.shirt_size} × {order.quantity}
