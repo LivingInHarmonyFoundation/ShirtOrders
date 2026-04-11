@@ -103,7 +103,7 @@ export default function CatalogPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !item.is_active }),
       })
-      if (!res.ok) { toast.error('Failed to update'); return }
+      if (!res.ok) { const j = await res.json(); toast.error(j.error || 'Failed to update'); return }
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_active: !i.is_active } : i))
       toast.success(item.is_active ? 'Hidden from home page' : 'Shown on home page')
     } catch {
