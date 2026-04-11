@@ -12,10 +12,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { School, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
+import { School, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShoppingBag } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
-import type { AppSettings, ShirtSize } from '@/types'
+import type { AppSettings, ShirtSize, ShirtCatalogItem } from '@/types'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
@@ -43,6 +43,8 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
 
   const [school, setSchool] = useState<SchoolInfo | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
+  const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -60,13 +62,18 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
     Promise.all([
       fetch(`/api/schools/${slug}`).then(r => r.json()),
       fetch('/api/admin/settings').then(r => r.json()),
-    ]).then(([schoolData, settingsData]) => {
+      fetch('/api/catalog').then(r => r.json()),
+    ]).then(([schoolData, settingsData, catalogData]) => {
       if (schoolData.error) {
         setLoadError(schoolData.error)
       } else {
         setSchool(schoolData.school)
       }
       if (settingsData.settings) setSettings(settingsData.settings)
+      if (catalogData.items?.length > 0) {
+        setCatalog(catalogData.items)
+        if (catalogData.items.length === 1) setSelectedCatalogItem(catalogData.items[0])
+      }
     }).catch(() => {
       setLoadError('Failed to load order form. Please try again.')
     }).finally(() => setLoading(false))
@@ -85,6 +92,8 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
           institution_type: 'school',
           school_name: school.school_name,
           school_link_id: school.id,
+          catalog_item_id: selectedCatalogItem?.id || null,
+          catalog_item_name: selectedCatalogItem?.name || null,
         }),
       })
       const json = await res.json()
@@ -101,6 +110,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
   }
 
   const sizes: ShirtSize[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  const showCatalogPicker = catalog.length > 1
 
   const Header = () => (
     <header className="border-b bg-white shadow-sm">
@@ -163,6 +173,55 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Shirt Style Picker */}
+          {showCatalogPicker && (
+            <Card className={cn('border-2 transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50' : 'border-[#8DC63F]/40')}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Choose Your Shirt *</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {catalog.map(item => {
+                    const selected = selectedCatalogItem?.id === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setSelectedCatalogItem(item)}
+                        className={cn(
+                          'relative rounded-xl border-2 overflow-hidden text-left transition-all',
+                          selected ? 'border-[#1B4D2E] shadow-md ring-2 ring-[#1B4D2E]/20' : 'border-gray-200 hover:border-[#1B4D2E]/40'
+                        )}
+                      >
+                        <div className="relative aspect-square bg-[#EFF8E8]">
+                          {item.image_url ? (
+                            <Image src={item.image_url} alt={item.name} fill className="object-cover" />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <ShoppingBag className="w-8 h-8 text-[#8DC63F]/50" />
+                            </div>
+                          )}
+                          {selected && (
+                            <div className="absolute top-2 right-2 w-6 h-6 bg-[#1B4D2E] rounded-full flex items-center justify-center shadow">
+                              <CheckCircle2 className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div className={cn('p-2.5', selected ? 'bg-[#EFF8E8]' : 'bg-white')}>
+                          <p className={cn('text-xs font-semibold leading-tight', selected ? 'text-[#1B4D2E]' : 'text-gray-800')}>{item.name}</p>
+                          {item.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                {!selectedCatalogItem && (
+                  <p className="text-amber-600 text-xs mt-3 font-medium">Please select a shirt style to continue</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Personal Info */}
           <Card>
             <CardHeader>
@@ -223,6 +282,23 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
               <CardTitle className="text-base">Shirt Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {catalog.length === 1 && selectedCatalogItem && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#EFF8E8] border border-[#8DC63F]/30">
+                  {selectedCatalogItem.image_url ? (
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                      <Image src={selectedCatalogItem.image_url} alt={selectedCatalogItem.name} fill className="object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                      <ShoppingBag className="w-6 h-6 text-[#8DC63F]" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-gray-500">Selected shirt</p>
+                    <p className="font-semibold text-[#1B4D2E] text-sm">{selectedCatalogItem.name}</p>
+                  </div>
+                </div>
+              )}
               <div>
                 <Label>Shirt Size *</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -269,6 +345,12 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
               <CardContent className="p-4">
                 <h3 className="font-semibold text-[#1B4D2E] mb-3">Order Summary</h3>
                 <div className="space-y-1 text-sm">
+                  {selectedCatalogItem && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Style</span>
+                      <span className="font-medium text-gray-800">{selectedCatalogItem.name}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-gray-600">
                     <span>Size {watchedSize} × {watchedQty}</span>
                     <span>{formatCurrency(unitPrice)} each</span>
@@ -285,7 +367,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
 
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (showCatalogPicker && !selectedCatalogItem)}
             className="w-full text-white h-12 text-base font-semibold"
             style={{ backgroundColor: '#1B4D2E' }}
           >

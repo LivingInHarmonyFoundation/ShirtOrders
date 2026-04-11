@@ -17,6 +17,8 @@ const orderSchema = z.object({
   quantity: z.number().int().positive(),
   notes: z.string().optional(),
   school_link_id: z.string().uuid().optional(),
+  catalog_item_id: z.string().uuid().optional(),
+  catalog_item_name: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -90,6 +92,8 @@ export async function POST(request: NextRequest) {
         total_amount,
         notes: data.notes || null,
         school_link_id: data.school_link_id || null,
+        catalog_item_id: data.catalog_item_id || null,
+        catalog_item_name: data.catalog_item_name || null,
         payment_status: 'pending',
         order_status: 'new',
         delivery_status: 'not_delivered',
