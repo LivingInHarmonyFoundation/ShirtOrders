@@ -1,6 +1,14 @@
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+function getTransporter() {
+  const user = process.env.GMAIL_USER
+  const pass = process.env.GMAIL_APP_PASSWORD
+  if (!user || !pass) return null
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass },
+  })
+}
 
 interface OrderNotificationData {
   order_number: string
@@ -43,12 +51,13 @@ export async function sendOrderNotifications(
 }
 
 async function sendEmailNotification(order: OrderNotificationData, toEmail: string) {
-  if (!resend) {
-    console.warn('Email notification skipped: RESEND_API_KEY not set')
+  const transporter = getTransporter()
+  if (!transporter) {
+    console.warn('Email notification skipped: GMAIL_USER or GMAIL_APP_PASSWORD not set')
     return
   }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+  const fromUser = process.env.GMAIL_USER!
   const institution = order.institution_type === 'school'
     ? order.school_name || 'School'
     : order.organization_name || 'Government'
@@ -93,16 +102,14 @@ async function sendEmailNotification(order: OrderNotificationData, toEmail: stri
     </div>
   `
 
-  await resend.emails.send({
-    from: fromEmail,
+  await transporter.sendMail({
+    from: `"Shirt Orders" <${fromUser}>`,
     to: toEmail,
     subject: `New Order #${order.order_number} — ${order.full_name}`,
     html,
   })
 }
 
-// Push notification via ntfy.sh — free, no account needed
-// admin_phone field is reused to store the ntfy topic name
 async function sendPushNotification(order: OrderNotificationData, ntfyTopic: string) {
   const institution = order.institution_type === 'school'
     ? order.school_name || 'School'

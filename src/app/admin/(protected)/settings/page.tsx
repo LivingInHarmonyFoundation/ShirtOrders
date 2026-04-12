@@ -267,7 +267,7 @@ export default function SettingsPage() {
                 <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
                   <Mail className="w-3.5 h-3.5 text-gray-400" /> Email Notifications
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Requires RESEND_API_KEY in Vercel env vars</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Requires GMAIL_USER and GMAIL_APP_PASSWORD in Vercel env vars</p>
               </div>
               <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
             </div>
