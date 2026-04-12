@@ -65,8 +65,6 @@ export interface AppSettings {
   government_orders_enabled: boolean
   manual_payment_enabled: boolean
   confirmation_message: string
-  admin_email: string | null
-  email_notifications_enabled: boolean
   admin_phone: string | null
   sms_notifications_enabled: boolean
   created_at: string

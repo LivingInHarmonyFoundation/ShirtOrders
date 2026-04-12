@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Get current shirt price from settings
     const { data: settings } = await supabase
       .from('app_settings')
-      .select('shirt_price, school_orders_enabled, government_orders_enabled, available_sizes, admin_email, email_notifications_enabled, admin_phone, sms_notifications_enabled')
+      .select('shirt_price, school_orders_enabled, government_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled')
       .single()
 
     if (!settings) {

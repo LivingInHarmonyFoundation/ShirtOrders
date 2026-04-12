@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, DollarSign, School, Building2, Mail, Tag, MessageSquare } from 'lucide-react'
+import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare } from 'lucide-react'
 import type { AppSettings, ShirtSize } from '@/types'
 
 const ALL_SIZES: ShirtSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
@@ -27,8 +27,6 @@ export default function SettingsPage() {
   const [govEnabled, setGovEnabled] = useState(true)
   const [manualPayEnabled, setManualPayEnabled] = useState(true)
   const [confirmationMessage, setConfirmationMessage] = useState('')
-  const [adminEmail, setAdminEmail] = useState('')
-  const [emailNotifications, setEmailNotifications] = useState(false)
   const [adminPhone, setAdminPhone] = useState('')
   const [smsNotifications, setSmsNotifications] = useState(false)
 
@@ -45,8 +43,6 @@ export default function SettingsPage() {
           setGovEnabled(settings.government_orders_enabled ?? true)
           setManualPayEnabled(settings.manual_payment_enabled ?? true)
           setConfirmationMessage(settings.confirmation_message || '')
-          setAdminEmail(settings.admin_email || '')
-          setEmailNotifications(settings.email_notifications_enabled ?? false)
           setAdminPhone(settings.admin_phone || '')
           setSmsNotifications(settings.sms_notifications_enabled ?? false)
         }
@@ -85,8 +81,6 @@ export default function SettingsPage() {
           government_orders_enabled: govEnabled,
           manual_payment_enabled: manualPayEnabled,
           confirmation_message: confirmationMessage,
-          admin_email: adminEmail || null,
-          email_notifications_enabled: emailNotifications,
           admin_phone: adminPhone || null,
           sms_notifications_enabled: smsNotifications,
         }),
@@ -251,71 +245,38 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Notifications */}
+      {/* Push notifications */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Mail className="w-4 h-4" /> Notifications
+            <MessageSquare className="w-4 h-4" /> Phone Notifications
           </CardTitle>
-          <CardDescription className="text-xs">Get notified by email and/or text when a new order comes in</CardDescription>
+          <CardDescription className="text-xs">Get a push notification on your phone when a new order comes in</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Email */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-gray-400" /> Email Notifications
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Requires GMAIL_USER and GMAIL_APP_PASSWORD in Vercel env vars</p>
-              </div>
-              <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Push Notifications</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Free alerts via the ntfy app — no phone number purchase needed</p>
             </div>
-            {emailNotifications && (
-              <div>
-                <Label htmlFor="admin_email">Admin Email Address</Label>
-                <Input
-                  id="admin_email"
-                  type="email"
-                  value={adminEmail}
-                  onChange={e => setAdminEmail(e.target.value)}
-                  placeholder="admin@example.com"
-                  className="mt-1"
-                />
-              </div>
-            )}
+            <Switch checked={smsNotifications} onCheckedChange={setSmsNotifications} />
           </div>
-
-          <Separator />
-
-          {/* Push notifications via ntfy.sh */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                  <MessageSquare className="w-3.5 h-3.5 text-gray-400" /> Phone Push Notifications
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Free alerts via ntfy app — no phone number purchase needed</p>
-              </div>
-              <Switch checked={smsNotifications} onCheckedChange={setSmsNotifications} />
+          {smsNotifications && (
+            <div>
+              <Label htmlFor="admin_phone">ntfy Topic Name</Label>
+              <Input
+                id="admin_phone"
+                type="text"
+                value={adminPhone}
+                onChange={e => setAdminPhone(e.target.value)}
+                placeholder="e.g. shirt-orders-lih-2026"
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Pick any unique private name. Install the <strong>ntfy</strong> app (iOS/Android), subscribe to this topic, and you&apos;ll receive a notification for every new order.
+              </p>
             </div>
-            {smsNotifications && (
-              <div>
-                <Label htmlFor="admin_phone">ntfy Topic Name</Label>
-                <Input
-                  id="admin_phone"
-                  type="text"
-                  value={adminPhone}
-                  onChange={e => setAdminPhone(e.target.value)}
-                  placeholder="e.g. shirt-orders-lih-2026"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Pick any unique private name. Install the <strong>ntfy</strong> app (iOS/Android), subscribe to this topic, and you&apos;ll receive a notification for every new order.
-                </p>
-              </div>
-            )}
-          </div>
+          )}
         </CardContent>
       </Card>
 

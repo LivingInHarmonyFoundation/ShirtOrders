@@ -27,7 +27,6 @@ export async function PATCH(request: NextRequest) {
     'app_name', 'logo_url', 'shirt_price', 'available_sizes',
     'school_orders_enabled', 'government_orders_enabled',
     'manual_payment_enabled', 'confirmation_message',
-    'admin_email', 'email_notifications_enabled',
     'admin_phone', 'sms_notifications_enabled',
   ]
 
