@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Users, Plus, Trash2, ToggleLeft, ToggleRight,
-  Crown, Shield, UserCheck, Info, Copy, Check
+  Crown, Shield, UserCheck, Info, Copy, Check, Eye, EyeOff, X
 } from 'lucide-react'
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_COLORS } from '@/lib/permissions'
 import type { TeamMember, UserRole } from '@/types'
@@ -56,8 +56,20 @@ export default function TeamPage() {
   const [inviteName, setInviteName] = useState('')
   const [inviteRole, setInviteRole] = useState<UserRole>('staff')
   const [invitePassword, setInvitePassword] = useState('')
+  const [showInvitePassword, setShowInvitePassword] = useState(false)
   const [lastCreated, setLastCreated] = useState<{ email: string; password: string } | null>(null)
   const [copied, setCopied] = useState(false)
+
+  const pwRules = [
+    { label: 'At least 8 characters', pass: invitePassword.length >= 8 },
+    { label: 'One uppercase letter (A–Z)', pass: /[A-Z]/.test(invitePassword) },
+    { label: 'One number (0–9)', pass: /[0-9]/.test(invitePassword) },
+  ]
+  const pwScore = pwRules.filter(r => r.pass).length
+  const pwValid = pwScore === 3
+  const pwStrengthColor = pwScore === 0 ? '' : pwScore === 1 ? 'bg-red-400' : pwScore === 2 ? 'bg-yellow-400' : 'bg-[#8DC63F]'
+  const pwStrengthLabel = ['', 'Weak', 'Almost', 'Strong'][pwScore]
+  const pwStrengthTextColor = pwScore === 1 ? 'text-red-500' : pwScore === 2 ? 'text-yellow-600' : 'text-[#1B4D2E]'
 
   const fetchTeam = async () => {
     try {
@@ -278,17 +290,49 @@ export default function TeamPage() {
               </div>
               <div>
                 <Label htmlFor="invite-password">Temporary Password *</Label>
-                <Input
-                  id="invite-password"
-                  type="password"
-                  placeholder="Min. 8 characters"
-                  value={invitePassword}
-                  onChange={e => setInvitePassword(e.target.value)}
-                  required
-                  minLength={8}
-                  className="mt-1"
-                  disabled={submitting}
-                />
+                <div className="relative mt-1">
+                  <Input
+                    id="invite-password"
+                    type={showInvitePassword ? 'text' : 'password'}
+                    placeholder="Min. 8 chars, 1 uppercase, 1 number"
+                    value={invitePassword}
+                    onChange={e => setInvitePassword(e.target.value)}
+                    className="pr-10"
+                    disabled={submitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowInvitePassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    tabIndex={-1}
+                  >
+                    {showInvitePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Strength bar */}
+                {invitePassword.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex gap-1">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= pwScore ? pwStrengthColor : 'bg-gray-200'}`} />
+                      ))}
+                    </div>
+                    <p className={`text-xs font-medium ${pwStrengthTextColor}`}>{pwStrengthLabel}</p>
+
+                    {/* Rule checklist */}
+                    <div className="space-y-1">
+                      {pwRules.map(rule => (
+                        <div key={rule.label} className="flex items-center gap-2">
+                          {rule.pass
+                            ? <Check className="w-3.5 h-3.5 text-[#8DC63F] flex-shrink-0" />
+                            : <X className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />}
+                          <span className={`text-xs ${rule.pass ? 'text-gray-500 line-through' : 'text-gray-500'}`}>{rule.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <Label htmlFor="invite-role">Role *</Label>
@@ -321,7 +365,7 @@ export default function TeamPage() {
               <div className="flex gap-3">
                 <Button
                   type="submit"
-                  disabled={submitting || !inviteEmail.trim() || invitePassword.length < 8}
+                  disabled={submitting || !inviteEmail.trim() || !pwValid}
                   className="text-white"
                   style={{ backgroundColor: '#1B4D2E' }}
                 >
@@ -330,7 +374,7 @@ export default function TeamPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { setAdding(false); setInviteEmail(''); setInviteName(''); setInvitePassword(''); setLastCreated(null) }}
+                  onClick={() => { setAdding(false); setInviteEmail(''); setInviteName(''); setInvitePassword(''); setShowInvitePassword(false); setLastCreated(null) }}
                   disabled={submitting}
                 >
                   Cancel
