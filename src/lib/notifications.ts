@@ -1,14 +1,6 @@
 import { Resend } from 'resend'
-import twilio from 'twilio'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
-
-function getTwilioClient() {
-  const sid = process.env.TWILIO_ACCOUNT_SID
-  const token = process.env.TWILIO_AUTH_TOKEN
-  if (!sid || !token) return null
-  return twilio(sid, token)
-}
 
 interface OrderNotificationData {
   order_number: string
@@ -39,10 +31,9 @@ export async function sendOrderNotifications(
   }
 
   if (settings.sms_notifications_enabled && settings.admin_phone) {
-    promises.push(sendSmsNotification(order, settings.admin_phone))
+    promises.push(sendPushNotification(order, settings.admin_phone))
   }
 
-  // Fire both in parallel, don't let failures block the order response
   const results = await Promise.allSettled(promises)
   results.forEach((r, i) => {
     if (r.status === 'rejected') {
@@ -57,7 +48,7 @@ async function sendEmailNotification(order: OrderNotificationData, toEmail: stri
     return
   }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'notifications@resend.dev'
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
   const institution = order.institution_type === 'school'
     ? order.school_name || 'School'
     : order.organization_name || 'Government'
@@ -110,32 +101,26 @@ async function sendEmailNotification(order: OrderNotificationData, toEmail: stri
   })
 }
 
-async function sendSmsNotification(order: OrderNotificationData, toPhone: string) {
-  const client = getTwilioClient()
-  if (!client) {
-    console.warn('SMS notification skipped: Twilio credentials not set')
-    return
-  }
-
-  const fromPhone = process.env.TWILIO_PHONE_NUMBER
-  if (!fromPhone) {
-    console.warn('SMS notification skipped: TWILIO_PHONE_NUMBER not set')
-    return
-  }
-
+// Push notification via ntfy.sh — free, no account needed
+// admin_phone field is reused to store the ntfy topic name
+async function sendPushNotification(order: OrderNotificationData, ntfyTopic: string) {
   const institution = order.institution_type === 'school'
     ? order.school_name || 'School'
     : order.organization_name || 'Government'
 
   const total = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.total_amount)
-
   const style = order.catalog_item_name ? ` | ${order.catalog_item_name}` : ''
 
-  const body = `New Order #${order.order_number}\n${order.full_name} (${institution})\n${order.shirt_size} x${order.quantity}${style}\nTotal: ${total}`
+  const body = `${order.full_name} (${institution})\n${order.shirt_size} × ${order.quantity}${style} — ${total}`
 
-  await client.messages.create({
-    to: toPhone,
-    from: fromPhone,
+  await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+    method: 'POST',
+    headers: {
+      'Title': `New Order #${order.order_number}`,
+      'Priority': 'high',
+      'Tags': 'shirt,shopping',
+      'Content-Type': 'text/plain',
+    },
     body,
   })
 }

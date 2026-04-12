@@ -288,29 +288,31 @@ export default function SettingsPage() {
 
           <Separator />
 
-          {/* SMS */}
+          {/* Push notifications via ntfy.sh */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                  <MessageSquare className="w-3.5 h-3.5 text-gray-400" /> SMS / Text Notifications
+                  <MessageSquare className="w-3.5 h-3.5 text-gray-400" /> Phone Push Notifications
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Requires Twilio credentials in Vercel env vars</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Free alerts via ntfy app — no phone number purchase needed</p>
               </div>
               <Switch checked={smsNotifications} onCheckedChange={setSmsNotifications} />
             </div>
             {smsNotifications && (
               <div>
-                <Label htmlFor="admin_phone">Admin Phone Number</Label>
+                <Label htmlFor="admin_phone">ntfy Topic Name</Label>
                 <Input
                   id="admin_phone"
-                  type="tel"
+                  type="text"
                   value={adminPhone}
                   onChange={e => setAdminPhone(e.target.value)}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="e.g. shirt-orders-lih-2026"
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-400 mt-1">Use international format: +1 for US numbers</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Pick any unique private name. Install the <strong>ntfy</strong> app (iOS/Android), subscribe to this topic, and you&apos;ll receive a notification for every new order.
+                </p>
               </div>
             )}
           </div>
