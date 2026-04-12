@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Users, Plus, Trash2, ToggleLeft, ToggleRight,
-  Mail, Crown, Shield, UserCheck, Clock, Info, KeyRound
+  Crown, Shield, UserCheck, Info, Copy, Check
 } from 'lucide-react'
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_COLORS } from '@/lib/permissions'
 import type { TeamMember, UserRole } from '@/types'
@@ -52,12 +52,12 @@ export default function TeamPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [changingRoleId, setChangingRoleId] = useState<string | null>(null)
 
-  // Invite form state
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteName, setInviteName] = useState('')
   const [inviteRole, setInviteRole] = useState<UserRole>('staff')
-  const [addMode, setAddMode] = useState<'invite' | 'password'>('invite')
   const [invitePassword, setInvitePassword] = useState('')
+  const [lastCreated, setLastCreated] = useState<{ email: string; password: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const fetchTeam = async () => {
     try {
@@ -78,25 +78,24 @@ export default function TeamPage() {
     if (!inviteEmail.trim()) return
     setSubmitting(true)
     try {
-      const body: Record<string, string> = { email: inviteEmail, role: inviteRole, full_name: inviteName }
-      if (addMode === 'password') body.password = invitePassword
       const res = await fetch('/api/admin/team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ email: inviteEmail, role: inviteRole, full_name: inviteName, password: invitePassword }),
       })
       const json = await res.json()
       if (!res.ok) {
         toast.error(json.error || 'Failed to add member')
         return
       }
-      toast.success(addMode === 'password' ? `${inviteEmail} added — they can log in now` : `Invite sent to ${inviteEmail}`)
+      setLastCreated({ email: inviteEmail, password: invitePassword })
       setMembers(prev => [...prev, json.member])
       setInviteEmail('')
       setInviteName('')
       setInviteRole('staff')
       setInvitePassword('')
       setAdding(false)
+      toast.success('Account created — share the login details below')
     } catch {
       toast.error('Failed to send invite')
     } finally {
@@ -182,11 +181,11 @@ export default function TeamPage() {
         </div>
         {!adding && (
           <Button
-            onClick={() => setAdding(true)}
+            onClick={() => { setAdding(true); setLastCreated(null) }}
             className="text-white"
             style={{ backgroundColor: '#1B4D2E' }}
           >
-            <Plus className="w-4 h-4 mr-2" /> Invite Member
+            <Plus className="w-4 h-4 mr-2" /> Add Member
           </Button>
         )}
       </div>
@@ -211,41 +210,42 @@ export default function TeamPage() {
         })}
       </div>
 
+      {/* Last created — show login details to share */}
+      {lastCreated && (
+        <Card className="border-[#8DC63F] bg-[#EFF8E8]">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-[#1B4D2E]" />
+              <p className="font-semibold text-[#1B4D2E] text-sm">Account created. Share these login details:</p>
+            </div>
+            <div className="bg-white rounded-lg border border-[#8DC63F]/40 p-3 space-y-2 text-sm font-mono">
+              <div><span className="text-gray-400 font-sans text-xs">Login URL</span><br />{typeof window !== 'undefined' ? `${window.location.origin}/admin/login` : '/admin/login'}</div>
+              <div><span className="text-gray-400 font-sans text-xs">Email</span><br />{lastCreated.email}</div>
+              <div><span className="text-gray-400 font-sans text-xs">Password</span><br />{lastCreated.password}</div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-[#8DC63F] text-[#1B4D2E] hover:bg-[#8DC63F]/10"
+              onClick={() => {
+                const text = `Login URL: ${window.location.origin}/admin/login\nEmail: ${lastCreated.email}\nPassword: ${lastCreated.password}`
+                navigator.clipboard.writeText(text)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              }}
+            >
+              {copied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy to clipboard</>}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Add member form */}
       {adding && (
         <Card className="border-[#8DC63F]/40">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Add Team Member</CardTitle>
-            {/* Mode toggle */}
-            <div className="flex gap-1 mt-2 p-1 bg-gray-100 rounded-lg w-fit">
-              <button
-                type="button"
-                onClick={() => setAddMode('invite')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  addMode === 'invite'
-                    ? 'bg-white text-[#1B4D2E] shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Mail className="w-3.5 h-3.5" /> Send Invite Email
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddMode('password')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  addMode === 'password'
-                    ? 'bg-white text-[#1B4D2E] shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <KeyRound className="w-3.5 h-3.5" /> Set Password
-              </button>
-            </div>
-            <CardDescription className="mt-1.5">
-              {addMode === 'invite'
-                ? "An invitation email will be sent. They'll click the link to access the admin panel."
-                : 'Create the account now with a temporary password. Share it with them directly.'}
-            </CardDescription>
+            <CardDescription>Set a temporary password and share the login link with them directly. No email needed.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleInvite} className="space-y-4">
@@ -276,22 +276,20 @@ export default function TeamPage() {
                   />
                 </div>
               </div>
-              {addMode === 'password' && (
-                <div>
-                  <Label htmlFor="invite-password">Temporary Password *</Label>
-                  <Input
-                    id="invite-password"
-                    type="password"
-                    placeholder="Min. 8 characters"
-                    value={invitePassword}
-                    onChange={e => setInvitePassword(e.target.value)}
-                    required={addMode === 'password'}
-                    minLength={8}
-                    className="mt-1"
-                    disabled={submitting}
-                  />
-                </div>
-              )}
+              <div>
+                <Label htmlFor="invite-password">Temporary Password *</Label>
+                <Input
+                  id="invite-password"
+                  type="password"
+                  placeholder="Min. 8 characters"
+                  value={invitePassword}
+                  onChange={e => setInvitePassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="mt-1"
+                  disabled={submitting}
+                />
+              </div>
               <div>
                 <Label htmlFor="invite-role">Role *</Label>
                 <Select value={inviteRole} onValueChange={v => v && setInviteRole(v as UserRole)}>
@@ -323,18 +321,16 @@ export default function TeamPage() {
               <div className="flex gap-3">
                 <Button
                   type="submit"
-                  disabled={submitting || !inviteEmail.trim() || (addMode === 'password' && invitePassword.length < 8)}
+                  disabled={submitting || !inviteEmail.trim() || invitePassword.length < 8}
                   className="text-white"
                   style={{ backgroundColor: '#1B4D2E' }}
                 >
-                  {submitting
-                    ? (addMode === 'password' ? 'Creating...' : 'Sending...')
-                    : (addMode === 'password' ? 'Create Account' : 'Send Invite')}
+                  {submitting ? 'Creating...' : 'Create Account'}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { setAdding(false); setInviteEmail(''); setInviteName(''); setInvitePassword('') }}
+                  onClick={() => { setAdding(false); setInviteEmail(''); setInviteName(''); setInvitePassword(''); setLastCreated(null) }}
                   disabled={submitting}
                 >
                   Cancel
@@ -376,7 +372,6 @@ export default function TeamPage() {
         <div className="space-y-2">
           {members.map(member => {
             const RoleIcon = ROLE_ICONS[member.role]
-            const isPending = !member.user_id
             const isOnlyOwner = member.role === 'owner' && ownerCount <= 1
 
             return (
@@ -410,11 +405,6 @@ export default function TeamPage() {
                         </Badge>
 
                         {/* Status badges */}
-                        {isPending && (
-                          <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> Invite Pending
-                          </Badge>
-                        )}
                         {!member.is_active && (
                           <Badge variant="outline" className="text-xs bg-gray-100 text-gray-500 border-gray-200">
                             Inactive
@@ -502,9 +492,8 @@ export default function TeamPage() {
         <Card className="bg-[#EFF8E8] border-[#8DC63F]/30">
           <CardContent className="p-4 flex gap-3">
             <Info className="w-4 h-4 text-[#1B4D2E] flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-[#1B4D2E] space-y-1">
-              <p><strong>Invite email:</strong> Member receives a link to access the admin panel. Supabase limits ~3 emails/hour.</p>
-              <p><strong>Set password:</strong> Creates the account immediately — no email needed. Share the password with them directly.</p>
+            <div className="text-sm text-[#1B4D2E]">
+              <p>Accounts are created immediately — no email invite needed. After creating an account, the login details appear so you can copy and send them directly (text, WhatsApp, etc.).</p>
             </div>
           </CardContent>
         </Card>

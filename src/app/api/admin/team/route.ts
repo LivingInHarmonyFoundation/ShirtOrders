@@ -69,34 +69,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'This person is already on the team' }, { status: 409 })
   }
 
-  let userId: string | null = null
-
-  if (password) {
-    // Direct creation with password — no email sent
-    if (password.length < 8) {
-      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
-    }
-    const { data: created, error: createError } = await admin.auth.admin.createUser({
-      email: email.trim(),
-      password,
-      email_confirm: true,
-    })
-    if (createError) {
-      return NextResponse.json({ error: `Failed to create account: ${createError.message}` }, { status: 500 })
-    }
-    userId = created.user.id
-  } else {
-    // Send Supabase invite email
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
-    const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-      email.trim(),
-      { redirectTo: `${siteUrl}/auth/callback` }
-    )
-    if (inviteError) {
-      return NextResponse.json({ error: `Invite failed: ${inviteError.message}` }, { status: 500 })
-    }
-    userId = inviteData?.user?.id ?? null
+  if (!password || password.length < 8) {
+    return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
   }
+
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: email.trim(),
+    password,
+    email_confirm: true,
+  })
+  if (createError) {
+    return NextResponse.json({ error: `Failed to create account: ${createError.message}` }, { status: 500 })
+  }
+
+  const userId = created.user.id
 
   const { data: member, error: insertError } = await admin
     .from('team_members')
