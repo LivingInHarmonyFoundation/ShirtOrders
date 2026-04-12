@@ -58,6 +58,7 @@ export default function TeamPage() {
   const [invitePassword, setInvitePassword] = useState('')
   const [showInvitePassword, setShowInvitePassword] = useState(false)
   const [lastCreated, setLastCreated] = useState<{ email: string; password: string } | null>(null)
+  const [lastCreatedMinimized, setLastCreatedMinimized] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const pwRules = [
@@ -101,6 +102,7 @@ export default function TeamPage() {
         return
       }
       setLastCreated({ email: inviteEmail, password: invitePassword })
+      setLastCreatedMinimized(false)
       setMembers(prev => [...prev, json.member])
       setInviteEmail('')
       setInviteName('')
@@ -225,29 +227,44 @@ export default function TeamPage() {
       {/* Last created — show login details to share */}
       {lastCreated && (
         <Card className="border-[#8DC63F] bg-[#EFF8E8]">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#1B4D2E]" />
-              <p className="font-semibold text-[#1B4D2E] text-sm">Account created. Share these login details:</p>
+          <CardContent className="p-4">
+            {/* Header row — always visible */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-[#1B4D2E] flex-shrink-0" />
+                <p className="font-semibold text-[#1B4D2E] text-sm">Account created. Share these login details:</p>
+              </div>
+              <button
+                onClick={() => setLastCreatedMinimized(v => !v)}
+                className="ml-3 text-xs text-[#1B4D2E]/60 hover:text-[#1B4D2E] underline flex-shrink-0"
+              >
+                {lastCreatedMinimized ? 'Show' : 'Hide'}
+              </button>
             </div>
-            <div className="bg-white rounded-lg border border-[#8DC63F]/40 p-3 space-y-2 text-sm font-mono">
-              <div><span className="text-gray-400 font-sans text-xs">Login URL</span><br />{typeof window !== 'undefined' ? `${window.location.origin}/admin/login` : '/admin/login'}</div>
-              <div><span className="text-gray-400 font-sans text-xs">Email</span><br />{lastCreated.email}</div>
-              <div><span className="text-gray-400 font-sans text-xs">Password</span><br />{lastCreated.password}</div>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-[#8DC63F] text-[#1B4D2E] hover:bg-[#8DC63F]/10"
-              onClick={() => {
-                const text = `Login URL: ${window.location.origin}/admin/login\nEmail: ${lastCreated.email}\nPassword: ${lastCreated.password}`
-                navigator.clipboard.writeText(text)
-                setCopied(true)
-                setTimeout(() => setCopied(false), 2000)
-              }}
-            >
-              {copied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy to clipboard</>}
-            </Button>
+
+            {/* Collapsible body */}
+            {!lastCreatedMinimized && (
+              <div className="mt-3 space-y-3">
+                <div className="bg-white rounded-lg border border-[#8DC63F]/40 p-3 space-y-2 text-sm font-mono">
+                  <div><span className="text-gray-400 font-sans text-xs">Login URL</span><br />{typeof window !== 'undefined' ? `${window.location.origin}/admin/login` : '/admin/login'}</div>
+                  <div><span className="text-gray-400 font-sans text-xs">Email</span><br />{lastCreated.email}</div>
+                  <div><span className="text-gray-400 font-sans text-xs">Password</span><br />{lastCreated.password}</div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-[#8DC63F] text-[#1B4D2E] hover:bg-[#8DC63F]/10"
+                  onClick={() => {
+                    const text = `Login URL: ${window.location.origin}/admin/login\nEmail: ${lastCreated.email}\nPassword: ${lastCreated.password}`
+                    navigator.clipboard.writeText(text)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}
+                >
+                  {copied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy to clipboard</>}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
