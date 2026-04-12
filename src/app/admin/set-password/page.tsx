@@ -7,34 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { KeyRound, Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { KeyRound, Loader2, Eye, EyeOff, CheckCircle2, Check, X } from 'lucide-react'
 import Image from 'next/image'
-
-function StrengthBar({ password }: { password: string }) {
-  const checks = [
-    password.length >= 8,
-    /[A-Z]/.test(password),
-    /[0-9]/.test(password),
-    /[^A-Za-z0-9]/.test(password),
-  ]
-  const score = checks.filter(Boolean).length
-  const colors = ['', 'bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-[#8DC63F]']
-  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
-
-  if (!password) return null
-  return (
-    <div className="mt-2 space-y-1">
-      <div className="flex gap-1">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= score ? colors[score] : 'bg-gray-200'}`} />
-        ))}
-      </div>
-      <p className={`text-xs ${score <= 1 ? 'text-red-500' : score === 2 ? 'text-orange-500' : score === 3 ? 'text-yellow-600' : 'text-[#1B4D2E]'}`}>
-        {labels[score]}
-      </p>
-    </div>
-  )
-}
 
 export default function SetPasswordPage() {
   const router = useRouter()
@@ -45,8 +19,19 @@ export default function SetPasswordPage() {
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
 
+  const rules = [
+    { label: 'At least 8 characters', pass: password.length >= 8 },
+    { label: 'One uppercase letter (A–Z)', pass: /[A-Z]/.test(password) },
+    { label: 'One number (0–9)', pass: /[0-9]/.test(password) },
+  ]
+  const score = rules.filter(r => r.pass).length
+  const allRulesPass = score === 3
   const mismatch = confirm.length > 0 && password !== confirm
-  const valid = password.length >= 8 && password === confirm
+  const valid = allRulesPass && password === confirm
+
+  const strengthColor = score === 0 ? '' : score === 1 ? 'bg-red-400' : score === 2 ? 'bg-yellow-400' : 'bg-[#8DC63F]'
+  const strengthLabel = ['', 'Weak', 'Almost there', 'Strong'][score]
+  const strengthTextColor = score === 1 ? 'text-red-500' : score === 2 ? 'text-yellow-600' : 'text-[#1B4D2E]'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,6 +96,8 @@ export default function SetPasswordPage() {
             </CardHeader>
             <CardContent className="pt-4">
               <form onSubmit={handleSubmit} className="space-y-4">
+
+                {/* New password */}
                 <div>
                   <Label htmlFor="password">New Password</Label>
                   <div className="relative mt-1">
@@ -119,7 +106,7 @@ export default function SetPasswordPage() {
                       type={showPw ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      placeholder="Min. 8 characters"
+                      placeholder="Min. 8 chars, 1 uppercase, 1 number"
                       autoFocus
                       autoComplete="new-password"
                       className="pr-10"
@@ -133,9 +120,36 @@ export default function SetPasswordPage() {
                       {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <StrengthBar password={password} />
+
+                  {/* Strength bar + checklist */}
+                  {password.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      <div className="flex gap-1">
+                        {[1, 2, 3].map(i => (
+                          <div
+                            key={i}
+                            className={`h-1.5 flex-1 rounded-full transition-colors ${i <= score ? strengthColor : 'bg-gray-200'}`}
+                          />
+                        ))}
+                      </div>
+                      <p className={`text-xs font-medium ${strengthTextColor}`}>{strengthLabel}</p>
+                      <div className="space-y-1">
+                        {rules.map(rule => (
+                          <div key={rule.label} className="flex items-center gap-2">
+                            {rule.pass
+                              ? <Check className="w-3.5 h-3.5 text-[#8DC63F] flex-shrink-0" />
+                              : <X className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />}
+                            <span className={`text-xs ${rule.pass ? 'text-gray-400 line-through' : 'text-gray-500'}`}>
+                              {rule.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
+                {/* Confirm password */}
                 <div>
                   <Label htmlFor="confirm">Confirm Password</Label>
                   <div className="relative mt-1">
