@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
     email: email.trim(),
     password,
     email_confirm: true,
+    user_metadata: { must_change_password: true },
   })
   if (createError) {
     return NextResponse.json({ error: `Failed to create account: ${createError.message}` }, { status: 500 })
@@ -93,7 +94,6 @@ export async function POST(request: NextRequest) {
       role: newRole,
       is_active: true,
       invited_by: user.id,
-      must_change_password: true,
     })
     .select()
     .single()

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -11,16 +11,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
   }
 
-  // Update the password
-  const { error: pwError } = await supabase.auth.updateUser({ password })
-  if (pwError) return NextResponse.json({ error: pwError.message }, { status: 500 })
+  // Update password and clear the must_change_password flag in one call
+  const { error } = await supabase.auth.updateUser({
+    password,
+    data: { must_change_password: false },
+  })
 
-  // Clear the must_change_password flag
-  const admin = await createAdminClient()
-  await admin
-    .from('team_members')
-    .update({ must_change_password: false })
-    .eq('user_id', user.id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })
 }

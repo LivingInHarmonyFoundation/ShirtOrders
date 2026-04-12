@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Step 1: Look up by user_id (fastest path)
   let { data: member } = await admin
     .from('team_members')
-    .select('id, role, is_active, full_name, must_change_password')
+    .select('id, role, is_active, full_name')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -58,8 +58,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/admin/login')
   }
 
-  // Force password change for new members
-  if (member.must_change_password) {
+  // Force password change for new members (flag stored in auth user metadata)
+  if (user.user_metadata?.must_change_password === true) {
     redirect('/admin/set-password')
   }
 
