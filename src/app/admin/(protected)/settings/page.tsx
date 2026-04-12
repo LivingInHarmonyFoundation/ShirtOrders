@@ -29,6 +29,8 @@ export default function SettingsPage() {
   const [confirmationMessage, setConfirmationMessage] = useState('')
   const [adminEmail, setAdminEmail] = useState('')
   const [emailNotifications, setEmailNotifications] = useState(false)
+  const [adminPhone, setAdminPhone] = useState('')
+  const [smsNotifications, setSmsNotifications] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -45,6 +47,8 @@ export default function SettingsPage() {
           setConfirmationMessage(settings.confirmation_message || '')
           setAdminEmail(settings.admin_email || '')
           setEmailNotifications(settings.email_notifications_enabled ?? false)
+          setAdminPhone(settings.admin_phone || '')
+          setSmsNotifications(settings.sms_notifications_enabled ?? false)
         }
       })
       .catch(() => toast.error('Failed to load settings'))
@@ -83,6 +87,8 @@ export default function SettingsPage() {
           confirmation_message: confirmationMessage,
           admin_email: adminEmail || null,
           email_notifications_enabled: emailNotifications,
+          admin_phone: adminPhone || null,
+          sms_notifications_enabled: smsNotifications,
         }),
       })
       if (res.ok) {
@@ -245,33 +251,68 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Email notifications */}
+      {/* Notifications */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Mail className="w-4 h-4" /> Email Notifications
+            <Mail className="w-4 h-4" /> Notifications
           </CardTitle>
-          <CardDescription className="text-xs">Configure admin email notification settings</CardDescription>
+          <CardDescription className="text-xs">Get notified by email and/or text when a new order comes in</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="admin_email">Admin Email Address</Label>
-            <Input
-              id="admin_email"
-              type="email"
-              value={adminEmail}
-              onChange={e => setAdminEmail(e.target.value)}
-              placeholder="admin@example.com"
-              className="mt-1"
-            />
-            <p className="text-xs text-gray-400 mt-1">Receive order notifications at this address</p>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Email Notifications</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Send email to admin on new orders (requires SMTP setup)</p>
+        <CardContent className="space-y-5">
+          {/* Email */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-gray-400" /> Email Notifications
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Requires RESEND_API_KEY in Vercel env vars</p>
+              </div>
+              <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
             </div>
-            <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+            {emailNotifications && (
+              <div>
+                <Label htmlFor="admin_email">Admin Email Address</Label>
+                <Input
+                  id="admin_email"
+                  type="email"
+                  value={adminEmail}
+                  onChange={e => setAdminEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  className="mt-1"
+                />
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* SMS */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                  <MessageSquare className="w-3.5 h-3.5 text-gray-400" /> SMS / Text Notifications
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Requires Twilio credentials in Vercel env vars</p>
+              </div>
+              <Switch checked={smsNotifications} onCheckedChange={setSmsNotifications} />
+            </div>
+            {smsNotifications && (
+              <div>
+                <Label htmlFor="admin_phone">Admin Phone Number</Label>
+                <Input
+                  id="admin_phone"
+                  type="tel"
+                  value={adminPhone}
+                  onChange={e => setAdminPhone(e.target.value)}
+                  placeholder="+1 (555) 000-0000"
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-400 mt-1">Use international format: +1 for US numbers</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

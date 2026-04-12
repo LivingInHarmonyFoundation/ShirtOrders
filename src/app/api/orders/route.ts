@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateOrderNumber } from '@/lib/utils'
+import { sendOrderNotifications } from '@/lib/notifications'
 import { z } from 'zod'
 
 const orderSchema = z.object({
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Get current shirt price from settings
     const { data: settings } = await supabase
       .from('app_settings')
-      .select('shirt_price, school_orders_enabled, government_orders_enabled, available_sizes')
+      .select('shirt_price, school_orders_enabled, government_orders_enabled, available_sizes, admin_email, email_notifications_enabled, admin_phone, sms_notifications_enabled')
       .single()
 
     if (!settings) {
@@ -105,6 +106,9 @@ export async function POST(request: NextRequest) {
       console.error('Error creating order:', error)
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
     }
+
+    // Send notifications (non-blocking — don't await before responding)
+    sendOrderNotifications(order, settings).catch(e => console.error('Notification error:', e))
 
     return NextResponse.json({ order }, { status: 201 })
   } catch (error) {
