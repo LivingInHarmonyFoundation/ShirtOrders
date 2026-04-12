@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Step 1: Look up by user_id (fastest path)
   let { data: member } = await admin
     .from('team_members')
-    .select('id, role, is_active, full_name')
+    .select('id, role, is_active, full_name, must_change_password')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -31,7 +31,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       .maybeSingle()
 
     if (pendingByEmail) {
-      // Link the auth user to their invite record
       await admin
         .from('team_members')
         .update({ user_id: user.id })
@@ -57,6 +56,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Block inactive members
   if (!member.is_active) {
     redirect('/admin/login')
+  }
+
+  // Force password change for new members
+  if (member.must_change_password) {
+    redirect('/admin/set-password')
   }
 
   const role = member.role as UserRole

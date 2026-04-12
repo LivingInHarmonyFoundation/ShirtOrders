@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
       role: newRole,
       is_active: true,
       invited_by: user.id,
+      must_change_password: true,
     })
     .select()
     .single()
