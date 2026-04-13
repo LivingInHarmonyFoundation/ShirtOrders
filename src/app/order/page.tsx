@@ -31,6 +31,11 @@ const schema = z.object({
   department_office: z.string().optional(),
   company_name: z.string().optional(),
   company_department: z.string().optional(),
+  delivery_street: z.string().optional(),
+  delivery_barangay: z.string().optional(),
+  delivery_city: z.string().optional(),
+  delivery_province: z.string().optional(),
+  delivery_zip: z.string().optional(),
   shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const),
   quantity: z.number().int().positive('Quantity must be at least 1'),
   notes: z.string().optional(),
@@ -46,6 +51,12 @@ const schema = z.object({
   }
   if (data.institution_type === 'private_company') {
     if (!data.company_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Company name is required', path: ['company_name'] })
+  }
+  if (data.institution_type === 'personal') {
+    if (!data.delivery_street) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Street address is required', path: ['delivery_street'] })
+    if (!data.delivery_city) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'City is required', path: ['delivery_city'] })
+    if (!data.delivery_province) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Province is required', path: ['delivery_province'] })
+    if (!data.delivery_zip) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'ZIP code is required', path: ['delivery_zip'] })
   }
 })
 
@@ -100,11 +111,16 @@ export default function OrderPage() {
     }
     setIsSubmitting(true)
     try {
+      const delivery_address = data.institution_type === 'personal'
+        ? [data.delivery_street, data.delivery_barangay, data.delivery_city, data.delivery_province, data.delivery_zip]
+            .filter(Boolean).join(', ')
+        : undefined
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...data,
+          delivery_address,
           quantity: Number(data.quantity),
           catalog_item_id: selectedCatalogItem?.id || null,
           catalog_item_name: selectedCatalogItem?.name || null,
@@ -287,13 +303,13 @@ export default function OrderPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="grade">Grade *</Label>
-                    <Input id="grade" {...register('grade')} placeholder="Grade 5" className="mt-1" />
+                    <Label htmlFor="grade">Grade / Group *</Label>
+                    <Input id="grade" {...register('grade')} placeholder="e.g. Grade 5 - Section A" className="mt-1" />
                     {errors.grade && <p className="text-red-500 text-xs mt-1">{errors.grade.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="classroom">Classroom *</Label>
-                    <Input id="classroom" {...register('classroom')} placeholder="Room 101" className="mt-1" />
+                    <Input id="classroom" {...register('classroom')} placeholder="e.g. Room 101" className="mt-1" />
                     {errors.classroom && <p className="text-red-500 text-xs mt-1">{errors.classroom.message}</p>}
                   </div>
                 </div>
@@ -351,7 +367,68 @@ export default function OrderPage() {
             </Card>
           )}
 
-          {/* Personal — no extra fields needed */}
+          {/* Personal — delivery address */}
+          {institutionType === 'personal' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Delivery Information</CardTitle>
+                <CardDescription>Your shirt will be mailed to this address</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="delivery_street">Street Address *</Label>
+                  <Input
+                    id="delivery_street"
+                    {...register('delivery_street')}
+                    placeholder="House/Unit No., Street Name"
+                    className="mt-1"
+                  />
+                  {errors.delivery_street && <p className="text-red-500 text-xs mt-1">{errors.delivery_street.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="delivery_barangay">Barangay / District <span className="text-gray-400">(optional)</span></Label>
+                  <Input
+                    id="delivery_barangay"
+                    {...register('delivery_barangay')}
+                    placeholder="e.g. Brgy. San Antonio"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="delivery_city">City / Municipality *</Label>
+                    <Input
+                      id="delivery_city"
+                      {...register('delivery_city')}
+                      placeholder="e.g. Quezon City"
+                      className="mt-1"
+                    />
+                    {errors.delivery_city && <p className="text-red-500 text-xs mt-1">{errors.delivery_city.message}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="delivery_province">Province *</Label>
+                    <Input
+                      id="delivery_province"
+                      {...register('delivery_province')}
+                      placeholder="e.g. Metro Manila"
+                      className="mt-1"
+                    />
+                    {errors.delivery_province && <p className="text-red-500 text-xs mt-1">{errors.delivery_province.message}</p>}
+                  </div>
+                </div>
+                <div className="max-w-[160px]">
+                  <Label htmlFor="delivery_zip">ZIP Code *</Label>
+                  <Input
+                    id="delivery_zip"
+                    {...register('delivery_zip')}
+                    placeholder="e.g. 1100"
+                    className="mt-1"
+                  />
+                  {errors.delivery_zip && <p className="text-red-500 text-xs mt-1">{errors.delivery_zip.message}</p>}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Shirt Details */}
           <Card>

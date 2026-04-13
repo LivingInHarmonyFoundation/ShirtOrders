@@ -29,6 +29,9 @@ export default function ReportsPage() {
   const [shirtSize, setShirtSize] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [grade, setGrade] = useState('')
+  const [classroom, setClassroom] = useState('')
+  const [department, setDepartment] = useState('')
 
   const buildExportUrl = () => {
     const params = new URLSearchParams()
@@ -38,6 +41,9 @@ export default function ReportsPage() {
     if (shirtSize) params.set('shirt_size', shirtSize)
     if (dateFrom) params.set('date_from', dateFrom)
     if (dateTo) params.set('date_to', dateTo)
+    if (grade) params.set('grade', grade)
+    if (classroom) params.set('classroom', classroom)
+    if (department) params.set('department', department)
     return `/api/admin/export?${params}`
   }
 
@@ -48,6 +54,7 @@ export default function ReportsPage() {
         institution_type: institutionType, payment_status: paymentStatus,
         delivery_status: deliveryStatus, shirt_size: shirtSize,
         date_from: dateFrom, date_to: dateTo,
+        grade, classroom, department,
         limit: '500',
       })
       const res = await fetch(`/api/admin/orders?${params}`)
@@ -186,6 +193,24 @@ export default function ReportsPage() {
               <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="mt-1 h-8 text-xs" />
             </div>
           </div>
+          {(institutionType === 'school' || !institutionType) && (
+            <div className="grid grid-cols-2 gap-3 mt-1">
+              <div>
+                <Label className="text-xs">Grade</Label>
+                <Input value={grade} onChange={e => setGrade(e.target.value)} className="mt-1 h-8 text-xs" placeholder="e.g. 5" />
+              </div>
+              <div>
+                <Label className="text-xs">Classroom</Label>
+                <Input value={classroom} onChange={e => setClassroom(e.target.value)} className="mt-1 h-8 text-xs" placeholder="e.g. 3-A" />
+              </div>
+            </div>
+          )}
+          {(institutionType === 'government' || institutionType === 'private_company' || !institutionType) && (
+            <div className="mt-1">
+              <Label className="text-xs">Department</Label>
+              <Input value={department} onChange={e => setDepartment(e.target.value)} className="mt-1 h-8 text-xs" placeholder="e.g. Finance" />
+            </div>
+          )}
           <div className="flex gap-2 mt-3">
             <Button onClick={fetchReport} size="sm" className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
               <FileText className="w-4 h-4 mr-1" /> Generate Report
@@ -193,6 +218,7 @@ export default function ReportsPage() {
             <Button variant="outline" size="sm" onClick={() => {
               setInstitutionType(''); setPaymentStatus(''); setDeliveryStatus('')
               setShirtSize(''); setDateFrom(''); setDateTo('')
+              setGrade(''); setClassroom(''); setDepartment('')
             }}>Clear</Button>
           </div>
         </CardContent>
@@ -312,11 +338,25 @@ export default function ReportsPage() {
                         {order.institution_type === 'school' && order.school_name && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.school_name}</p>
                         )}
+                        {order.institution_type === 'school' && (order.grade || order.classroom) && (
+                          <p className="text-xs text-gray-400">
+                            {[order.grade && `Gr. ${order.grade}`, order.classroom && `Rm. ${order.classroom}`].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
                         {order.institution_type === 'government' && order.organization_name && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.organization_name}</p>
                         )}
+                        {order.institution_type === 'government' && order.department_office && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.department_office}</p>
+                        )}
                         {order.institution_type === 'private_company' && order.company_name && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.company_name}</p>
+                        )}
+                        {order.institution_type === 'private_company' && order.company_department && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.company_department}</p>
+                        )}
+                        {order.institution_type === 'personal' && order.delivery_address && (
+                          <p className="text-xs text-gray-400 max-w-[150px] truncate" title={order.delivery_address}>{order.delivery_address}</p>
                         )}
                       </div>
                     </TableCell>

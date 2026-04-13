@@ -108,10 +108,6 @@ export default function OrderDetailPage() {
     )
   }
 
-  const institutionDisplay = order.institution_type === 'school'
-    ? `${order.school_name} — Grade ${order.grade}, ${order.classroom}`
-    : `${order.organization_name} — ${order.department_office}`
-
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
@@ -168,10 +164,53 @@ export default function OrderDetailPage() {
                 <InstitutionBadge type={order.institution_type} />
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-700 dark:text-gray-300">{institutionDisplay}</p>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {order.institution_type === 'school' && (<>
+                  <div>
+                    <p className="text-xs text-gray-500">School</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.school_name || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Grade / Group</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.grade || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Classroom</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.classroom || '—'}</p>
+                  </div>
+                </>)}
+                {order.institution_type === 'government' && (<>
+                  <div>
+                    <p className="text-xs text-gray-500">Agency / Organization</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.organization_name || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Department / Office</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.department_office || '—'}</p>
+                  </div>
+                </>)}
+                {order.institution_type === 'private_company' && (<>
+                  <div>
+                    <p className="text-xs text-gray-500">Company</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.company_name || '—'}</p>
+                  </div>
+                  {order.company_department && (
+                    <div>
+                      <p className="text-xs text-gray-500">Department</p>
+                      <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.company_department}</p>
+                    </div>
+                  )}
+                </>)}
+                {order.institution_type === 'personal' && order.delivery_address && (
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500">Mailing Address</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5 whitespace-pre-line">{order.delivery_address}</p>
+                  </div>
+                )}
+              </div>
               {order.notes && (
-                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1">Customer Notes</p>
                   <p className="text-sm text-gray-700 dark:text-gray-300">{order.notes}</p>
                 </div>

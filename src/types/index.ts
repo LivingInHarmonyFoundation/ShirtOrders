@@ -22,6 +22,7 @@ export interface Order {
   department_office: string | null
   company_name: string | null
   company_department: string | null
+  delivery_address: string | null
   shirt_size: ShirtSize
   quantity: number
   unit_price: number
@@ -52,6 +53,9 @@ export interface OrderFormData {
   classroom?: string
   organization_name?: string
   department_office?: string
+  company_name?: string
+  company_department?: string
+  delivery_address?: string
   shirt_size: ShirtSize
   quantity: number
   notes?: string

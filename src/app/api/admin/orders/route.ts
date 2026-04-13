@@ -16,6 +16,9 @@ export async function GET(request: NextRequest) {
   const shirt_size = searchParams.get('shirt_size') || ''
   const date_from = searchParams.get('date_from') || ''
   const date_to = searchParams.get('date_to') || ''
+  const grade = searchParams.get('grade') || ''
+  const classroom = searchParams.get('classroom') || ''
+  const department = searchParams.get('department') || ''
   const sort = searchParams.get('sort') || 'newest'
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '20')
@@ -25,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   if (search) {
     query = query.or(
-      `full_name.ilike.%${search}%,email.ilike.%${search}%,order_number.ilike.%${search}%,school_name.ilike.%${search}%,organization_name.ilike.%${search}%,department_office.ilike.%${search}%`
+      `full_name.ilike.%${search}%,email.ilike.%${search}%,order_number.ilike.%${search}%,school_name.ilike.%${search}%,organization_name.ilike.%${search}%,department_office.ilike.%${search}%,company_name.ilike.%${search}%,company_department.ilike.%${search}%,grade.ilike.%${search}%,classroom.ilike.%${search}%`
     )
   }
 
@@ -35,6 +38,9 @@ export async function GET(request: NextRequest) {
   if (shirt_size) query = query.eq('shirt_size', shirt_size)
   if (date_from) query = query.gte('created_at', date_from)
   if (date_to) query = query.lte('created_at', date_to + 'T23:59:59')
+  if (grade) query = query.ilike('grade', `%${grade}%`)
+  if (classroom) query = query.ilike('classroom', `%${classroom}%`)
+  if (department) query = query.or(`department_office.ilike.%${department}%,company_department.ilike.%${department}%`)
 
   switch (sort) {
     case 'oldest':

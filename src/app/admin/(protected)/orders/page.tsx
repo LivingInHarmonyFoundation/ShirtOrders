@@ -27,6 +27,9 @@ export default function AdminOrdersPage() {
   const [shirtSize, setShirtSize] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [grade, setGrade] = useState('')
+  const [classroom, setClassroom] = useState('')
+  const [department, setDepartment] = useState('')
   const [sort, setSort] = useState('newest')
   const [page, setPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -37,7 +40,9 @@ export default function AdminOrdersPage() {
     const params = new URLSearchParams({
       search, institution_type: institutionType, payment_status: paymentStatus,
       delivery_status: deliveryStatus, shirt_size: shirtSize,
-      date_from: dateFrom, date_to: dateTo, sort, page: page.toString(), limit: '20',
+      date_from: dateFrom, date_to: dateTo,
+      grade, classroom, department,
+      sort, page: page.toString(), limit: '20',
     })
     try {
       const res = await fetch(`/api/admin/orders?${params}`)
@@ -48,7 +53,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, sort, page])
+  }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, grade, classroom, department, sort, page])
 
   useEffect(() => {
     const t = setTimeout(fetchOrders, search ? 400 : 0)
@@ -88,10 +93,11 @@ export default function AdminOrdersPage() {
   const clearFilters = () => {
     setSearch(''); setInstitutionType(''); setPaymentStatus('')
     setDeliveryStatus(''); setShirtSize(''); setDateFrom(''); setDateTo('')
+    setGrade(''); setClassroom(''); setDepartment('')
     setSort('newest'); setPage(1)
   }
 
-  const hasFilters = search || institutionType || paymentStatus || deliveryStatus || shirtSize || dateFrom || dateTo
+  const hasFilters = search || institutionType || paymentStatus || deliveryStatus || shirtSize || dateFrom || dateTo || grade || classroom || department
 
   return (
     <div className="space-y-4">
@@ -203,6 +209,31 @@ export default function AdminOrdersPage() {
               placeholder="To"
             />
 
+            {(institutionType === 'school' || !institutionType) && (
+              <Input
+                value={grade}
+                onChange={e => { setGrade(e.target.value); setPage(1) }}
+                className="w-28 h-8 text-xs"
+                placeholder="Grade"
+              />
+            )}
+            {(institutionType === 'school' || !institutionType) && (
+              <Input
+                value={classroom}
+                onChange={e => { setClassroom(e.target.value); setPage(1) }}
+                className="w-32 h-8 text-xs"
+                placeholder="Classroom"
+              />
+            )}
+            {(institutionType === 'government' || institutionType === 'private_company' || !institutionType) && (
+              <Input
+                value={department}
+                onChange={e => { setDepartment(e.target.value); setPage(1) }}
+                className="w-36 h-8 text-xs"
+                placeholder="Department"
+              />
+            )}
+
             {hasFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs text-gray-500">
                 Clear filters
@@ -298,11 +329,25 @@ export default function AdminOrdersPage() {
                         {order.institution_type === 'school' && order.school_name && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.school_name}</p>
                         )}
+                        {order.institution_type === 'school' && (order.grade || order.classroom) && (
+                          <p className="text-xs text-gray-400">
+                            {[order.grade && `Gr. ${order.grade}`, order.classroom && `Rm. ${order.classroom}`].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
                         {order.institution_type === 'government' && order.organization_name && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.organization_name}</p>
                         )}
+                        {order.institution_type === 'government' && order.department_office && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.department_office}</p>
+                        )}
                         {order.institution_type === 'private_company' && order.company_name && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.company_name}</p>
+                        )}
+                        {order.institution_type === 'private_company' && order.company_department && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.company_department}</p>
+                        )}
+                        {order.institution_type === 'personal' && order.delivery_address && (
+                          <p className="text-xs text-gray-400 max-w-[150px] truncate" title={order.delivery_address}>{order.delivery_address}</p>
                         )}
                       </div>
                     </TableCell>
