@@ -72,9 +72,15 @@ function ConfirmationContent() {
     )
   }
 
-  const institutionDisplay = order.institution_type === 'school'
-    ? `${order.school_name} — Grade ${order.grade}, ${order.classroom}`
-    : `${order.organization_name} — ${order.department_office}`
+  const institutionDisplay = (() => {
+    switch (order.institution_type) {
+      case 'school': return [order.school_name, order.grade && `Grade ${order.grade}`, order.classroom].filter(Boolean).join(' — ')
+      case 'government': return [order.organization_name, order.department_office].filter(Boolean).join(' — ')
+      case 'private_company': return [order.company_name, order.company_department].filter(Boolean).join(' — ')
+      case 'personal': return order.delivery_address || 'Personal Order'
+      default: return ''
+    }
+  })()
 
   return (
     <div className="min-h-screen bg-[#F5F4F0]">
@@ -209,6 +215,16 @@ function ConfirmationContent() {
         <p className="text-xs text-center text-gray-400 mt-4 print:hidden">
           Save your order number <strong className="text-gray-600">{order.order_number}</strong> for your records.
         </p>
+
+        {/* Mission badge */}
+        <div className="flex flex-col items-center gap-3 mt-10 mb-2 print:hidden">
+          <div className="relative w-24 h-24" style={{ filter: 'drop-shadow(0 8px 20px rgba(27,77,46,0.2))' }}>
+            <Image src="/badge.jpeg" alt="Que Nadie en PR Envejezca Solo" fill className="object-contain rounded-full" />
+          </div>
+          <p className="text-xs text-gray-400 italic text-center max-w-xs">
+            Thank you for supporting our mission — <span className="text-[#1B4D2E] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
+          </p>
+        </div>
       </main>
     </div>
   )

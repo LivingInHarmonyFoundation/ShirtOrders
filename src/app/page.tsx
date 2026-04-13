@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { School, Building2, CheckCircle, Shield, CreditCard, FileText, ShoppingBag } from 'lucide-react'
+import { School, Building2, User, Briefcase, CheckCircle, Shield, CreditCard, FileText, ShoppingBag } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/server'
 import type { ShirtCatalogItem } from '@/types'
 
@@ -53,27 +53,59 @@ export default async function LandingPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="py-20 px-4" style={{ background: 'linear-gradient(135deg, #EFF8E8 0%, #d4edda 100%)' }}>
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="flex justify-center mb-5">
-              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center p-2 shadow-md border border-white/60">
-                <Image src="/logo.png" alt="Living in Harmony Foundation" width={64} height={64} className="object-contain" />
+        <section className="py-16 px-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #EFF8E8 0%, #d4edda 100%)' }}>
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+              {/* Text */}
+              <div className="flex-1 text-center lg:text-left">
+                <div className="flex justify-center lg:justify-start mb-5">
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center p-1.5 shadow-md border border-white/60">
+                    <Image src="/logo.png" alt="Living in Harmony Foundation" width={52} height={52} className="object-contain" />
+                  </div>
+                </div>
+                <Badge className="mb-4 border-[#8DC63F]/50 text-[#1B4D2E]" style={{ backgroundColor: '#d4edda' }}>
+                  Official Order Portal
+                </Badge>
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-5">
+                  Order Your Institution Shirts
+                </h1>
+                <p className="text-lg text-gray-600 mb-8 max-w-xl">
+                  Place your shirt order online in minutes. Secure payment, instant confirmation, and easy tracking for schools, government agencies, companies, and individuals.
+                </p>
+                <Link href="/order">
+                  <Button size="lg" className="text-white px-10 h-12 text-base font-semibold shadow-md" style={{ backgroundColor: '#1B4D2E' }}>
+                    Place an Order
+                  </Button>
+                </Link>
+              </div>
+              {/* Badge */}
+              <div className="flex-shrink-0 flex items-center justify-center">
+                <div className="relative w-56 h-56 md:w-64 md:h-64" style={{ filter: 'drop-shadow(0 20px 40px rgba(27,77,46,0.25))' }}>
+                  <Image
+                    src="/badge.jpeg"
+                    alt="Que Nadie en PR Envejezca Solo — Living in Harmony Foundation"
+                    fill
+                    className="object-contain rounded-full"
+                  />
+                </div>
               </div>
             </div>
-            <Badge className="mb-4 border-[#8DC63F]/50 text-[#1B4D2E]" style={{ backgroundColor: '#d4edda' }}>
-              Official Order Portal
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Order Your Institution Shirts
-            </h1>
-            <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-              Place your shirt order online in minutes. Secure payment, instant confirmation, and easy tracking for schools and government organizations.
-            </p>
-            <Link href="/order">
-              <Button size="lg" className="text-white px-10 h-12 text-base font-semibold shadow-md" style={{ backgroundColor: '#1B4D2E' }}>
-                Place an Order
-              </Button>
-            </Link>
+          </div>
+        </section>
+
+        {/* Mission banner */}
+        <section style={{ backgroundColor: '#1B4D2E' }} className="py-12 px-4">
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-shrink-0">
+              <div className="w-24 h-24 relative rounded-xl overflow-hidden">
+                <Image src="/logo-full.jpeg" alt="Living in Harmony Foundation" fill className="object-cover" />
+              </div>
+            </div>
+            <div className="text-center md:text-left">
+              <p className="text-[#8DC63F] text-xs font-semibold uppercase tracking-widest mb-1">Our Mission</p>
+              <h2 className="text-white text-2xl md:text-3xl font-bold mb-2">Que Nadie en PR Envejezca Solo</h2>
+              <p className="text-white/70 text-sm max-w-xl">Únete a la lucha contra la soledad NO Deseada — Every shirt purchased supports Living in Harmony Foundation's mission to end unwanted loneliness in Puerto Rico.</p>
+            </div>
           </div>
         </section>
 
@@ -137,28 +169,24 @@ export default async function LandingPage() {
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">Who Can Order?</h2>
             <div className="grid md:grid-cols-2 gap-6">
-              <Card className="border-2 border-[#8DC63F]/30 hover:border-[#1B4D2E]/40 transition-colors">
-                <CardContent className="p-6 flex items-start gap-4">
-                  <div className="w-12 h-12 bg-[#EFF8E8] rounded-xl flex items-center justify-center flex-shrink-0">
-                    <School className="w-6 h-6 text-[#1B4D2E]" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Schools</h3>
-                    <p className="text-gray-600 text-sm">Students, teachers, and staff from schools. Include grade and classroom details.</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-[#8DC63F]/30 hover:border-[#1B4D2E]/40 transition-colors">
-                <CardContent className="p-6 flex items-start gap-4">
-                  <div className="w-12 h-12 bg-[#EFF8E8] rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Building2 className="w-6 h-6 text-[#1B4D2E]" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Government Organizations</h3>
-                    <p className="text-gray-600 text-sm">Government agencies, departments, and offices. Include department details.</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {[
+                { icon: School,    title: 'Schools',                 desc: 'Students, teachers, and staff from schools. Include grade and classroom details.' },
+                { icon: Building2, title: 'Government Organizations', desc: 'Government agencies, departments, and offices.' },
+                { icon: User,      title: 'Personal Orders',          desc: 'Individuals ordering for personal use. Delivery address collected at checkout.' },
+                { icon: Briefcase, title: 'Private Companies',        desc: 'Businesses and private organizations. Include company and department details.' },
+              ].map(({ icon: Icon, title, desc }) => (
+                <Card key={title} className="border-2 border-[#8DC63F]/30 hover:border-[#1B4D2E]/40 transition-colors">
+                  <CardContent className="p-6 flex items-start gap-4">
+                    <div className="w-12 h-12 bg-[#EFF8E8] rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-6 h-6 text-[#1B4D2E]" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
+                      <p className="text-gray-600 text-sm">{desc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
@@ -214,9 +242,18 @@ export default async function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t bg-white py-6 px-4">
-        <div className="max-w-6xl mx-auto text-center text-gray-400 text-sm">
-          © {new Date().getFullYear()} Living in Harmony Foundation. All rights reserved.
+      <footer className="border-t bg-white py-8 px-4">
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative w-14 h-14 flex-shrink-0">
+              <Image src="/badge.jpeg" alt="Living in Harmony Foundation Badge" fill className="object-contain rounded-full opacity-90" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-[#1B4D2E]">Living in Harmony Foundation</p>
+              <p className="text-xs text-gray-400 mt-0.5 italic">Únete a la lucha contra la soledad NO Deseada</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400">© {new Date().getFullYear()} Living in Harmony Foundation. All rights reserved.</p>
         </div>
       </footer>
     </div>
