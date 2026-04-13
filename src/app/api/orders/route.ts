@@ -8,12 +8,14 @@ const orderSchema = z.object({
   full_name: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional(),
-  institution_type: z.enum(['school', 'government']),
+  institution_type: z.enum(['school', 'government', 'personal', 'private_company']),
   school_name: z.string().optional(),
   grade: z.string().optional(),
   classroom: z.string().optional(),
   organization_name: z.string().optional(),
   department_office: z.string().optional(),
+  company_name: z.string().optional(),
+  company_department: z.string().optional(),
   shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']),
   quantity: z.number().int().positive(),
   notes: z.string().optional(),
@@ -29,30 +31,32 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    // Get current shirt price from settings
     const { data: settings } = await supabase
       .from('app_settings')
-      .select('shirt_price, school_orders_enabled, government_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled')
+      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled')
       .single()
 
     if (!settings) {
       return NextResponse.json({ error: 'Settings not found' }, { status: 500 })
     }
 
-    // Validate institution type is enabled
     if (data.institution_type === 'school' && !settings.school_orders_enabled) {
       return NextResponse.json({ error: 'School orders are currently disabled' }, { status: 400 })
     }
     if (data.institution_type === 'government' && !settings.government_orders_enabled) {
       return NextResponse.json({ error: 'Government orders are currently disabled' }, { status: 400 })
     }
+    if (data.institution_type === 'personal' && settings.personal_orders_enabled === false) {
+      return NextResponse.json({ error: 'Personal orders are currently disabled' }, { status: 400 })
+    }
+    if (data.institution_type === 'private_company' && settings.private_company_orders_enabled === false) {
+      return NextResponse.json({ error: 'Private company orders are currently disabled' }, { status: 400 })
+    }
 
-    // Validate shirt size is available
     if (!settings.available_sizes.includes(data.shirt_size)) {
       return NextResponse.json({ error: 'Selected shirt size is not available' }, { status: 400 })
     }
 
-    // Check for duplicate submission (same email + size + quantity within last 10 min)
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
     const { data: existing } = await supabase
       .from('orders')
@@ -87,6 +91,8 @@ export async function POST(request: NextRequest) {
         classroom: data.classroom || null,
         organization_name: data.organization_name || null,
         department_office: data.department_office || null,
+        company_name: data.company_name || null,
+        company_department: data.company_department || null,
         shirt_size: data.shirt_size,
         quantity: data.quantity,
         unit_price,
@@ -107,7 +113,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
     }
 
-    // Send notifications (non-blocking — don't await before responding)
     sendOrderNotifications(order, settings).catch(e => console.error('Notification error:', e))
 
     return NextResponse.json({ order }, { status: 201 })

@@ -16,18 +16,21 @@ import { School, Building2, ArrowRight, Loader2, CheckCircle2, ShoppingBag } fro
 import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Briefcase, User } from 'lucide-react'
 import type { AppSettings, InstitutionType, ShirtSize, ShirtCatalogItem, GovOrg } from '@/types'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Valid email is required'),
   phone: z.string().optional(),
-  institution_type: z.enum(['school', 'government'] as const),
+  institution_type: z.enum(['school', 'government', 'personal', 'private_company'] as const),
   school_name: z.string().optional(),
   grade: z.string().optional(),
   classroom: z.string().optional(),
   organization_name: z.string().optional(),
   department_office: z.string().optional(),
+  company_name: z.string().optional(),
+  company_department: z.string().optional(),
   shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const),
   quantity: z.number().int().positive('Quantity must be at least 1'),
   notes: z.string().optional(),
@@ -40,6 +43,9 @@ const schema = z.object({
   if (data.institution_type === 'government') {
     if (!data.organization_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Organization name is required', path: ['organization_name'] })
     if (!data.department_office) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Department/Office is required', path: ['department_office'] })
+  }
+  if (data.institution_type === 'private_company') {
+    if (!data.company_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Company name is required', path: ['company_name'] })
   }
 })
 
@@ -116,6 +122,13 @@ export default function OrderPage() {
 
   const sizes: ShirtSize[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const showCatalogPicker = catalog.length > 1
+
+  const institutionOptions = [
+    { value: 'school' as const,          label: 'School',          icon: School,    enabled: settings?.school_orders_enabled !== false },
+    { value: 'government' as const,      label: 'Government',      icon: Building2, enabled: settings?.government_orders_enabled !== false },
+    { value: 'personal' as const,        label: 'Personal',        icon: User,      enabled: settings?.personal_orders_enabled !== false },
+    { value: 'private_company' as const, label: 'Private Company', icon: Briefcase, enabled: settings?.private_company_orders_enabled !== false },
+  ]
 
   return (
     <div className="min-h-screen bg-[#F5F4F0]">
@@ -204,15 +217,12 @@ export default function OrderPage() {
           {/* Institution Type */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Institution Type</CardTitle>
-              <CardDescription>Select your institution type</CardDescription>
+              <CardTitle className="text-base">Order Type</CardTitle>
+              <CardDescription>Select who this order is for</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
-                {[
-                  { value: 'school' as const, label: 'School', icon: School, enabled: settings?.school_orders_enabled !== false },
-                  { value: 'government' as const, label: 'Government', icon: Building2, enabled: settings?.government_orders_enabled !== false },
-                ].map(({ value, label, icon: Icon, enabled }) => (
+                {institutionOptions.map(({ value, label, icon: Icon, enabled }) => (
                   <button
                     key={value}
                     type="button"
@@ -322,6 +332,26 @@ export default function OrderPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Private Company fields */}
+          {institutionType === 'private_company' && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Company Information</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="company_name">Company Name *</Label>
+                  <Input id="company_name" {...register('company_name')} placeholder="Acme Corporation" className="mt-1" />
+                  {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="company_department">Department <span className="text-gray-400">(optional)</span></Label>
+                  <Input id="company_department" {...register('company_department')} placeholder="Marketing, HR, etc." className="mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Personal — no extra fields needed */}
 
           {/* Shirt Details */}
           <Card>

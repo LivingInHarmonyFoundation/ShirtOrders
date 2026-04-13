@@ -129,6 +129,8 @@ export default function ReportsPage() {
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="school">School</SelectItem>
                   <SelectItem value="government">Government</SelectItem>
+                  <SelectItem value="personal">Personal</SelectItem>
+                  <SelectItem value="private_company">Private Company</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -312,6 +314,9 @@ export default function ReportsPage() {
                         )}
                         {order.institution_type === 'government' && order.organization_name && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.organization_name}</p>
+                        )}
+                        {order.institution_type === 'private_company' && order.company_name && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.company_name}</p>
                         )}
                       </div>
                     </TableCell>

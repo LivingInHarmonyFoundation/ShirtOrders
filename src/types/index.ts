@@ -1,4 +1,4 @@
-export type InstitutionType = 'school' | 'government'
+export type InstitutionType = 'school' | 'government' | 'personal' | 'private_company'
 
 export type ShirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL'
 
@@ -20,6 +20,8 @@ export interface Order {
   classroom: string | null
   organization_name: string | null
   department_office: string | null
+  company_name: string | null
+  company_department: string | null
   shirt_size: ShirtSize
   quantity: number
   unit_price: number
@@ -63,6 +65,8 @@ export interface AppSettings {
   available_sizes: ShirtSize[]
   school_orders_enabled: boolean
   government_orders_enabled: boolean
+  personal_orders_enabled: boolean
+  private_company_orders_enabled: boolean
   manual_payment_enabled: boolean
   confirmation_message: string
   admin_phone: string | null

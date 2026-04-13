@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare } from 'lucide-react'
+import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase } from 'lucide-react'
 import type { AppSettings, ShirtSize } from '@/types'
 
 const ALL_SIZES: ShirtSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const [availableSizes, setAvailableSizes] = useState<ShirtSize[]>([])
   const [schoolEnabled, setSchoolEnabled] = useState(true)
   const [govEnabled, setGovEnabled] = useState(true)
+  const [personalEnabled, setPersonalEnabled] = useState(true)
+  const [privateCompanyEnabled, setPrivateCompanyEnabled] = useState(true)
   const [manualPayEnabled, setManualPayEnabled] = useState(true)
   const [confirmationMessage, setConfirmationMessage] = useState('')
   const [adminPhone, setAdminPhone] = useState('')
@@ -41,6 +43,8 @@ export default function SettingsPage() {
           setAvailableSizes(settings.available_sizes || ALL_SIZES)
           setSchoolEnabled(settings.school_orders_enabled ?? true)
           setGovEnabled(settings.government_orders_enabled ?? true)
+          setPersonalEnabled(settings.personal_orders_enabled ?? true)
+          setPrivateCompanyEnabled(settings.private_company_orders_enabled ?? true)
           setManualPayEnabled(settings.manual_payment_enabled ?? true)
           setConfirmationMessage(settings.confirmation_message || '')
           setAdminPhone(settings.admin_phone || '')
@@ -79,6 +83,8 @@ export default function SettingsPage() {
           available_sizes: availableSizes,
           school_orders_enabled: schoolEnabled,
           government_orders_enabled: govEnabled,
+          personal_orders_enabled: personalEnabled,
+          private_company_orders_enabled: privateCompanyEnabled,
           manual_payment_enabled: manualPayEnabled,
           confirmation_message: confirmationMessage,
           admin_phone: adminPhone || null,
@@ -214,6 +220,28 @@ export default function SettingsPage() {
               </div>
             </div>
             <Switch checked={govEnabled} onCheckedChange={setGovEnabled} />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <User className="w-4 h-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Personal Orders</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Allow individuals to place personal orders</p>
+              </div>
+            </div>
+            <Switch checked={personalEnabled} onCheckedChange={setPersonalEnabled} />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Briefcase className="w-4 h-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Private Company Orders</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Allow private companies to place orders</p>
+              </div>
+            </div>
+            <Switch checked={privateCompanyEnabled} onCheckedChange={setPrivateCompanyEnabled} />
           </div>
           <Separator />
           <div className="flex items-center justify-between">

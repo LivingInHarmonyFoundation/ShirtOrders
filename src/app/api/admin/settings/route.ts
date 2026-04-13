@@ -26,6 +26,7 @@ export async function PATCH(request: NextRequest) {
   const allowedFields = [
     'app_name', 'logo_url', 'shirt_price', 'available_sizes',
     'school_orders_enabled', 'government_orders_enabled',
+    'personal_orders_enabled', 'private_company_orders_enabled',
     'manual_payment_enabled', 'confirmation_message',
     'admin_phone', 'sms_notifications_enabled',
   ]
