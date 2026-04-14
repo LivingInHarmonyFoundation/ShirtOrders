@@ -224,17 +224,17 @@ export default async function LandingPage() {
 
         {/* ── Mission ─────────────────────────────────────────── */}
         {missionBannerUrl ? (
-          /* Custom banner image set by admin */
+          /* Custom banner image — natural aspect ratio, never cropped */
           <section className="w-full">
-            <div className="relative w-full" style={{ minHeight: '200px', maxHeight: '420px' }}>
-              <Image
-                src={missionBannerUrl}
-                alt="Living in Harmony Foundation — Mission Banner"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
+            <Image
+              src={missionBannerUrl}
+              alt="Living in Harmony Foundation — Mission Banner"
+              width={0}
+              height={0}
+              sizes="100vw"
+              className="w-full h-auto block"
+              priority
+            />
           </section>
         ) : (
           /* Default text version */
