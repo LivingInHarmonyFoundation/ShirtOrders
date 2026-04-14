@@ -148,14 +148,19 @@ export default function OrderPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5F4F0' }}>
+      {/* Brand accent bar */}
+      <div
+        className="h-[3px] w-full"
+        style={{ background: 'linear-gradient(90deg, #1B4D2E 0%, #8DC63F 60%, #1B4D2E 100%)' }}
+      />
       {/* Header */}
       <header
         className="border-b sticky top-0 z-10"
         style={{
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottomColor: 'rgba(0,0,0,0.06)',
+          backgroundColor: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderBottomColor: 'rgba(0,0,0,0.05)',
         }}
       >
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -164,25 +169,27 @@ export default function OrderPage() {
               <Image src="/logo.png" alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
             </div>
             <div>
-              <p className="font-semibold text-[13px] leading-none" style={{ color: '#1B4D2E' }}>
-                Living in Harmony Foundation
+              <p className="font-semibold leading-none" style={{ color: '#1B4D2E', fontSize: '13px' }}>
+                <span className="hidden sm:inline">Living in Harmony Foundation</span>
+                <span className="sm:hidden">LIH Foundation</span>
               </p>
-              <p className="text-gray-400 text-[11px] mt-0.5">Shirt Order Manager</p>
+              <p className="text-gray-400 mt-0.5" style={{ fontSize: '11px' }}>Shirt Order Manager</p>
             </div>
           </div>
           <Link
             href="/"
-            className="text-xs text-gray-400 hover:text-[#1B4D2E] transition-colors flex items-center gap-1"
+            className="text-gray-400 hover:text-[#1B4D2E] transition-colors flex items-center gap-1 font-medium"
+            style={{ fontSize: '12px' }}
           >
             <span>←</span> Back
           </Link>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <div className="mb-7">
+      <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
+        <div className="mb-6">
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">Place Your Order</h1>
-          <p className="text-gray-500 mt-1.5 text-sm">Fill out the form below to order your shirts</p>
+          <p className="text-gray-500 mt-1" style={{ fontSize: '14px' }}>Fill out the form below to order your shirts</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -273,34 +280,52 @@ export default function OrderPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
-                {institutionOptions.map(({ value, label, icon: Icon, enabled }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    disabled={!enabled}
-                    onClick={() => {
-                      setInstitutionType(value)
-                      setValue('institution_type', value, { shouldValidate: true })
-                    }}
-                    className={cn(
-                      'flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 transition-all duration-150 text-sm font-medium',
-                      institutionType === value
-                        ? 'border-[#1B4D2E] bg-[#EFF8E8] text-[#1B4D2E] shadow-sm'
-                        : 'border-gray-200 bg-white hover:border-[#1B4D2E]/30 hover:bg-[#F5F4F0] text-gray-600',
-                      !enabled && 'opacity-40 cursor-not-allowed'
-                    )}
-                  >
-                    <div
+                {institutionOptions.map(({ value, label, icon: Icon, enabled }) => {
+                  const active = institutionType === value
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={!enabled}
+                      onClick={() => {
+                        setInstitutionType(value)
+                        setValue('institution_type', value, { shouldValidate: true })
+                      }}
                       className={cn(
-                        'w-9 h-9 rounded-xl flex items-center justify-center transition-colors',
-                        institutionType === value ? 'bg-[#1B4D2E]/10' : 'bg-gray-100'
+                        'relative flex flex-col items-center gap-3 py-5 px-3 rounded-2xl border-2 transition-all duration-150 overflow-hidden',
+                        active
+                          ? 'border-[#1B4D2E] bg-[#EFF8E8] shadow-md'
+                          : 'border-gray-200 bg-white hover:border-[#8DC63F]/50 hover:bg-[#F9FCF7]',
+                        !enabled && 'opacity-40 cursor-not-allowed'
                       )}
                     >
-                      <Icon className="w-4.5 h-4.5" />
-                    </div>
-                    <span className="text-xs font-semibold">{label}</span>
-                  </button>
-                ))}
+                      {/* Active top accent stripe */}
+                      {active && (
+                        <div
+                          className="absolute top-0 left-0 right-0 h-[3px]"
+                          style={{ backgroundColor: '#1B4D2E' }}
+                        />
+                      )}
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                        style={{
+                          backgroundColor: active ? 'rgba(27,77,46,0.12)' : '#F3F4F6',
+                        }}
+                      >
+                        <Icon
+                          className="w-5 h-5"
+                          style={{ color: active ? '#1B4D2E' : '#6B7280' }}
+                        />
+                      </div>
+                      <span
+                        className="text-xs font-semibold leading-none"
+                        style={{ color: active ? '#1B4D2E' : '#374151' }}
+                      >
+                        {label}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
               {errors.institution_type && (
                 <p className="text-red-500 text-xs mt-2">{errors.institution_type.message}</p>

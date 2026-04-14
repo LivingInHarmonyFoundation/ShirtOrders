@@ -26,24 +26,23 @@ async function getCatalog(): Promise<ShirtCatalogItem[]> {
 export default async function LandingPage() {
   const catalog = await getCatalog()
 
-  const features = [
-    { icon: ShoppingBag, title: 'Easy Ordering',  desc: 'Simple form for placing shirt orders' },
-    { icon: CreditCard,  title: 'Secure Payment', desc: 'Pay safely with Stripe-powered checkout' },
-    { icon: FileText,    title: 'Order Tracking', desc: 'Get a confirmation with your order number' },
-    { icon: Shield,      title: 'Safe & Secure',  desc: 'Your data is protected and private' },
-  ]
-
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F5F4F0' }}>
+
+      {/* ── Brand accent bar ────────────────────────────────── */}
+      <div
+        className="h-[3px] w-full flex-shrink-0"
+        style={{ background: 'linear-gradient(90deg, #1B4D2E 0%, #8DC63F 60%, #1B4D2E 100%)' }}
+      />
 
       {/* ── Header ─────────────────────────────────────────── */}
       <header
         className="sticky top-0 z-50 border-b"
         style={{
-          backgroundColor: 'rgba(255,255,255,0.88)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          borderBottomColor: 'rgba(0,0,0,0.06)',
+          backgroundColor: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
+          borderBottomColor: 'rgba(0,0,0,0.05)',
         }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -52,17 +51,18 @@ export default async function LandingPage() {
               <Image src="/logo.png" alt="LIH" width={32} height={32} className="object-contain" />
             </div>
             <div>
-              <p className="font-semibold text-[13px] leading-none" style={{ color: '#1B4D2E' }}>
-                Living in Harmony Foundation
+              <p className="font-semibold leading-none" style={{ color: '#1B4D2E', fontSize: '13px' }}>
+                <span className="hidden sm:inline">Living in Harmony Foundation</span>
+                <span className="sm:hidden">LIH Foundation</span>
               </p>
-              <p className="text-gray-400 text-[11px] mt-0.5">Shirt Order Manager</p>
+              <p className="text-gray-400 mt-0.5" style={{ fontSize: '11px' }}>Shirt Order Manager</p>
             </div>
           </div>
           <Link href="/admin/login">
             <Button
               variant="outline"
               size="sm"
-              className="text-xs border-gray-200 text-gray-500 hover:text-[#1B4D2E] hover:border-[#1B4D2E] hover:bg-[#EFF8E8] transition-all duration-200"
+              className="text-xs border-gray-200 text-gray-500 hover:text-[#1B4D2E] hover:border-[#1B4D2E] hover:bg-[#EFF8E8] transition-all duration-200 rounded-lg h-8"
             >
               Admin Login
             </Button>
@@ -73,36 +73,34 @@ export default async function LandingPage() {
       <main className="flex-1">
 
         {/* ── Hero ───────────────────────────────────────────── */}
-        <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden">
-          {/* Layered gradient background */}
+        <section className="relative py-12 sm:py-20 lg:py-28 px-4 sm:px-6 overflow-hidden">
+          {/* Layered gradient bg */}
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 pointer-events-none"
             style={{
-              background:
-                'radial-gradient(ellipse 130% 100% at 5% 0%, #EFF8E8 0%, #d4edda 50%, #eaf4ea 100%)',
+              background: `
+                radial-gradient(ellipse 60% 80% at 90% 10%, rgba(141,198,63,0.14) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 5% 90%, rgba(27,77,46,0.08) 0%, transparent 55%),
+                linear-gradient(160deg, #EFF8E8 0%, #d9efd9 55%, #e5f5e5 100%)
+              `,
             }}
-          />
-          {/* Decorative blobs */}
-          <div
-            className="absolute top-[-15%] right-[-8%] w-[520px] h-[520px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.13) 0%, transparent 70%)' }}
-          />
-          <div
-            className="absolute bottom-[-15%] left-[-5%] w-[380px] h-[380px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(27,77,46,0.07) 0%, transparent 70%)' }}
           />
 
           <div className="max-w-5xl mx-auto relative">
-            <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
+            {/*
+              flex-col-reverse: badge appears ABOVE text on mobile
+              lg:flex-row: side-by-side on desktop
+            */}
+            <div className="flex flex-col-reverse lg:flex-row items-center gap-10 lg:gap-20">
 
-              {/* Text */}
-              <div className="flex-1 text-center lg:text-left">
-                {/* Pill badge */}
+              {/* ── Text (below badge on mobile, left on desktop) ── */}
+              <div className="flex-1 text-center lg:text-left w-full">
+                {/* Pill */}
                 <div
-                  className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 mb-6 border"
+                  className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 mb-5"
                   style={{
-                    borderColor: 'rgba(141,198,63,0.45)',
-                    backgroundColor: 'rgba(255,255,255,0.65)',
+                    border: '1px solid rgba(141,198,63,0.5)',
+                    backgroundColor: 'rgba(255,255,255,0.75)',
                     backdropFilter: 'blur(8px)',
                   }}
                 >
@@ -110,60 +108,69 @@ export default async function LandingPage() {
                     className="w-1.5 h-1.5 rounded-full"
                     style={{ backgroundColor: '#8DC63F' }}
                   />
-                  <span className="text-[11px] font-semibold tracking-wider uppercase" style={{ color: '#1B4D2E' }}>
+                  <span
+                    className="font-bold uppercase tracking-wider"
+                    style={{ color: '#1B4D2E', fontSize: '10px' }}
+                  >
                     Official Order Portal
                   </span>
                 </div>
 
                 <h1
-                  className="font-heading text-[2.6rem] sm:text-5xl lg:text-[3.4rem] font-bold leading-[1.08] mb-5"
-                  style={{ color: '#111827' }}
+                  className="font-heading font-bold leading-[1.1] mb-5"
+                  style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#111827' }}
                 >
-                  Order Your<br />
-                  <span style={{ color: '#1B4D2E' }}>Institution</span><br />
+                  Order Your{' '}
+                  <span style={{ color: '#1B4D2E' }}>Institution</span>{' '}
                   Shirts
                 </h1>
 
-                <p className="text-base sm:text-lg text-gray-600 mb-8 max-w-md mx-auto lg:mx-0 leading-relaxed">
-                  Place your shirt order online in minutes. Secure payment, instant confirmation,
-                  and easy tracking for schools, government agencies, companies, and individuals.
+                <p className="text-gray-600 mb-7 leading-relaxed mx-auto lg:mx-0" style={{ maxWidth: '420px', fontSize: '15px' }}>
+                  Place your shirt order online in minutes — secure payment,
+                  instant confirmation, and easy tracking.
                 </p>
 
-                <Link href="/order">
+                {/* CTA — full-width on mobile */}
+                <Link href="/order" className="block sm:inline-block">
                   <Button
                     size="lg"
-                    className="text-white px-8 h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
+                    className="w-full sm:w-auto text-white h-12 px-8 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
                     style={{ backgroundColor: '#1B4D2E' }}
                   >
                     Place an Order
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
+
+                <p className="mt-4 flex items-center justify-center lg:justify-start gap-1.5 text-gray-400" style={{ fontSize: '11px' }}>
+                  <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#8DC63F' }} />
+                  Secure payment · Instant confirmation · No account needed
+                </p>
               </div>
 
-              {/* Badge image */}
-              <div className="flex-shrink-0">
+              {/* ── Badge (above text on mobile, right on desktop) ── */}
+              <div className="flex-shrink-0 flex items-center justify-center">
                 <div className="relative">
-                  {/* Outer dashed ring */}
+                  {/* Dashed outer ring */}
                   <div
                     className="absolute rounded-full border-2 border-dashed pointer-events-none"
                     style={{
                       inset: '-18px',
-                      borderColor: 'rgba(141,198,63,0.35)',
+                      borderColor: 'rgba(141,198,63,0.38)',
                     }}
                   />
-                  {/* Soft glow behind */}
+                  {/* Glow */}
                   <div
-                    className="absolute inset-0 rounded-full pointer-events-none"
-                    style={{
-                      boxShadow: '0 0 60px 20px rgba(141,198,63,0.15)',
-                    }}
+                    className="absolute inset-[-4px] rounded-full pointer-events-none"
+                    style={{ boxShadow: '0 0 48px 16px rgba(141,198,63,0.15)' }}
                   />
-                  {/* Main circle */}
+                  {/* Image */}
                   <div
-                    className="relative w-56 h-56 sm:w-64 sm:h-64 md:w-[280px] md:h-[280px] rounded-full overflow-hidden border-[5px] border-white"
+                    className="relative rounded-full overflow-hidden border-[5px] border-white"
                     style={{
-                      boxShadow: '0 24px 64px rgba(27,77,46,0.22), 0 0 0 10px rgba(141,198,63,0.12)',
+                      width: 'clamp(170px, 28vw, 288px)',
+                      height: 'clamp(170px, 28vw, 288px)',
+                      boxShadow: '0 24px 64px rgba(27,77,46,0.22)',
                     }}
                   >
                     <Image
@@ -176,37 +183,72 @@ export default async function LandingPage() {
                   </div>
                 </div>
               </div>
+
             </div>
           </div>
         </section>
 
-        {/* ── Mission Banner ──────────────────────────────────── */}
-        <section style={{ backgroundColor: '#1B4D2E' }} className="py-14 sm:py-16 px-4 sm:px-6">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="flex justify-center mb-6">
+        {/* ── Trust Strip ─────────────────────────────────────── */}
+        <section className="py-4 bg-white border-y" style={{ borderColor: 'rgba(0,0,0,0.05)' }}>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2.5">
+              {[
+                { icon: Shield,      label: 'Stripe-Secured Payments' },
+                { icon: CheckCircle, label: 'Instant Confirmation' },
+                { icon: FileText,    label: 'Order Tracking Included' },
+                { icon: CreditCard,  label: 'Multiple Payment Options' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#8DC63F' }} />
+                  <span className="text-gray-500 font-medium whitespace-nowrap" style={{ fontSize: '11px' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Mission ─────────────────────────────────────────── */}
+        <section
+          className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden"
+          style={{ backgroundColor: '#1B4D2E' }}
+        >
+          {/* Decorative radial behind text */}
+          <div
+            className="absolute right-[-10%] top-[-40%] w-[500px] h-[500px] rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.1) 0%, transparent 65%)' }}
+          />
+          <div
+            className="absolute left-[-8%] bottom-[-30%] w-[340px] h-[340px] rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.07) 0%, transparent 65%)' }}
+          />
+
+          <div className="max-w-3xl mx-auto text-center relative">
+            <div className="flex justify-center mb-5">
               <div
-                className="w-16 h-16 rounded-2xl overflow-hidden border-2 flex-shrink-0"
-                style={{ borderColor: 'rgba(255,255,255,0.2)', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}
+                className="w-14 h-14 rounded-2xl overflow-hidden border-2"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.18)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                }}
               >
-                <Image
-                  src="/logo-full.jpeg"
-                  alt="Living in Harmony Foundation"
-                  width={64}
-                  height={64}
-                  className="object-cover w-full h-full"
-                />
+                <Image src="/logo-full.jpeg" alt="Living in Harmony Foundation" width={56} height={56} className="object-cover w-full h-full" />
               </div>
             </div>
+
             <p
-              className="text-[11px] font-bold uppercase tracking-[0.22em] mb-4"
-              style={{ color: '#8DC63F' }}
+              className="font-bold uppercase tracking-[0.25em] mb-3"
+              style={{ color: '#8DC63F', fontSize: '11px' }}
             >
               Our Mission
             </p>
-            <h2 className="font-heading text-white text-2xl sm:text-3xl md:text-4xl font-bold italic leading-snug mb-4">
+
+            <h2 className="font-heading text-white font-bold italic leading-snug mb-4" style={{ fontSize: 'clamp(1.6rem, 4vw, 2.6rem)' }}>
               &ldquo;Que Nadie en PR Envejezca Solo&rdquo;
             </h2>
-            <p className="text-sm sm:text-base leading-relaxed max-w-lg mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
+
+            <div className="w-10 h-0.5 mx-auto mb-5" style={{ backgroundColor: '#8DC63F' }} />
+
+            <p className="leading-relaxed mx-auto" style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '480px', fontSize: '14px' }}>
               Únete a la lucha contra la soledad NO Deseada — Every shirt purchased supports
               Living in Harmony Foundation&rsquo;s mission to end unwanted loneliness in Puerto Rico.
             </p>
@@ -215,33 +257,36 @@ export default async function LandingPage() {
 
         {/* ── Shirt Catalog ───────────────────────────────────── */}
         {catalog.length > 0 && (
-          <section className="py-20 px-4 sm:px-6 bg-white">
+          <section className="py-16 sm:py-20 px-4 sm:px-6 bg-white">
             <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-12">
+              <div className="text-center mb-10 sm:mb-12">
                 <div
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-4 text-[11px] font-semibold uppercase tracking-wider border"
-                  style={{ borderColor: 'rgba(141,198,63,0.4)', backgroundColor: '#EFF8E8', color: '#1B4D2E' }}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 mb-4 font-bold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: '#EFF8E8',
+                    color: '#1B4D2E',
+                    border: '1px solid rgba(141,198,63,0.35)',
+                    fontSize: '10px',
+                  }}
                 >
                   Available Styles
                 </div>
                 <h2 className="font-heading text-3xl sm:text-4xl font-bold text-gray-900">Our Shirts</h2>
-                <p className="text-gray-500 mt-3 max-w-md mx-auto text-sm leading-relaxed">
-                  Choose from our selection of quality shirts available for your institution.
+                <p className="text-gray-500 mt-3 mx-auto leading-relaxed" style={{ maxWidth: '380px', fontSize: '14px' }}>
+                  Quality shirts representing the Living in Harmony Foundation.
                 </p>
               </div>
 
-              <div
-                className={`grid gap-6 ${
-                  catalog.length === 1 ? 'max-w-xs mx-auto' :
-                  catalog.length === 2 ? 'sm:grid-cols-2 max-w-2xl mx-auto' :
-                  catalog.length === 3 ? 'sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto' :
-                  'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                }`}
-              >
+              <div className={`grid gap-4 sm:gap-6 ${
+                catalog.length === 1 ? 'max-w-xs mx-auto' :
+                catalog.length === 2 ? 'grid-cols-2 max-w-xl mx-auto' :
+                catalog.length === 3 ? 'grid-cols-2 sm:grid-cols-3 max-w-4xl mx-auto' :
+                'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+              }`}>
                 {catalog.map(item => (
                   <div key={item.id} className="group">
                     <div
-                      className="relative aspect-square rounded-2xl overflow-hidden mb-4 transition-all duration-300"
+                      className="relative aspect-square rounded-2xl overflow-hidden mb-3 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-[#1B4D2E]/10"
                       style={{ backgroundColor: '#EFF8E8' }}
                     >
                       {item.image_url ? (
@@ -253,34 +298,31 @@ export default async function LandingPage() {
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <ShoppingBag className="w-16 h-16" style={{ color: 'rgba(141,198,63,0.4)' }} />
+                          <ShoppingBag className="w-12 h-12 sm:w-16 sm:h-16" style={{ color: 'rgba(141,198,63,0.35)' }} />
                         </div>
                       )}
                       {/* Hover overlay */}
                       <div
                         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        style={{ background: 'linear-gradient(to top, rgba(27,77,46,0.08) 0%, transparent 60%)' }}
+                        style={{ background: 'linear-gradient(to top, rgba(27,77,46,0.1) 0%, transparent 60%)' }}
                       />
                     </div>
-                    <div className="px-1">
-                      <h3 className="font-semibold text-gray-900 text-sm">{item.name}</h3>
-                      {item.description && (
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
-                      )}
-                    </div>
+                    <h3 className="font-semibold text-gray-900 text-sm">{item.name}</h3>
+                    {item.description && (
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">{item.description}</p>
+                    )}
                   </div>
                 ))}
               </div>
 
-              <div className="text-center mt-14">
-                <Link href="/order">
+              <div className="text-center mt-12">
+                <Link href="/order" className="block sm:inline-block">
                   <Button
                     size="lg"
-                    className="text-white px-10 h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
+                    className="w-full sm:w-auto text-white px-10 h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
                     style={{ backgroundColor: '#1B4D2E' }}
                   >
-                    Order Now
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    Order Now <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
@@ -289,32 +331,34 @@ export default async function LandingPage() {
         )}
 
         {/* ── Who Can Order ───────────────────────────────────── */}
-        <section style={{ backgroundColor: '#F5F4F0' }} className="py-20 px-4 sm:px-6">
+        <section style={{ backgroundColor: '#F5F4F0' }} className="py-16 sm:py-20 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-10">
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">Who Can Order?</h2>
-              <p className="text-gray-500 mt-2 text-sm">Open to institutions and individuals across Puerto Rico</p>
+              <p className="text-gray-500 mt-2" style={{ fontSize: '14px' }}>Open to institutions and individuals across Puerto Rico</p>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {[
                 { icon: School,    title: 'Schools',                  desc: 'Students, teachers, and staff. Include grade and classroom details.' },
                 { icon: Building2, title: 'Government Organizations', desc: 'Government agencies, departments, and offices.' },
-                { icon: User,      title: 'Personal Orders',           desc: 'Individuals ordering for personal use. Delivery address collected at checkout.' },
+                { icon: User,      title: 'Personal Orders',           desc: 'Individuals ordering for personal use. Delivery address at checkout.' },
                 { icon: Briefcase, title: 'Private Companies',         desc: 'Businesses and private organizations. Include company and department details.' },
               ].map(({ icon: Icon, title, desc }) => (
                 <div
                   key={title}
-                  className="flex items-start gap-4 p-5 rounded-2xl bg-white border border-transparent shadow-sm transition-all duration-200 hover:shadow-md hover:border-[#8DC63F]/25"
+                  className="flex items-start gap-4 p-5 rounded-2xl bg-white shadow-sm transition-all duration-200 hover:shadow-md border-l-[3px]"
+                  style={{ borderLeftColor: '#8DC63F' }}
                 >
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: '#EFF8E8' }}
                   >
                     <Icon className="w-5 h-5" style={{ color: '#1B4D2E' }} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+                    <h3 className="font-semibold text-gray-900 mb-0.5" style={{ fontSize: '14px' }}>{title}</h3>
+                    <p className="text-gray-500 leading-relaxed" style={{ fontSize: '13px' }}>{desc}</p>
                   </div>
                 </div>
               ))}
@@ -322,105 +366,123 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* ── Features ────────────────────────────────────────── */}
-        <section className="py-20 px-4 sm:px-6 bg-white">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">Why Order With Us?</h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {features.map(({ icon: Icon, title, desc }) => (
-                <div key={title} className="text-center">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                    style={{ backgroundColor: '#EFF8E8' }}
-                  >
-                    <Icon className="w-5 h-5" style={{ color: '#1B4D2E' }} />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1.5 text-sm">{title}</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Steps ───────────────────────────────────────────── */}
-        <section style={{ backgroundColor: '#F5F4F0' }} className="py-20 px-4 sm:px-6">
-          <div className="max-w-xl mx-auto">
+        {/* ── How It Works — Timeline ─────────────────────────── */}
+        <section className="py-16 sm:py-20 px-4 sm:px-6 bg-white">
+          <div className="max-w-lg mx-auto">
             <div className="text-center mb-10">
-              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">3 Simple Steps</h2>
-              <p className="text-gray-500 mt-2 text-sm">Ordering takes just a few minutes</p>
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">How It Works</h2>
+              <p className="text-gray-500 mt-2" style={{ fontSize: '14px' }}>Order your shirts in 3 simple steps</p>
             </div>
-            <div className="space-y-3">
-              {[
-                { step: '01', title: 'Fill Out the Form',  desc: 'Enter your details and shirt preferences' },
-                { step: '02', title: 'Review & Pay',       desc: 'Review your order summary and pay securely' },
-                { step: '03', title: 'Get Confirmation',   desc: 'Receive your order confirmation instantly' },
-              ].map(({ step, title, desc }) => (
-                <div
-                  key={step}
-                  className="flex items-center gap-4 p-5 rounded-2xl bg-white border border-transparent shadow-sm"
-                >
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-white font-heading font-bold text-sm"
-                    style={{ backgroundColor: '#1B4D2E' }}
-                  >
-                    {step}
+
+            {/* Timeline */}
+            <div className="relative">
+              {/* Connecting line */}
+              <div
+                className="absolute top-5 bottom-5 w-px"
+                style={{
+                  left: '19px',
+                  background: 'linear-gradient(to bottom, #1B4D2E 0%, #8DC63F 100%)',
+                }}
+              />
+
+              <div className="space-y-3">
+                {[
+                  { n: '1', title: 'Fill Out the Form',  desc: 'Enter your institution type, contact details, and shirt preferences.' },
+                  { n: '2', title: 'Review & Pay',       desc: 'Review your order summary and complete payment securely via Stripe.' },
+                  { n: '3', title: 'Get Confirmation',   desc: 'Receive your order confirmation number instantly by email.' },
+                ].map(({ n, title, desc }) => (
+                  <div key={n} className="flex items-start gap-4">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-heading font-bold relative z-10 shadow-md"
+                      style={{ backgroundColor: '#1B4D2E', fontSize: '14px' }}
+                    >
+                      {n}
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <div
+                        className="bg-white border rounded-2xl p-4 shadow-sm"
+                        style={{ borderColor: 'rgba(0,0,0,0.06)' }}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-semibold text-gray-900" style={{ fontSize: '14px' }}>{title}</h3>
+                            <p className="text-gray-500 mt-0.5 leading-relaxed" style={{ fontSize: '13px' }}>{desc}</p>
+                          </div>
+                          <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#8DC63F' }} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
-                    <p className="text-gray-500 text-xs mt-0.5">{desc}</p>
-                  </div>
-                  <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#8DC63F' }} />
-                </div>
-              ))}
-            </div>
-            <div className="text-center mt-10">
-              <Link href="/order">
-                <Button
-                  size="lg"
-                  className="text-white px-10 h-12 font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
-                  style={{ backgroundColor: '#1B4D2E' }}
-                >
-                  Start Your Order
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+                ))}
+              </div>
             </div>
           </div>
         </section>
+
+        {/* ── Final CTA ────────────────────────────────────────── */}
+        <section
+          className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden"
+          style={{ backgroundColor: '#0D2E1A' }}
+        >
+          <div
+            className="absolute top-[-20%] right-[-5%] w-[400px] h-[400px] rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.12) 0%, transparent 65%)' }}
+          />
+          <div className="max-w-2xl mx-auto text-center relative">
+            <div className="flex justify-center mb-6">
+              <div
+                className="relative w-16 h-16 rounded-full overflow-hidden border-2"
+                style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+              >
+                <Image src="/badge.jpeg" alt="LIH Badge" fill className="object-contain" />
+              </div>
+            </div>
+            <h2 className="font-heading text-white font-bold leading-snug mb-4" style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)' }}>
+              Ready to Place Your Order?
+            </h2>
+            <p className="mb-8 leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '14px' }}>
+              Takes less than 5 minutes. No account required. Instant confirmation.
+            </p>
+            <Link href="/order" className="block sm:inline-block">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto h-12 px-10 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5"
+                style={{
+                  backgroundColor: 'white',
+                  color: '#1B4D2E',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
+                }}
+              >
+                Order Your Shirts
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </section>
+
       </main>
 
       {/* ── Footer ──────────────────────────────────────────── */}
-      <footer className="border-t bg-white py-8 px-4 sm:px-6" style={{ borderTopColor: 'rgba(0,0,0,0.06)' }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div
-                className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border-2"
-                style={{ borderColor: 'rgba(27,77,46,0.15)' }}
-              >
-                <Image
-                  src="/badge.jpeg"
-                  alt="Living in Harmony Foundation"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: '#1B4D2E' }}>
-                  Living in Harmony Foundation
-                </p>
-                <p className="text-xs text-gray-400 italic mt-0.5">
-                  Únete a la lucha contra la soledad NO Deseada
-                </p>
-              </div>
+      <footer
+        className="bg-white py-7 px-4 sm:px-6"
+        style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}
+      >
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="relative w-9 h-9 flex-shrink-0 rounded-full overflow-hidden border"
+              style={{ borderColor: 'rgba(27,77,46,0.15)' }}
+            >
+              <Image src="/badge.jpeg" alt="LIH" fill className="object-contain" />
             </div>
-            <p className="text-xs text-gray-400">
-              &copy; {new Date().getFullYear()} Living in Harmony Foundation. All rights reserved.
-            </p>
+            <div>
+              <p className="font-semibold" style={{ color: '#1B4D2E', fontSize: '13px' }}>Living in Harmony Foundation</p>
+              <p className="text-gray-400 italic" style={{ fontSize: '11px' }}>Únete a la lucha contra la soledad NO Deseada</p>
+            </div>
           </div>
+          <p className="text-gray-400" style={{ fontSize: '11px' }}>
+            &copy; {new Date().getFullYear()} Living in Harmony Foundation. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
