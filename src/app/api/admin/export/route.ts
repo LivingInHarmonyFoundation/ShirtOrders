@@ -23,6 +23,9 @@ export async function GET(request: NextRequest) {
   const shirt_size = searchParams.get('shirt_size') || ''
   const date_from = searchParams.get('date_from') || ''
   const date_to = searchParams.get('date_to') || ''
+  const organization_name = searchParams.get('organization_name') || ''
+  const school_name = searchParams.get('school_name') || ''
+  const company_name = searchParams.get('company_name') || ''
 
   let query = adminSupabase.from('orders').select('*').order('created_at', { ascending: false })
 
@@ -32,6 +35,9 @@ export async function GET(request: NextRequest) {
   if (shirt_size) query = query.eq('shirt_size', shirt_size)
   if (date_from) query = query.gte('created_at', date_from)
   if (date_to) query = query.lte('created_at', date_to + 'T23:59:59')
+  if (organization_name) query = query.eq('organization_name', organization_name)
+  if (school_name) query = query.eq('school_name', school_name)
+  if (company_name) query = query.eq('company_name', company_name)
 
   const { data: orders, error } = await query
 

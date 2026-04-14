@@ -14,7 +14,7 @@ import {
 import { Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Order, PaginatedOrders } from '@/types'
+import type { Order, PaginatedOrders, GovOrg, SchoolLink, PrivateCompany } from '@/types'
 import { toast } from 'sonner'
 
 export default function AdminOrdersPage() {
@@ -30,10 +30,28 @@ export default function AdminOrdersPage() {
   const [grade, setGrade] = useState('')
   const [classroom, setClassroom] = useState('')
   const [department, setDepartment] = useState('')
+  const [organizationName, setOrganizationName] = useState('')
+  const [schoolName, setSchoolName] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [sort, setSort] = useState('newest')
   const [page, setPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
+
+  // Sub-filter dropdown lists
+  const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
+  const [schools, setSchools] = useState<SchoolLink[]>([])
+  const [companies, setCompanies] = useState<PrivateCompany[]>([])
+
+  // Load sub-filter lists once on mount
+  useEffect(() => {
+    fetch('/api/admin/government-orgs')
+      .then(r => r.json()).then(j => setGovOrgs(j.orgs || [])).catch(() => {})
+    fetch('/api/admin/schools')
+      .then(r => r.json()).then(j => setSchools(j.schools || [])).catch(() => {})
+    fetch('/api/admin/private-companies')
+      .then(r => r.json()).then(j => setCompanies(j.companies || [])).catch(() => {})
+  }, [])
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
@@ -42,6 +60,9 @@ export default function AdminOrdersPage() {
       delivery_status: deliveryStatus, shirt_size: shirtSize,
       date_from: dateFrom, date_to: dateTo,
       grade, classroom, department,
+      organization_name: organizationName,
+      school_name: schoolName,
+      company_name: companyName,
       sort, page: page.toString(), limit: '20',
     })
     try {
@@ -53,7 +74,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, grade, classroom, department, sort, page])
+  }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, grade, classroom, department, organizationName, schoolName, companyName, sort, page])
 
   useEffect(() => {
     const t = setTimeout(fetchOrders, search ? 400 : 0)
@@ -94,10 +115,11 @@ export default function AdminOrdersPage() {
     setSearch(''); setInstitutionType(''); setPaymentStatus('')
     setDeliveryStatus(''); setShirtSize(''); setDateFrom(''); setDateTo('')
     setGrade(''); setClassroom(''); setDepartment('')
+    setOrganizationName(''); setSchoolName(''); setCompanyName('')
     setSort('newest'); setPage(1)
   }
 
-  const hasFilters = search || institutionType || paymentStatus || deliveryStatus || shirtSize || dateFrom || dateTo || grade || classroom || department
+  const hasFilters = search || institutionType || paymentStatus || deliveryStatus || shirtSize || dateFrom || dateTo || grade || classroom || department || organizationName || schoolName || companyName
 
   return (
     <div className="space-y-4">
@@ -142,7 +164,13 @@ export default function AdminOrdersPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Select value={institutionType} onValueChange={v => { setInstitutionType(!v || v === 'all' ? '' : v); setPage(1) }}>
+            <Select value={institutionType} onValueChange={v => {
+              const t = !v || v === 'all' ? '' : v
+              setInstitutionType(t)
+              // Clear sub-filters when institution type changes
+              setOrganizationName(''); setSchoolName(''); setCompanyName('')
+              setPage(1)
+            }}>
               <SelectTrigger className="w-36 h-8 text-xs">
                 <Filter className="w-3 h-3 mr-1" />
                 <SelectValue placeholder="Institution" />
@@ -150,11 +178,54 @@ export default function AdminOrdersPage() {
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="school">School</SelectItem>
-                <SelectItem value="government">Government</SelectItem>
+                <SelectItem value="government">Gobierno</SelectItem>
                 <SelectItem value="personal">Personal</SelectItem>
                 <SelectItem value="private_company">Private Company</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Sub-filter: specific org/school/company */}
+            {institutionType === 'government' && govOrgs.length > 0 && (
+              <Select value={organizationName} onValueChange={v => { setOrganizationName(!v || v === 'all' ? '' : v); setPage(1) }}>
+                <SelectTrigger className="w-48 h-8 text-xs">
+                  <SelectValue placeholder="All agencies..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All agencies</SelectItem>
+                  {govOrgs.filter(o => o.is_active).map(o => (
+                    <SelectItem key={o.id} value={o.name}>{o.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {institutionType === 'school' && schools.length > 0 && (
+              <Select value={schoolName} onValueChange={v => { setSchoolName(!v || v === 'all' ? '' : v); setPage(1) }}>
+                <SelectTrigger className="w-48 h-8 text-xs">
+                  <SelectValue placeholder="All schools..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All schools</SelectItem>
+                  {schools.map(s => (
+                    <SelectItem key={s.id} value={s.school_name}>{s.school_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {institutionType === 'private_company' && companies.length > 0 && (
+              <Select value={companyName} onValueChange={v => { setCompanyName(!v || v === 'all' ? '' : v); setPage(1) }}>
+                <SelectTrigger className="w-48 h-8 text-xs">
+                  <SelectValue placeholder="All companies..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All companies</SelectItem>
+                  {companies.filter(c => c.is_active).map(c => (
+                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             <Select value={paymentStatus} onValueChange={v => { setPaymentStatus(!v || v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-36 h-8 text-xs">

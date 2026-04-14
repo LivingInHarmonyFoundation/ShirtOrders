@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Download, FileText, Printer, Filter, Shirt } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Order, DashboardStats } from '@/types'
+import type { Order, DashboardStats, GovOrg, SchoolLink, PrivateCompany } from '@/types'
 import { toast } from 'sonner'
 
 export default function ReportsPage() {
@@ -32,6 +32,22 @@ export default function ReportsPage() {
   const [grade, setGrade] = useState('')
   const [classroom, setClassroom] = useState('')
   const [department, setDepartment] = useState('')
+  const [organizationName, setOrganizationName] = useState('')
+  const [schoolName, setSchoolName] = useState('')
+  const [companyName, setCompanyName] = useState('')
+
+  const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
+  const [schools, setSchools] = useState<SchoolLink[]>([])
+  const [companies, setCompanies] = useState<PrivateCompany[]>([])
+
+  useEffect(() => {
+    fetch('/api/admin/government-orgs')
+      .then(r => r.json()).then(j => setGovOrgs(j.orgs || [])).catch(() => {})
+    fetch('/api/admin/schools')
+      .then(r => r.json()).then(j => setSchools(j.schools || [])).catch(() => {})
+    fetch('/api/admin/private-companies')
+      .then(r => r.json()).then(j => setCompanies(j.companies || [])).catch(() => {})
+  }, [])
 
   const buildExportUrl = () => {
     const params = new URLSearchParams()
@@ -44,6 +60,9 @@ export default function ReportsPage() {
     if (grade) params.set('grade', grade)
     if (classroom) params.set('classroom', classroom)
     if (department) params.set('department', department)
+    if (organizationName) params.set('organization_name', organizationName)
+    if (schoolName) params.set('school_name', schoolName)
+    if (companyName) params.set('company_name', companyName)
     return `/api/admin/export?${params}`
   }
 
@@ -55,6 +74,9 @@ export default function ReportsPage() {
         delivery_status: deliveryStatus, shirt_size: shirtSize,
         date_from: dateFrom, date_to: dateTo,
         grade, classroom, department,
+        organization_name: organizationName,
+        school_name: schoolName,
+        company_name: companyName,
         limit: '500',
       })
       const res = await fetch(`/api/admin/orders?${params}`)
@@ -128,19 +150,75 @@ export default function ReportsPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <Label className="text-xs">Institution Type</Label>
-              <Select value={institutionType} onValueChange={v => setInstitutionType(!v || v === 'all' ? '' : v)}>
+              <Select value={institutionType} onValueChange={v => {
+                const t = !v || v === 'all' ? '' : v
+                setInstitutionType(t)
+                setOrganizationName(''); setSchoolName(''); setCompanyName('')
+              }}>
                 <SelectTrigger className="mt-1 h-8 text-xs">
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="school">School</SelectItem>
-                  <SelectItem value="government">Government</SelectItem>
+                  <SelectItem value="government">Gobierno</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
                   <SelectItem value="private_company">Private Company</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Sub-filter by specific org/school/company */}
+            {institutionType === 'government' && govOrgs.length > 0 && (
+              <div>
+                <Label className="text-xs">Agency</Label>
+                <Select value={organizationName} onValueChange={v => setOrganizationName(!v || v === 'all' ? '' : v)}>
+                  <SelectTrigger className="mt-1 h-8 text-xs">
+                    <SelectValue placeholder="All agencies" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All agencies</SelectItem>
+                    {govOrgs.filter(o => o.is_active).map(o => (
+                      <SelectItem key={o.id} value={o.name}>{o.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {institutionType === 'school' && schools.length > 0 && (
+              <div>
+                <Label className="text-xs">School</Label>
+                <Select value={schoolName} onValueChange={v => setSchoolName(!v || v === 'all' ? '' : v)}>
+                  <SelectTrigger className="mt-1 h-8 text-xs">
+                    <SelectValue placeholder="All schools" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All schools</SelectItem>
+                    {schools.map(s => (
+                      <SelectItem key={s.id} value={s.school_name}>{s.school_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {institutionType === 'private_company' && companies.length > 0 && (
+              <div>
+                <Label className="text-xs">Company</Label>
+                <Select value={companyName} onValueChange={v => setCompanyName(!v || v === 'all' ? '' : v)}>
+                  <SelectTrigger className="mt-1 h-8 text-xs">
+                    <SelectValue placeholder="All companies" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All companies</SelectItem>
+                    {companies.filter(c => c.is_active).map(c => (
+                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label className="text-xs">Payment Status</Label>
               <Select value={paymentStatus} onValueChange={v => setPaymentStatus(!v || v === 'all' ? '' : v)}>
@@ -219,6 +297,7 @@ export default function ReportsPage() {
               setInstitutionType(''); setPaymentStatus(''); setDeliveryStatus('')
               setShirtSize(''); setDateFrom(''); setDateTo('')
               setGrade(''); setClassroom(''); setDepartment('')
+              setOrganizationName(''); setSchoolName(''); setCompanyName('')
             }}>Clear</Button>
           </div>
         </CardContent>

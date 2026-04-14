@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
   const grade = searchParams.get('grade') || ''
   const classroom = searchParams.get('classroom') || ''
   const department = searchParams.get('department') || ''
+  const organization_name = searchParams.get('organization_name') || ''
+  const school_name = searchParams.get('school_name') || ''
+  const company_name = searchParams.get('company_name') || ''
   const sort = searchParams.get('sort') || 'newest'
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '20')
@@ -41,6 +44,9 @@ export async function GET(request: NextRequest) {
   if (grade) query = query.ilike('grade', `%${grade}%`)
   if (classroom) query = query.ilike('classroom', `%${classroom}%`)
   if (department) query = query.or(`department_office.ilike.%${department}%,company_department.ilike.%${department}%`)
+  if (organization_name) query = query.eq('organization_name', organization_name)
+  if (school_name) query = query.eq('school_name', school_name)
+  if (company_name) query = query.eq('company_name', company_name)
 
   switch (sort) {
     case 'oldest':
