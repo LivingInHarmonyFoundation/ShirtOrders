@@ -8,6 +8,8 @@ import {
 import { createAdminClient } from '@/lib/supabase/server'
 import type { ShirtCatalogItem } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 async function getCatalog(): Promise<ShirtCatalogItem[]> {
   try {
     const admin = await createAdminClient()
