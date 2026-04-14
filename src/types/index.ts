@@ -159,6 +159,14 @@ export interface GovOrg {
   updated_at: string
 }
 
+export interface PrivateCompany {
+  id: string
+  name: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface SchoolLink {
   id: string
   school_name: string

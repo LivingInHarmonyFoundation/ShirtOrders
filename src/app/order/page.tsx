@@ -17,7 +17,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Briefcase, User } from 'lucide-react'
-import type { AppSettings, InstitutionType, ShirtSize, ShirtCatalogItem, GovOrg } from '@/types'
+import type { AppSettings, InstitutionType, ShirtSize, ShirtCatalogItem, GovOrg, PrivateCompany } from '@/types'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
@@ -68,6 +68,7 @@ export default function OrderPage() {
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
+  const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [institutionType, setInstitutionType] = useState<InstitutionType | ''>('')
 
@@ -96,6 +97,11 @@ export default function OrderPage() {
     fetch('/api/government-orgs')
       .then(r => r.json())
       .then(({ orgs }) => { if (orgs?.length > 0) setGovOrgs(orgs) })
+      .catch(() => {})
+
+    fetch('/api/private-companies')
+      .then(r => r.json())
+      .then(({ companies }) => { if (companies?.length > 0) setPrivateCompanies(companies) })
       .catch(() => {})
   }, [])
 
@@ -452,7 +458,20 @@ export default function OrderPage() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="company_name">Company Name *</Label>
-                  <Input id="company_name" {...register('company_name')} placeholder="Acme Corporation" className="mt-1" />
+                  {privateCompanies.length > 0 ? (
+                    <select
+                      id="company_name"
+                      {...register('company_name')}
+                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <option value="">Select a company...</option>
+                      {privateCompanies.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input id="company_name" {...register('company_name')} placeholder="Acme Corporation" className="mt-1" />
+                  )}
                   {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
                 </div>
                 <div>
