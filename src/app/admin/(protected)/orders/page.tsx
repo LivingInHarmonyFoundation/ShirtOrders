@@ -11,10 +11,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
-import { Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw } from 'lucide-react'
+import { Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw, Megaphone } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Order, PaginatedOrders, GovOrg, SchoolLink, PrivateCompany } from '@/types'
+import type { Order, PaginatedOrders, GovOrg, SchoolLink, PrivateCompany, Campaign } from '@/types'
 import { toast } from 'sonner'
 
 export default function AdminOrdersPage() {
@@ -38,6 +38,9 @@ export default function AdminOrdersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
 
+  const [campaignId, setCampaignId] = useState('')
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+
   // Sub-filter dropdown lists
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [schools, setSchools] = useState<SchoolLink[]>([])
@@ -45,6 +48,8 @@ export default function AdminOrdersPage() {
 
   // Load sub-filter lists once on mount
   useEffect(() => {
+    fetch('/api/admin/campaigns')
+      .then(r => r.json()).then(j => setCampaigns(j.campaigns || [])).catch(() => {})
     fetch('/api/admin/government-orgs')
       .then(r => r.json()).then(j => setGovOrgs(j.orgs || [])).catch(() => {})
     fetch('/api/admin/schools')
@@ -63,6 +68,7 @@ export default function AdminOrdersPage() {
       organization_name: organizationName,
       school_name: schoolName,
       company_name: companyName,
+      campaign_id: campaignId,
       sort, page: page.toString(), limit: '20',
     })
     try {
@@ -74,7 +80,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, grade, classroom, department, organizationName, schoolName, companyName, sort, page])
+  }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, grade, classroom, department, organizationName, schoolName, companyName, campaignId, sort, page])
 
   useEffect(() => {
     const t = setTimeout(fetchOrders, search ? 400 : 0)
@@ -116,10 +122,11 @@ export default function AdminOrdersPage() {
     setDeliveryStatus(''); setShirtSize(''); setDateFrom(''); setDateTo('')
     setGrade(''); setClassroom(''); setDepartment('')
     setOrganizationName(''); setSchoolName(''); setCompanyName('')
+    setCampaignId('')
     setSort('newest'); setPage(1)
   }
 
-  const hasFilters = search || institutionType || paymentStatus || deliveryStatus || shirtSize || dateFrom || dateTo || grade || classroom || department || organizationName || schoolName || companyName
+  const hasFilters = search || institutionType || paymentStatus || deliveryStatus || shirtSize || dateFrom || dateTo || grade || classroom || department || organizationName || schoolName || companyName || campaignId
 
   return (
     <div className="space-y-4">
@@ -164,6 +171,23 @@ export default function AdminOrdersPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {campaigns.length > 0 && (
+              <Select value={campaignId || 'all'} onValueChange={v => { setCampaignId(!v || v === 'all' ? '' : v); setPage(1) }}>
+                <SelectTrigger className="w-44 h-8 text-xs">
+                  <Megaphone className="w-3 h-3 mr-1 flex-shrink-0" />
+                  <SelectValue placeholder="All Campaigns" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Campaigns</SelectItem>
+                  {campaigns.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}{c.is_active ? ' ●' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <Select value={institutionType} onValueChange={v => {
               const t = !v || v === 'all' ? '' : v
               setInstitutionType(t)

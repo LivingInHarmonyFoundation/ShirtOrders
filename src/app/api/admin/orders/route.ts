@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
   const organization_name = searchParams.get('organization_name') || ''
   const school_name = searchParams.get('school_name') || ''
   const company_name = searchParams.get('company_name') || ''
+  const campaign_id = searchParams.get('campaign_id') || ''
   const sort = searchParams.get('sort') || 'newest'
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '20')
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
   if (organization_name) query = query.eq('organization_name', organization_name)
   if (school_name) query = query.eq('school_name', school_name)
   if (company_name) query = query.eq('company_name', company_name)
+  if (campaign_id && campaign_id !== 'all') query = query.eq('campaign_id', campaign_id)
 
   switch (sort) {
     case 'oldest':

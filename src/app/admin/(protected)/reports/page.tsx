@@ -10,10 +10,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Download, FileText, Printer, Filter, Shirt } from 'lucide-react'
+import { Download, FileText, Printer, Filter, Shirt, Megaphone } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Order, DashboardStats, GovOrg, SchoolLink, PrivateCompany } from '@/types'
+import type { Order, DashboardStats, GovOrg, SchoolLink, PrivateCompany, Campaign } from '@/types'
 import { toast } from 'sonner'
 
 export default function ReportsPage() {
@@ -35,12 +35,16 @@ export default function ReportsPage() {
   const [organizationName, setOrganizationName] = useState('')
   const [schoolName, setSchoolName] = useState('')
   const [companyName, setCompanyName] = useState('')
+  const [campaignId, setCampaignId] = useState('')
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
 
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [schools, setSchools] = useState<SchoolLink[]>([])
   const [companies, setCompanies] = useState<PrivateCompany[]>([])
 
   useEffect(() => {
+    fetch('/api/admin/campaigns')
+      .then(r => r.json()).then(j => setCampaigns(j.campaigns || [])).catch(() => {})
     fetch('/api/admin/government-orgs')
       .then(r => r.json()).then(j => setGovOrgs(j.orgs || [])).catch(() => {})
     fetch('/api/admin/schools')
@@ -63,6 +67,7 @@ export default function ReportsPage() {
     if (organizationName) params.set('organization_name', organizationName)
     if (schoolName) params.set('school_name', schoolName)
     if (companyName) params.set('company_name', companyName)
+    if (campaignId) params.set('campaign_id', campaignId)
     return `/api/admin/export?${params}`
   }
 
@@ -77,6 +82,7 @@ export default function ReportsPage() {
         organization_name: organizationName,
         school_name: schoolName,
         company_name: companyName,
+        campaign_id: campaignId,
         limit: '500',
       })
       const res = await fetch(`/api/admin/orders?${params}`)
@@ -148,6 +154,24 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {campaigns.length > 0 && (
+              <div>
+                <Label className="text-xs flex items-center gap-1"><Megaphone className="w-3 h-3" /> Campaign</Label>
+                <Select value={campaignId || 'all'} onValueChange={v => setCampaignId(!v || v === 'all' ? '' : v)}>
+                  <SelectTrigger className="mt-1 h-8 text-xs">
+                    <SelectValue placeholder="All Campaigns" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Campaigns</SelectItem>
+                    {campaigns.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}{c.is_active ? ' ●' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label className="text-xs">Institution Type</Label>
               <Select value={institutionType} onValueChange={v => {
@@ -298,6 +322,7 @@ export default function ReportsPage() {
               setShirtSize(''); setDateFrom(''); setDateTo('')
               setGrade(''); setClassroom(''); setDepartment('')
               setOrganizationName(''); setSchoolName(''); setCompanyName('')
+              setCampaignId('')
             }}>Clear</Button>
           </div>
         </CardContent>
