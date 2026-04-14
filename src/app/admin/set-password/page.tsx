@@ -29,9 +29,9 @@ export default function SetPasswordPage() {
   const mismatch = confirm.length > 0 && password !== confirm
   const valid = allRulesPass && password === confirm
 
-  const strengthColor = score === 0 ? '' : score === 1 ? 'bg-red-400' : score === 2 ? 'bg-yellow-400' : 'bg-[#8DC63F]'
+  const strengthColor = score === 0 ? '' : score === 1 ? 'bg-red-400' : score === 2 ? 'bg-yellow-400' : 'bg-[#CEDC00]'
   const strengthLabel = ['', 'Weak', 'Almost there', 'Strong'][score]
-  const strengthTextColor = score === 1 ? 'text-red-500' : score === 2 ? 'text-yellow-600' : 'text-[#1B4D2E]'
+  const strengthTextColor = score === 1 ? 'text-red-500' : score === 2 ? 'text-yellow-600' : 'text-[#00352F]'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,8 +76,8 @@ export default function SetPasswordPage() {
         {done ? (
           <Card>
             <CardContent className="py-12 flex flex-col items-center text-center gap-3">
-              <div className="w-14 h-14 bg-[#EFF8E8] rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-8 h-8 text-[#1B4D2E]" />
+              <div className="w-14 h-14 bg-[#E5F2F0] rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-[#00352F]" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">Password set!</h2>
               <p className="text-gray-500 text-sm">Taking you to the dashboard...</p>
@@ -86,8 +86,8 @@ export default function SetPasswordPage() {
         ) : (
           <Card>
             <CardHeader className="text-center pb-2">
-              <div className="w-10 h-10 bg-[#EFF8E8] rounded-xl flex items-center justify-center mx-auto mb-3">
-                <KeyRound className="w-5 h-5 text-[#1B4D2E]" />
+              <div className="w-10 h-10 bg-[#E5F2F0] rounded-xl flex items-center justify-center mx-auto mb-3">
+                <KeyRound className="w-5 h-5 text-[#00352F]" />
               </div>
               <CardTitle className="text-xl">Create Your Password</CardTitle>
               <CardDescription>
@@ -137,7 +137,7 @@ export default function SetPasswordPage() {
                         {rules.map(rule => (
                           <div key={rule.label} className="flex items-center gap-2">
                             {rule.pass
-                              ? <Check className="w-3.5 h-3.5 text-[#8DC63F] flex-shrink-0" />
+                              ? <Check className="w-3.5 h-3.5 text-[#CEDC00] flex-shrink-0" />
                               : <X className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />}
                             <span className={`text-xs ${rule.pass ? 'text-gray-400 line-through' : 'text-gray-500'}`}>
                               {rule.label}
@@ -178,7 +178,7 @@ export default function SetPasswordPage() {
                   type="submit"
                   disabled={!valid || submitting}
                   className="w-full text-white mt-2"
-                  style={{ backgroundColor: '#1B4D2E' }}
+                  style={{ backgroundColor: '#00352F' }}
                 >
                   {submitting
                     ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Setting password...</>

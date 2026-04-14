@@ -157,7 +157,7 @@ export default function OrderPage() {
       {/* Brand accent bar */}
       <div
         className="h-[3px] w-full"
-        style={{ background: 'linear-gradient(90deg, #1B4D2E 0%, #8DC63F 60%, #1B4D2E 100%)' }}
+        style={{ background: 'linear-gradient(90deg, #00352F 0%, #CEDC00 60%, #00352F 100%)' }}
       />
       {/* Header */}
       <header
@@ -175,7 +175,7 @@ export default function OrderPage() {
               <Image src="/logo.png" alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
             </div>
             <div>
-              <p className="font-semibold leading-none" style={{ color: '#1B4D2E', fontSize: '13px' }}>
+              <p className="font-semibold leading-none" style={{ color: '#00352F', fontSize: '13px' }}>
                 <span className="hidden sm:inline">Living in Harmony Foundation</span>
                 <span className="sm:hidden">LIH Foundation</span>
               </p>
@@ -184,7 +184,7 @@ export default function OrderPage() {
           </div>
           <Link
             href="/"
-            className="text-gray-400 hover:text-[#1B4D2E] transition-colors flex items-center gap-1 font-medium"
+            className="text-gray-400 hover:text-[#00352F] transition-colors flex items-center gap-1 font-medium"
             style={{ fontSize: '12px' }}
           >
             <span>←</span> Back
@@ -202,12 +202,12 @@ export default function OrderPage() {
 
           {/* Shirt Style Picker — only shown when multiple options exist */}
           {showCatalogPicker && (
-            <Card className={cn('border-2 shadow-sm transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50/60' : 'border-[#8DC63F]/40')}>
+            <Card className={cn('border-2 shadow-sm transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50/60' : 'border-[#CEDC00]/40')}>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
-                    style={{ backgroundColor: '#1B4D2E' }}
+                    style={{ backgroundColor: '#00352F' }}
                   >
                     1
                   </div>
@@ -229,28 +229,28 @@ export default function OrderPage() {
                         className={cn(
                           'relative rounded-xl border-2 overflow-hidden text-left transition-all focus:outline-none',
                           selected
-                            ? 'border-[#1B4D2E] shadow-md ring-2 ring-[#1B4D2E]/20'
-                            : 'border-gray-200 hover:border-[#1B4D2E]/40'
+                            ? 'border-[#00352F] shadow-md ring-2 ring-[#00352F]/20'
+                            : 'border-gray-200 hover:border-[#00352F]/40'
                         )}
                       >
                         {/* Image */}
-                        <div className="relative aspect-square bg-[#EFF8E8]">
+                        <div className="relative aspect-square bg-[#E5F2F0]">
                           {item.image_url ? (
                             <Image src={item.image_url} alt={item.name} fill className="object-cover" />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <ShoppingBag className="w-8 h-8 text-[#8DC63F]/50" />
+                              <ShoppingBag className="w-8 h-8 text-[#CEDC00]/50" />
                             </div>
                           )}
                           {selected && (
-                            <div className="absolute top-2 right-2 w-6 h-6 bg-[#1B4D2E] rounded-full flex items-center justify-center shadow">
+                            <div className="absolute top-2 right-2 w-6 h-6 bg-[#00352F] rounded-full flex items-center justify-center shadow">
                               <CheckCircle2 className="w-4 h-4 text-white" />
                             </div>
                           )}
                         </div>
                         {/* Label */}
-                        <div className={cn('p-2.5', selected ? 'bg-[#EFF8E8]' : 'bg-white')}>
-                          <p className={cn('text-xs font-semibold leading-tight', selected ? 'text-[#1B4D2E]' : 'text-gray-800')}>
+                        <div className={cn('p-2.5', selected ? 'bg-[#E5F2F0]' : 'bg-white')}>
+                          <p className={cn('text-xs font-semibold leading-tight', selected ? 'text-[#00352F]' : 'text-gray-800')}>
                             {item.name}
                           </p>
                           {item.description && (
@@ -274,7 +274,7 @@ export default function OrderPage() {
               <div className="flex items-center gap-3">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
-                  style={{ backgroundColor: '#1B4D2E' }}
+                  style={{ backgroundColor: '#00352F' }}
                 >
                   {showCatalogPicker ? '2' : '1'}
                 </div>
@@ -300,8 +300,8 @@ export default function OrderPage() {
                       className={cn(
                         'relative flex flex-col items-center gap-3 py-5 px-3 rounded-2xl border-2 transition-all duration-150 overflow-hidden',
                         active
-                          ? 'border-[#1B4D2E] bg-[#EFF8E8] shadow-md'
-                          : 'border-gray-200 bg-white hover:border-[#8DC63F]/50 hover:bg-[#F9FCF7]',
+                          ? 'border-[#00352F] bg-[#E5F2F0] shadow-md'
+                          : 'border-gray-200 bg-white hover:border-[#CEDC00]/50 hover:bg-[#F9FCF7]',
                         !enabled && 'opacity-40 cursor-not-allowed'
                       )}
                     >
@@ -309,23 +309,23 @@ export default function OrderPage() {
                       {active && (
                         <div
                           className="absolute top-0 left-0 right-0 h-[3px]"
-                          style={{ backgroundColor: '#1B4D2E' }}
+                          style={{ backgroundColor: '#00352F' }}
                         />
                       )}
                       <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
                         style={{
-                          backgroundColor: active ? 'rgba(27,77,46,0.12)' : '#F3F4F6',
+                          backgroundColor: active ? 'rgba(0,53,47,0.12)' : '#F3F4F6',
                         }}
                       >
                         <Icon
                           className="w-5 h-5"
-                          style={{ color: active ? '#1B4D2E' : '#6B7280' }}
+                          style={{ color: active ? '#00352F' : '#6B7280' }}
                         />
                       </div>
                       <span
                         className="text-xs font-semibold leading-none"
-                        style={{ color: active ? '#1B4D2E' : '#374151' }}
+                        style={{ color: active ? '#00352F' : '#374151' }}
                       >
                         {label}
                       </span>
@@ -345,7 +345,7 @@ export default function OrderPage() {
               <div className="flex items-center gap-3">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
-                  style={{ backgroundColor: '#1B4D2E' }}
+                  style={{ backgroundColor: '#00352F' }}
                 >
                   {showCatalogPicker ? '3' : '2'}
                 </div>
@@ -377,7 +377,7 @@ export default function OrderPage() {
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#1B4D2E' }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
                     {showCatalogPicker ? '4' : '3'}
                   </div>
                   <CardTitle className="text-base">School Information</CardTitle>
@@ -410,7 +410,7 @@ export default function OrderPage() {
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#1B4D2E' }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
                     {showCatalogPicker ? '4' : '3'}
                   </div>
                   <CardTitle className="text-base">Organization Information</CardTitle>
@@ -449,7 +449,7 @@ export default function OrderPage() {
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#1B4D2E' }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
                     {showCatalogPicker ? '4' : '3'}
                   </div>
                   <CardTitle className="text-base">Company Information</CardTitle>
@@ -487,7 +487,7 @@ export default function OrderPage() {
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#1B4D2E' }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
                     {showCatalogPicker ? '4' : '3'}
                   </div>
                   <div>
@@ -558,7 +558,7 @@ export default function OrderPage() {
               <div className="flex items-center gap-3">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
-                  style={{ backgroundColor: '#1B4D2E' }}
+                  style={{ backgroundColor: '#00352F' }}
                 >
                   {institutionType ? (showCatalogPicker ? '5' : '4') : (showCatalogPicker ? '4' : '3')}
                 </div>
@@ -568,19 +568,19 @@ export default function OrderPage() {
             <CardContent className="space-y-4">
               {/* Show selected shirt summary if only 1 in catalog */}
               {catalog.length === 1 && selectedCatalogItem && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#EFF8E8] border border-[#8DC63F]/30">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#E5F2F0] border border-[#CEDC00]/30">
                   {selectedCatalogItem.image_url ? (
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                       <Image src={selectedCatalogItem.image_url} alt={selectedCatalogItem.name} fill className="object-cover" />
                     </div>
                   ) : (
                     <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-                      <ShoppingBag className="w-6 h-6 text-[#8DC63F]" />
+                      <ShoppingBag className="w-6 h-6 text-[#CEDC00]" />
                     </div>
                   )}
                   <div>
                     <p className="text-xs text-gray-500">Selected shirt</p>
-                    <p className="font-semibold text-[#1B4D2E] text-sm">{selectedCatalogItem.name}</p>
+                    <p className="font-semibold text-[#00352F] text-sm">{selectedCatalogItem.name}</p>
                   </div>
                 </div>
               )}
@@ -596,8 +596,8 @@ export default function OrderPage() {
                       className={cn(
                         'min-w-[52px] px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150',
                         watchedSize === size
-                          ? 'border-[#1B4D2E] bg-[#EFF8E8] text-[#1B4D2E] shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-[#1B4D2E]/30 hover:bg-[#F5F4F0] text-gray-600'
+                          ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F] shadow-sm'
+                          : 'border-gray-200 bg-white hover:border-[#00352F]/30 hover:bg-[#F5F4F0] text-gray-600'
                       )}
                     >
                       {size}
@@ -629,9 +629,9 @@ export default function OrderPage() {
 
           {/* Order Summary */}
           {watchedSize && watchedQty > 0 && (
-            <Card className="border-0 shadow-sm" style={{ backgroundColor: '#EFF8E8' }}>
+            <Card className="border-0 shadow-sm" style={{ backgroundColor: '#E5F2F0' }}>
               <CardContent className="p-5">
-                <h3 className="font-heading font-semibold text-base mb-3" style={{ color: '#1B4D2E' }}>Order Summary</h3>
+                <h3 className="font-heading font-semibold text-base mb-3" style={{ color: '#00352F' }}>Order Summary</h3>
                 <div className="space-y-1 text-sm">
                   {selectedCatalogItem && (
                     <div className="flex justify-between text-gray-600">
@@ -646,7 +646,7 @@ export default function OrderPage() {
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold text-gray-900">
                     <span>Total</span>
-                    <span className="text-[#1B4D2E]">{formatCurrency(unitPrice * (watchedQty || 0))}</span>
+                    <span className="text-[#00352F]">{formatCurrency(unitPrice * (watchedQty || 0))}</span>
                   </div>
                 </div>
               </CardContent>
@@ -657,7 +657,7 @@ export default function OrderPage() {
             type="submit"
             disabled={isSubmitting || !institutionType || (showCatalogPicker && !selectedCatalogItem)}
             className="w-full text-white h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
-            style={{ backgroundColor: '#1B4D2E' }}
+            style={{ backgroundColor: '#00352F' }}
           >
             {isSubmitting ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>

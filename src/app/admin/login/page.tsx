@@ -52,7 +52,7 @@ function LoginForm() {
           placeholder="admin@example.com"
           required
           autoComplete="email"
-          className="h-11 rounded-xl border-gray-200 bg-gray-50 focus:bg-white focus:border-[#1B4D2E] transition-colors"
+          className="h-11 rounded-xl border-gray-200 bg-gray-50 focus:bg-white focus:border-[#00352F] transition-colors"
         />
       </div>
 
@@ -66,7 +66,7 @@ function LoginForm() {
           placeholder="••••••••"
           required
           autoComplete="current-password"
-          className="h-11 rounded-xl border-gray-200 bg-gray-50 focus:bg-white focus:border-[#1B4D2E] transition-colors"
+          className="h-11 rounded-xl border-gray-200 bg-gray-50 focus:bg-white focus:border-[#00352F] transition-colors"
         />
       </div>
 
@@ -74,7 +74,7 @@ function LoginForm() {
         type="submit"
         disabled={loading}
         className="w-full h-11 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow mt-1"
-        style={{ backgroundColor: '#1B4D2E' }}
+        style={{ backgroundColor: '#00352F' }}
       >
         {loading
           ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</>
@@ -91,13 +91,13 @@ export default function AdminLoginPage() {
       {/* ── Left brand panel — desktop only ────────────────── */}
       <div
         className="hidden lg:flex flex-col justify-between w-[420px] flex-shrink-0 p-10"
-        style={{ backgroundColor: '#0D2E1A' }}
+        style={{ backgroundColor: '#00352F' }}
       >
         <div>
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 text-sm mb-14 transition-colors"
-            style={{ color: 'rgba(141,198,63,0.6)' }}
+            style={{ color: 'rgba(206,220,0,0.6)' }}
           >
             <ArrowLeft className="w-4 h-4" /> Back to home
           </Link>
@@ -111,7 +111,7 @@ export default function AdminLoginPage() {
             </div>
             <div>
               <p className="font-semibold text-white leading-none" style={{ fontSize: '13px' }}>Living in Harmony</p>
-              <p style={{ color: '#8DC63F', fontSize: '12px' }} className="mt-0.5">Foundation</p>
+              <p style={{ color: '#CEDC00', fontSize: '12px' }} className="mt-0.5">Foundation</p>
             </div>
           </div>
 
@@ -145,12 +145,12 @@ export default function AdminLoginPage() {
         {/* Mobile-only: full-width branded green top section */}
         <div
           className="lg:hidden relative overflow-hidden"
-          style={{ backgroundColor: '#0D2E1A' }}
+          style={{ backgroundColor: '#00352F' }}
         >
           {/* Decorative glow */}
           <div
             className="absolute right-[-20%] top-[-40%] w-64 h-64 rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.1) 0%, transparent 70%)' }}
+            style={{ background: 'radial-gradient(circle, rgba(206,220,0,0.1) 0%, transparent 70%)' }}
           />
           <div className="relative px-6 pt-10 pb-10 text-center">
             <div
@@ -162,7 +162,7 @@ export default function AdminLoginPage() {
             <h1 className="font-heading text-white text-xl font-bold leading-tight mb-1">
               Living in Harmony Foundation
             </h1>
-            <p className="font-heading italic" style={{ color: '#8DC63F', fontSize: '13px' }}>
+            <p className="font-heading italic" style={{ color: '#CEDC00', fontSize: '13px' }}>
               &ldquo;Que Nadie en PR Envejezca Solo&rdquo;
             </p>
           </div>
@@ -176,7 +176,7 @@ export default function AdminLoginPage() {
             <div className="lg:hidden mb-5">
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1B4D2E] transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#00352F] transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" /> Back to home
               </Link>
@@ -193,9 +193,9 @@ export default function AdminLoginPage() {
               <div className="mb-6">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                  style={{ backgroundColor: '#EFF8E8' }}
+                  style={{ backgroundColor: '#E5F2F0' }}
                 >
-                  <Lock className="w-5 h-5" style={{ color: '#1B4D2E' }} />
+                  <Lock className="w-5 h-5" style={{ color: '#00352F' }} />
                 </div>
                 <h2 className="font-heading text-xl font-bold text-gray-900">Admin Login</h2>
                 <p className="text-gray-500 mt-1" style={{ fontSize: '13px' }}>Sign in to access the dashboard</p>

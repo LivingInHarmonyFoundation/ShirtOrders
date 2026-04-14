@@ -53,7 +53,7 @@ export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
 }
 
 export const ROLE_COLORS: Record<UserRole, string> = {
-  owner: 'bg-[#1B4D2E] text-white border-[#1B4D2E]',
-  admin: 'bg-[#EFF8E8] text-[#1B4D2E] border-[#8DC63F]/40',
+  owner: 'bg-[#00352F] text-white border-[#00352F]',
+  admin: 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40',
   staff: 'bg-gray-100 text-gray-700 border-gray-200',
 }

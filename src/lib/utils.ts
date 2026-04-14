@@ -43,7 +43,7 @@ export const paymentStatusConfig: Record<PaymentStatus, { label: string; classNa
   paid: { label: 'Paid', className: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400' },
   failed: { label: 'Failed', className: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400' },
   refunded: { label: 'Refunded', className: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
-  manual: { label: 'Manual', className: 'bg-[#EFF8E8] text-[#1B4D2E] border-[#8DC63F]/40' },
+  manual: { label: 'Manual', className: 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40' },
 }
 
 export const orderStatusConfig: Record<OrderStatus, { label: string; className: string }> = {

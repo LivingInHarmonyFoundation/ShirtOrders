@@ -126,7 +126,7 @@ export default function ReportsPage() {
           <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-1" /> Print
           </Button>
-          <Button onClick={handleExport} size="sm" className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
+          <Button onClick={handleExport} size="sm" className="text-white" style={{ backgroundColor: '#00352F' }}>
             <Download className="w-4 h-4 mr-1" /> Export CSV
           </Button>
         </div>
@@ -290,7 +290,7 @@ export default function ReportsPage() {
             </div>
           )}
           <div className="flex gap-2 mt-3">
-            <Button onClick={fetchReport} size="sm" className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
+            <Button onClick={fetchReport} size="sm" className="text-white" style={{ backgroundColor: '#00352F' }}>
               <FileText className="w-4 h-4 mr-1" /> Generate Report
             </Button>
             <Button variant="outline" size="sm" onClick={() => {
@@ -332,8 +332,8 @@ export default function ReportsPage() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#EFF8E8] rounded-lg flex items-center justify-center flex-shrink-0">
-                <Shirt className="w-4 h-4 text-[#1B4D2E]" />
+              <div className="w-7 h-7 bg-[#E5F2F0] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Shirt className="w-4 h-4 text-[#00352F]" />
               </div>
               <div>
                 <CardTitle className="text-sm font-semibold">Shirts by Style</CardTitle>
@@ -344,7 +344,7 @@ export default function ReportsPage() {
           <CardContent>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {catalogBreakdown.map(({ name, orders: o, shirts: s }, i) => {
-                const colors = ['#1B4D2E', '#2D6A4F', '#8DC63F', '#5fa832', '#0D2E1A']
+                const colors = ['#00352F', '#00594F', '#CEDC00', '#00594F', '#00352F']
                 return (
                   <div key={name} className="rounded-xl border p-4 flex items-center gap-3">
                     <div
@@ -356,7 +356,7 @@ export default function ReportsPage() {
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 text-sm truncate">{name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        <span className="font-bold text-[#1B4D2E]">{s}</span> shirts &middot; {o} order{o !== 1 ? 's' : ''}
+                        <span className="font-bold text-[#00352F]">{s}</span> shirts &middot; {o} order{o !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>

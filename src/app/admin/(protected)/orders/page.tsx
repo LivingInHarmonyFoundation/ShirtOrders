@@ -316,8 +316,8 @@ export default function AdminOrdersPage() {
 
       {/* Bulk actions */}
       {selectedIds.length > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-[#EFF8E8] dark:bg-green-900/20 rounded-lg border border-[#8DC63F]/40">
-          <span className="text-sm font-medium text-[#1B4D2E] dark:text-green-400">{selectedIds.length} selected</span>
+        <div className="flex items-center gap-3 p-3 bg-[#E5F2F0] dark:bg-green-900/20 rounded-lg border border-[#CEDC00]/40">
+          <span className="text-sm font-medium text-[#00352F] dark:text-green-400">{selectedIds.length} selected</span>
           <Select value={bulkStatus} onValueChange={v => setBulkStatus(v ?? '')}>
             <SelectTrigger className="w-52 h-8 text-xs">
               <SelectValue placeholder="Bulk action..." />

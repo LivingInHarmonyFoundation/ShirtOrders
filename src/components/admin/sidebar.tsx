@@ -58,13 +58,13 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
         </div>
         <div className="min-w-0">
           <p className="font-semibold text-white text-[12px] leading-none truncate">Living in Harmony</p>
-          <p className="text-[11px] mt-0.5 truncate" style={{ color: '#8DC63F' }}>Foundation</p>
+          <p className="text-[11px] mt-0.5 truncate" style={{ color: '#CEDC00' }}>Foundation</p>
         </div>
       </div>
 
       {/* Nav label */}
       <div className="px-4 pt-5 pb-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: 'rgba(141,198,63,0.45)' }}>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: 'rgba(206,220,0,0.45)' }}>
           Menu
         </p>
       </div>
@@ -90,16 +90,16 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
               {isActive && (
                 <span
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
-                  style={{ backgroundColor: '#8DC63F' }}
+                  style={{ backgroundColor: '#CEDC00' }}
                 />
               )}
               <Icon
                 className={cn('w-4 h-4 flex-shrink-0')}
-                style={{ color: isActive ? '#8DC63F' : 'rgba(209,250,229,0.45)' }}
+                style={{ color: isActive ? '#CEDC00' : 'rgba(209,250,229,0.45)' }}
               />
               <span style={{ color: isActive ? 'white' : 'rgba(209,250,229,0.65)' }}>{label}</span>
               {isActive && (
-                <ChevronRight className="w-3 h-3 ml-auto" style={{ color: 'rgba(141,198,63,0.6)' }} />
+                <ChevronRight className="w-3 h-3 ml-auto" style={{ color: 'rgba(206,220,0,0.6)' }} />
               )}
             </Link>
           )
@@ -109,7 +109,7 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
       {/* Footer */}
       <div className="px-2 pb-4 border-t border-white/10 pt-4">
         <div className="px-3 py-1.5 mb-2">
-          <p className="text-[11px] truncate" style={{ color: 'rgba(141,198,63,0.5)' }}>{userEmail}</p>
+          <p className="text-[11px] truncate" style={{ color: 'rgba(206,220,0,0.5)' }}>{userEmail}</p>
         </div>
         <Button
           variant="ghost"
@@ -127,14 +127,14 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-56 flex-shrink-0" style={{ backgroundColor: '#0D2E1A' }}>
+      <aside className="hidden md:flex flex-col w-56 flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
         <NavContent />
       </aside>
 
       {/* Mobile top bar */}
       <div
         className="md:hidden fixed top-0 left-0 right-0 z-40 border-b border-white/10 px-4 py-3 flex items-center justify-between"
-        style={{ backgroundColor: '#0D2E1A' }}
+        style={{ backgroundColor: '#00352F' }}
       >
         <div className="flex items-center gap-2.5">
           <div
@@ -165,7 +165,7 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-30 mt-[52px]">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-56 h-full" style={{ backgroundColor: '#0D2E1A' }}>
+          <aside className="relative w-56 h-full" style={{ backgroundColor: '#00352F' }}>
             <NavContent />
           </aside>
         </div>

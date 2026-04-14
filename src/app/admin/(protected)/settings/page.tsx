@@ -265,7 +265,7 @@ export default function SettingsPage() {
               <>
                 {/* Empty state */}
                 <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-10 cursor-pointer hover:border-[#8DC63F]/50 hover:bg-[#EFF8E8]/30 transition-colors"
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-10 cursor-pointer hover:border-[#CEDC00]/50 hover:bg-[#E5F2F0]/30 transition-colors"
                   onClick={() => bannerRef.current?.click()}
                 >
                   <ImagePlus className="w-8 h-8 text-gray-300 mb-2" />
@@ -278,7 +278,7 @@ export default function SettingsPage() {
                   size="sm"
                   onClick={() => bannerRef.current?.click()}
                   disabled={uploadingBanner}
-                  style={{ borderColor: '#1B4D2E', color: '#1B4D2E' }}
+                  style={{ borderColor: '#00352F', color: '#00352F' }}
                 >
                   {uploadingBanner
                     ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
@@ -460,7 +460,7 @@ export default function SettingsPage() {
       </Card>
 
       <div className="flex items-center gap-3 pb-6">
-        <Button onClick={handleSave} disabled={saving} className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
+        <Button onClick={handleSave} disabled={saving} className="text-white" style={{ backgroundColor: '#00352F' }}>
           {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><Save className="w-4 h-4 mr-2" /> Save Settings</>}
         </Button>
         {settings && (

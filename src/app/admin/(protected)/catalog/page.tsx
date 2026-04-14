@@ -141,7 +141,7 @@ export default function CatalogPage() {
           </p>
         </div>
         {!adding && (
-          <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
+          <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#00352F' }}>
             <Plus className="w-4 h-4 mr-2" /> Add Shirt
           </Button>
         )}
@@ -154,7 +154,7 @@ export default function CatalogPage() {
           <p className="text-xs text-gray-500 mt-0.5">Total Items</p>
         </div>
         <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
-          <p className="text-2xl font-bold text-[#1B4D2E]">{visibleCount}</p>
+          <p className="text-2xl font-bold text-[#00352F]">{visibleCount}</p>
           <p className="text-xs text-gray-500 mt-0.5">Visible</p>
         </div>
         <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
@@ -165,10 +165,10 @@ export default function CatalogPage() {
 
       {/* Add form */}
       {adding && (
-        <Card className="border-[#8DC63F]/40">
+        <Card className="border-[#CEDC00]/40">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ImagePlus className="w-4 h-4 text-[#1B4D2E]" /> Add New Shirt
+              <ImagePlus className="w-4 h-4 text-[#00352F]" /> Add New Shirt
             </CardTitle>
             <CardDescription>
               Upload an image and add a name. Image is optional — you can add one later.
@@ -196,7 +196,7 @@ export default function CatalogPage() {
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="mt-2 w-full max-w-xs aspect-square rounded-xl border-2 border-dashed border-gray-200 hover:border-[#8DC63F] hover:bg-[#EFF8E8] transition-all flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-[#1B4D2E]"
+                    className="mt-2 w-full max-w-xs aspect-square rounded-xl border-2 border-dashed border-gray-200 hover:border-[#CEDC00] hover:bg-[#E5F2F0] transition-all flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-[#00352F]"
                   >
                     <Upload className="w-8 h-8" />
                     <span className="text-sm font-medium">Click to upload</span>
@@ -244,7 +244,7 @@ export default function CatalogPage() {
                   type="submit"
                   disabled={uploading || !name.trim()}
                   className="text-white"
-                  style={{ backgroundColor: '#1B4D2E' }}
+                  style={{ backgroundColor: '#00352F' }}
                 >
                   {uploading ? 'Adding...' : 'Add to Catalog'}
                 </Button>
@@ -283,7 +283,7 @@ export default function CatalogPage() {
             </div>
             <p className="font-semibold text-gray-900">No shirts in catalog yet</p>
             <p className="text-gray-500 text-sm mt-1">Add your first shirt to display it on the home page.</p>
-            <Button onClick={() => setAdding(true)} className="mt-4 text-white" style={{ backgroundColor: '#1B4D2E' }}>
+            <Button onClick={() => setAdding(true)} className="mt-4 text-white" style={{ backgroundColor: '#00352F' }}>
               <Plus className="w-4 h-4 mr-2" /> Add First Shirt
             </Button>
           </CardContent>
@@ -318,7 +318,7 @@ export default function CatalogPage() {
                       onClick={() => handleToggle(item)}
                       disabled={togglingId === item.id}
                       title={item.is_active ? 'Hide from home page' : 'Show on home page'}
-                      className={`p-1.5 rounded-lg transition-colors ${item.is_active ? 'text-[#1B4D2E] hover:bg-[#EFF8E8]' : 'text-gray-400 hover:bg-gray-100'}`}
+                      className={`p-1.5 rounded-lg transition-colors ${item.is_active ? 'text-[#00352F] hover:bg-[#E5F2F0]' : 'text-gray-400 hover:bg-gray-100'}`}
                     >
                       {item.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>

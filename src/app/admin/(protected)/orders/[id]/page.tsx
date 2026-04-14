@@ -359,7 +359,7 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
-          <Button onClick={handleSave} disabled={saving} className="w-full text-white" style={{ backgroundColor: '#1B4D2E' }}>
+          <Button onClick={handleSave} disabled={saving} className="w-full text-white" style={{ backgroundColor: '#00352F' }}>
             {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
           </Button>
 

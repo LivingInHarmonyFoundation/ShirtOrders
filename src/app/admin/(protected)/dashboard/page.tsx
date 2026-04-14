@@ -15,7 +15,7 @@ import {
 } from 'recharts'
 import { Shirt } from 'lucide-react'
 
-const COLORS = ['#1B4D2E', '#8DC63F', '#2D6A4F', '#5fa832', '#0D2E1A', '#4a8a28', '#3d7a20']
+const COLORS = ['#00352F', '#CEDC00', '#00594F', '#00594F', '#00352F', '#4a8a28', '#3d7a20']
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -29,14 +29,14 @@ export default function DashboardPage() {
   }, [])
 
   const statCards = [
-    { label: 'Total Orders',     value: stats?.total_orders ?? 0,          icon: ShoppingBag, color: 'text-[#1B4D2E]',  bg: 'bg-[#EFF8E8] dark:bg-green-900/20',   format: (v: number) => v.toString() },
-    { label: 'Total Revenue',    value: stats?.total_revenue ?? 0,          icon: DollarSign,  color: 'text-[#1B4D2E]',  bg: 'bg-[#EFF8E8] dark:bg-green-900/20',   format: formatCurrency },
+    { label: 'Total Orders',     value: stats?.total_orders ?? 0,          icon: ShoppingBag, color: 'text-[#00352F]',  bg: 'bg-[#E5F2F0] dark:bg-green-900/20',   format: (v: number) => v.toString() },
+    { label: 'Total Revenue',    value: stats?.total_revenue ?? 0,          icon: DollarSign,  color: 'text-[#00352F]',  bg: 'bg-[#E5F2F0] dark:bg-green-900/20',   format: formatCurrency },
     { label: 'Paid Orders',      value: stats?.paid_orders ?? 0,            icon: CreditCard,  color: 'text-emerald-700', bg: 'bg-emerald-50 dark:bg-emerald-900/20', format: (v: number) => v.toString() },
     { label: 'Unpaid Orders',    value: stats?.unpaid_orders ?? 0,          icon: Clock,       color: 'text-yellow-600',  bg: 'bg-yellow-50 dark:bg-yellow-900/20',  format: (v: number) => v.toString() },
-    { label: 'Total Shirts',     value: stats?.total_shirts ?? 0,           icon: Package,     color: 'text-[#2D6A4F]',  bg: 'bg-green-50 dark:bg-green-900/20',    format: (v: number) => v.toString() },
+    { label: 'Total Shirts',     value: stats?.total_shirts ?? 0,           icon: Package,     color: 'text-[#00594F]',  bg: 'bg-green-50 dark:bg-green-900/20',    format: (v: number) => v.toString() },
     { label: 'Delivered',        value: stats?.delivered_orders ?? 0,       icon: Truck,       color: 'text-teal-700',    bg: 'bg-teal-50 dark:bg-teal-900/20',      format: (v: number) => v.toString() },
     { label: 'Pending Delivery', value: stats?.pending_deliveries ?? 0,     icon: TrendingUp,  color: 'text-orange-600',  bg: 'bg-orange-50 dark:bg-orange-900/20',  format: (v: number) => v.toString() },
-    { label: 'Institutions',     value: stats?.orders_by_institution.length ?? 0, icon: Users, color: 'text-[#1B4D2E]',  bg: 'bg-[#EFF8E8] dark:bg-green-900/20',   format: (v: number) => v.toString() },
+    { label: 'Institutions',     value: stats?.orders_by_institution.length ?? 0, icon: Users, color: 'text-[#00352F]',  bg: 'bg-[#E5F2F0] dark:bg-green-900/20',   format: (v: number) => v.toString() },
   ]
 
   return (
@@ -77,8 +77,8 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#EFF8E8] rounded-lg flex items-center justify-center">
-                <Shirt className="w-4 h-4 text-[#1B4D2E]" />
+              <div className="w-7 h-7 bg-[#E5F2F0] rounded-lg flex items-center justify-center">
+                <Shirt className="w-4 h-4 text-[#00352F]" />
               </div>
               <CardTitle className="text-sm font-semibold">Shirts Ordered by Style</CardTitle>
             </div>
@@ -97,7 +97,7 @@ export default function DashboardPage() {
                         <span className="text-sm font-medium text-gray-800 truncate max-w-[60%]">{name}</span>
                         <div className="flex items-center gap-3 text-xs text-gray-500 flex-shrink-0">
                           <span>{orders} order{orders !== 1 ? 's' : ''}</span>
-                          <span className="font-bold text-[#1B4D2E] text-sm">{shirts} shirts</span>
+                          <span className="font-bold text-[#00352F] text-sm">{shirts} shirts</span>
                         </div>
                       </div>
                       <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -134,7 +134,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v) => v.slice(5)} />
                   <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `$${v}`} />
                   <Tooltip formatter={(v) => formatCurrency(Number(v))} labelFormatter={(l) => `Date: ${l}`} />
-                  <Line type="monotone" dataKey="revenue" stroke="#1B4D2E" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="revenue" stroke="#00352F" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="shirt_size" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#1B4D2E" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="count" fill="#00352F" radius={[4, 4, 0, 0]}>
                     {stats.orders_by_size.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -217,9 +217,9 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-3 pt-2">
                 {[
-                  { label: 'Paid',      value: stats?.paid_orders || 0,      total: stats?.total_orders || 1, color: 'bg-[#1B4D2E]' },
+                  { label: 'Paid',      value: stats?.paid_orders || 0,      total: stats?.total_orders || 1, color: 'bg-[#00352F]' },
                   { label: 'Pending',   value: stats?.unpaid_orders || 0,    total: stats?.total_orders || 1, color: 'bg-yellow-400' },
-                  { label: 'Delivered', value: stats?.delivered_orders || 0, total: stats?.total_orders || 1, color: 'bg-[#8DC63F]' },
+                  { label: 'Delivered', value: stats?.delivered_orders || 0, total: stats?.total_orders || 1, color: 'bg-[#CEDC00]' },
                 ].map(({ label, value, total, color }) => {
                   const pct = total > 0 ? Math.round((value / total) * 100) : 0
                   return (

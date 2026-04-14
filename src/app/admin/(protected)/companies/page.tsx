@@ -141,7 +141,7 @@ export default function CompaniesPage() {
           <p className="text-xs text-gray-500 mt-0.5">Total</p>
         </div>
         <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
-          <p className="text-2xl font-bold text-[#1B4D2E]">{activeCount}</p>
+          <p className="text-2xl font-bold text-[#00352F]">{activeCount}</p>
           <p className="text-xs text-gray-500 mt-0.5">Active</p>
         </div>
         <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
@@ -151,10 +151,10 @@ export default function CompaniesPage() {
       </div>
 
       {/* Add form */}
-      <Card className="border-[#8DC63F]/40">
+      <Card className="border-[#CEDC00]/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Plus className="w-4 h-4 text-[#1B4D2E]" /> Add Company
+            <Plus className="w-4 h-4 text-[#00352F]" /> Add Company
           </CardTitle>
           <CardDescription>Add a new private company to the dropdown list</CardDescription>
         </CardHeader>
@@ -171,7 +171,7 @@ export default function CompaniesPage() {
               type="submit"
               disabled={adding || !newName.trim()}
               className="text-white"
-              style={{ backgroundColor: '#1B4D2E' }}
+              style={{ backgroundColor: '#00352F' }}
             >
               {adding ? 'Adding...' : 'Add'}
             </Button>
@@ -209,7 +209,7 @@ export default function CompaniesPage() {
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSaveName(company); if (e.key === 'Escape') cancelEdit() }}
-                  className="flex-1 text-sm border border-[#8DC63F] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1B4D2E]/20"
+                  className="flex-1 text-sm border border-[#CEDC00] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#00352F]/20"
                 />
               ) : (
                 <span className="flex-1 text-sm font-medium text-gray-800">{company.name}</span>
@@ -223,7 +223,7 @@ export default function CompaniesPage() {
                     <button
                       onClick={() => handleSaveName(company)}
                       disabled={savingId === company.id}
-                      className="p-1.5 rounded-lg text-[#1B4D2E] hover:bg-[#EFF8E8] transition-colors"
+                      className="p-1.5 rounded-lg text-[#00352F] hover:bg-[#E5F2F0] transition-colors"
                       title="Save"
                     >
                       <Check className="w-4 h-4" />
@@ -248,7 +248,7 @@ export default function CompaniesPage() {
                     <button
                       onClick={() => handleToggle(company)}
                       disabled={togglingId === company.id}
-                      className={`p-1.5 rounded-lg transition-colors ${company.is_active ? 'text-[#1B4D2E] hover:bg-[#EFF8E8]' : 'text-gray-400 hover:bg-gray-100'}`}
+                      className={`p-1.5 rounded-lg transition-colors ${company.is_active ? 'text-[#00352F] hover:bg-[#E5F2F0]' : 'text-gray-400 hover:bg-gray-100'}`}
                       title={company.is_active ? 'Hide from order form' : 'Show in order form'}
                     >
                       {company.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}

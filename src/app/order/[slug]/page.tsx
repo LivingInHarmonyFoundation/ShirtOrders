@@ -119,7 +119,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
           <Image src="/logo.png" alt="Living in Harmony Foundation" width={36} height={36} className="object-contain" />
         </div>
         <div>
-          <p className="font-bold text-[#1B4D2E] text-sm leading-none">Living in Harmony Foundation</p>
+          <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
           <p className="text-gray-400 text-xs mt-0.5">Shirt Order Manager</p>
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F5F4F0] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-[#1B4D2E]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#00352F]" />
       </div>
     )
   }
@@ -155,12 +155,12 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         {/* School banner */}
-        <div className="mb-6 rounded-2xl px-5 py-4 flex items-center gap-3 text-white shadow-md" style={{ backgroundColor: '#1B4D2E' }}>
+        <div className="mb-6 rounded-2xl px-5 py-4 flex items-center gap-3 text-white shadow-md" style={{ backgroundColor: '#00352F' }}>
           <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center flex-shrink-0">
             <School className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[#8DC63F] text-xs font-semibold uppercase tracking-wide">School Order Form</p>
+            <p className="text-[#CEDC00] text-xs font-semibold uppercase tracking-wide">School Order Form</p>
             <p className="font-bold text-lg leading-tight">{school.school_name}</p>
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Shirt Style Picker */}
           {showCatalogPicker && (
-            <Card className={cn('border-2 transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50' : 'border-[#8DC63F]/40')}>
+            <Card className={cn('border-2 transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50' : 'border-[#CEDC00]/40')}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Choose Your Shirt *</CardTitle>
               </CardHeader>
@@ -190,25 +190,25 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
                         onClick={() => setSelectedCatalogItem(item)}
                         className={cn(
                           'relative rounded-xl border-2 overflow-hidden text-left transition-all',
-                          selected ? 'border-[#1B4D2E] shadow-md ring-2 ring-[#1B4D2E]/20' : 'border-gray-200 hover:border-[#1B4D2E]/40'
+                          selected ? 'border-[#00352F] shadow-md ring-2 ring-[#00352F]/20' : 'border-gray-200 hover:border-[#00352F]/40'
                         )}
                       >
-                        <div className="relative aspect-square bg-[#EFF8E8]">
+                        <div className="relative aspect-square bg-[#E5F2F0]">
                           {item.image_url ? (
                             <Image src={item.image_url} alt={item.name} fill className="object-cover" />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <ShoppingBag className="w-8 h-8 text-[#8DC63F]/50" />
+                              <ShoppingBag className="w-8 h-8 text-[#CEDC00]/50" />
                             </div>
                           )}
                           {selected && (
-                            <div className="absolute top-2 right-2 w-6 h-6 bg-[#1B4D2E] rounded-full flex items-center justify-center shadow">
+                            <div className="absolute top-2 right-2 w-6 h-6 bg-[#00352F] rounded-full flex items-center justify-center shadow">
                               <CheckCircle2 className="w-4 h-4 text-white" />
                             </div>
                           )}
                         </div>
-                        <div className={cn('p-2.5', selected ? 'bg-[#EFF8E8]' : 'bg-white')}>
-                          <p className={cn('text-xs font-semibold leading-tight', selected ? 'text-[#1B4D2E]' : 'text-gray-800')}>{item.name}</p>
+                        <div className={cn('p-2.5', selected ? 'bg-[#E5F2F0]' : 'bg-white')}>
+                          <p className={cn('text-xs font-semibold leading-tight', selected ? 'text-[#00352F]' : 'text-gray-800')}>{item.name}</p>
                           {item.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>}
                         </div>
                       </button>
@@ -255,10 +255,10 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
             <CardContent className="space-y-4">
               <div>
                 <Label>School Name</Label>
-                <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-[#EFF8E8] border border-[#8DC63F]/30 rounded-lg">
-                  <School className="w-4 h-4 text-[#1B4D2E] flex-shrink-0" />
-                  <span className="text-sm text-[#1B4D2E] font-semibold">{school.school_name}</span>
-                  <span className="ml-auto text-xs text-[#1B4D2E]/50 bg-[#8DC63F]/20 px-2 py-0.5 rounded">Pre-filled</span>
+                <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-[#E5F2F0] border border-[#CEDC00]/30 rounded-lg">
+                  <School className="w-4 h-4 text-[#00352F] flex-shrink-0" />
+                  <span className="text-sm text-[#00352F] font-semibold">{school.school_name}</span>
+                  <span className="ml-auto text-xs text-[#00352F]/50 bg-[#CEDC00]/20 px-2 py-0.5 rounded">Pre-filled</span>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -283,19 +283,19 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
             </CardHeader>
             <CardContent className="space-y-4">
               {catalog.length === 1 && selectedCatalogItem && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#EFF8E8] border border-[#8DC63F]/30">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#E5F2F0] border border-[#CEDC00]/30">
                   {selectedCatalogItem.image_url ? (
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                       <Image src={selectedCatalogItem.image_url} alt={selectedCatalogItem.name} fill className="object-cover" />
                     </div>
                   ) : (
                     <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-                      <ShoppingBag className="w-6 h-6 text-[#8DC63F]" />
+                      <ShoppingBag className="w-6 h-6 text-[#CEDC00]" />
                     </div>
                   )}
                   <div>
                     <p className="text-xs text-gray-500">Selected shirt</p>
-                    <p className="font-semibold text-[#1B4D2E] text-sm">{selectedCatalogItem.name}</p>
+                    <p className="font-semibold text-[#00352F] text-sm">{selectedCatalogItem.name}</p>
                   </div>
                 </div>
               )}
@@ -310,8 +310,8 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
                       className={cn(
                         'px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all',
                         watchedSize === size
-                          ? 'border-[#1B4D2E] bg-[#EFF8E8] text-[#1B4D2E]'
-                          : 'border-gray-200 hover:border-[#1B4D2E]/30 text-gray-700'
+                          ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F]'
+                          : 'border-gray-200 hover:border-[#00352F]/30 text-gray-700'
                       )}
                     >
                       {size}
@@ -341,9 +341,9 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
 
           {/* Order Summary */}
           {watchedSize && watchedQty > 0 && (
-            <Card className="border-[#8DC63F]/40 bg-[#EFF8E8]">
+            <Card className="border-[#CEDC00]/40 bg-[#E5F2F0]">
               <CardContent className="p-4">
-                <h3 className="font-semibold text-[#1B4D2E] mb-3">Order Summary</h3>
+                <h3 className="font-semibold text-[#00352F] mb-3">Order Summary</h3>
                 <div className="space-y-1 text-sm">
                   {selectedCatalogItem && (
                     <div className="flex justify-between text-gray-600">
@@ -358,7 +358,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold text-gray-900">
                     <span>Total</span>
-                    <span className="text-[#1B4D2E]">{formatCurrency(unitPrice * (watchedQty || 0))}</span>
+                    <span className="text-[#00352F]">{formatCurrency(unitPrice * (watchedQty || 0))}</span>
                   </div>
                 </div>
               </CardContent>
@@ -369,7 +369,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
             type="submit"
             disabled={isSubmitting || (showCatalogPicker && !selectedCatalogItem)}
             className="w-full text-white h-12 text-base font-semibold"
-            style={{ backgroundColor: '#1B4D2E' }}
+            style={{ backgroundColor: '#00352F' }}
           >
             {isSubmitting ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>

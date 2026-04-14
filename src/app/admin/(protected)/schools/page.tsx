@@ -119,7 +119,7 @@ export default function SchoolsPage() {
           </p>
         </div>
         {!adding && (
-          <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
+          <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#00352F' }}>
             <Plus className="w-4 h-4 mr-2" /> Add School
           </Button>
         )}
@@ -145,7 +145,7 @@ export default function SchoolsPage() {
                 className="flex-1"
                 disabled={submitting}
               />
-              <Button type="submit" disabled={submitting || !newSchoolName.trim()} className="text-white" style={{ backgroundColor: '#1B4D2E' }}>
+              <Button type="submit" disabled={submitting || !newSchoolName.trim()} className="text-white" style={{ backgroundColor: '#00352F' }}>
                 {submitting ? 'Creating...' : 'Create Link'}
               </Button>
               <Button type="button" variant="outline" onClick={() => { setAdding(false); setNewSchoolName('') }} disabled={submitting}>

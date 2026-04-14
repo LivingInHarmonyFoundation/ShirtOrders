@@ -66,7 +66,7 @@ function CheckoutContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F4F0]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1B4D2E]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#00352F]" />
       </div>
     )
   }
@@ -105,7 +105,7 @@ function CheckoutContent() {
             <Image src="/logo.png" alt="Living in Harmony Foundation" width={36} height={36} className="object-contain" />
           </div>
           <div>
-            <p className="font-bold text-[#1B4D2E] text-sm leading-none">Living in Harmony Foundation</p>
+            <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
             <p className="text-gray-400 text-xs mt-0.5">Shirt Order Manager</p>
           </div>
         </div>
@@ -179,14 +179,14 @@ function CheckoutContent() {
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="font-bold text-gray-900">Total Amount</span>
-                <span className="font-bold text-xl text-[#1B4D2E]">{formatCurrency(order.total_amount)}</span>
+                <span className="font-bold text-xl text-[#00352F]">{formatCurrency(order.total_amount)}</span>
               </div>
               <p className="text-xs text-gray-400">Submitted {formatDateTime(order.date_submitted)}</p>
             </CardContent>
           </Card>
 
           {/* Payment */}
-          <Card className="border-[#8DC63F]/30">
+          <Card className="border-[#CEDC00]/30">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <CreditCard className="w-4 h-4" /> Payment
@@ -197,7 +197,7 @@ function CheckoutContent() {
                 onClick={handleStripeCheckout}
                 disabled={isRedirecting}
                 className="w-full text-white h-12 font-semibold"
-                style={{ backgroundColor: '#1B4D2E' }}
+                style={{ backgroundColor: '#00352F' }}
               >
                 {isRedirecting ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting...</>
@@ -219,9 +219,9 @@ function CheckoutContent() {
           </Card>
 
           <div className="flex items-center gap-2 text-xs text-gray-400 justify-center">
-            <CheckCircle className="w-3 h-3 text-[#1B4D2E]" /> SSL encrypted
+            <CheckCircle className="w-3 h-3 text-[#00352F]" /> SSL encrypted
             <span className="mx-1">•</span>
-            <CheckCircle className="w-3 h-3 text-[#1B4D2E]" /> Secure checkout
+            <CheckCircle className="w-3 h-3 text-[#00352F]" /> Secure checkout
           </div>
         </div>
       </main>
@@ -233,7 +233,7 @@ export default function CheckoutPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-[#F5F4F0]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1B4D2E]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#00352F]" />
       </div>
     }>
       <CheckoutContent />

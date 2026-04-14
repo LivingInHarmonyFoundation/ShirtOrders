@@ -28,8 +28,8 @@ function InitialsAvatar({ name, email, role }: { name: string | null; email: str
     : email[0].toUpperCase()
 
   const bg: Record<UserRole, string> = {
-    owner: '#1B4D2E',
-    admin: '#2D6A4F',
+    owner: '#00352F',
+    admin: '#00594F',
     staff: '#6b7280',
   }
 
@@ -68,9 +68,9 @@ export default function TeamPage() {
   ]
   const pwScore = pwRules.filter(r => r.pass).length
   const pwValid = pwScore === 3
-  const pwStrengthColor = pwScore === 0 ? '' : pwScore === 1 ? 'bg-red-400' : pwScore === 2 ? 'bg-yellow-400' : 'bg-[#8DC63F]'
+  const pwStrengthColor = pwScore === 0 ? '' : pwScore === 1 ? 'bg-red-400' : pwScore === 2 ? 'bg-yellow-400' : 'bg-[#CEDC00]'
   const pwStrengthLabel = ['', 'Weak', 'Almost', 'Strong'][pwScore]
-  const pwStrengthTextColor = pwScore === 1 ? 'text-red-500' : pwScore === 2 ? 'text-yellow-600' : 'text-[#1B4D2E]'
+  const pwStrengthTextColor = pwScore === 1 ? 'text-red-500' : pwScore === 2 ? 'text-yellow-600' : 'text-[#00352F]'
 
   const fetchTeam = async () => {
     try {
@@ -197,7 +197,7 @@ export default function TeamPage() {
           <Button
             onClick={() => { setAdding(true); setLastCreated(null) }}
             className="text-white"
-            style={{ backgroundColor: '#1B4D2E' }}
+            style={{ backgroundColor: '#00352F' }}
           >
             <Plus className="w-4 h-4 mr-2" /> Add Member
           </Button>
@@ -211,8 +211,8 @@ export default function TeamPage() {
           return (
             <Card key={r} className="border-dashed">
               <CardContent className="p-3 flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${r === 'owner' ? 'bg-[#1B4D2E]' : r === 'admin' ? 'bg-[#EFF8E8]' : 'bg-gray-100'}`}>
-                  <Icon className={`w-4 h-4 ${r === 'owner' ? 'text-white' : r === 'admin' ? 'text-[#1B4D2E]' : 'text-gray-500'}`} />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${r === 'owner' ? 'bg-[#00352F]' : r === 'admin' ? 'bg-[#E5F2F0]' : 'bg-gray-100'}`}>
+                  <Icon className={`w-4 h-4 ${r === 'owner' ? 'text-white' : r === 'admin' ? 'text-[#00352F]' : 'text-gray-500'}`} />
                 </div>
                 <div>
                   <p className="font-semibold text-sm text-gray-900">{ROLE_LABELS[r]}</p>
@@ -226,17 +226,17 @@ export default function TeamPage() {
 
       {/* Last created — show login details to share */}
       {lastCreated && (
-        <Card className="border-[#8DC63F] bg-[#EFF8E8]">
+        <Card className="border-[#CEDC00] bg-[#E5F2F0]">
           <CardContent className="p-4">
             {/* Header row — always visible */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-[#1B4D2E] flex-shrink-0" />
-                <p className="font-semibold text-[#1B4D2E] text-sm">Account created. Share these login details:</p>
+                <Check className="w-4 h-4 text-[#00352F] flex-shrink-0" />
+                <p className="font-semibold text-[#00352F] text-sm">Account created. Share these login details:</p>
               </div>
               <button
                 onClick={() => setLastCreatedMinimized(v => !v)}
-                className="ml-3 text-xs text-[#1B4D2E]/60 hover:text-[#1B4D2E] underline flex-shrink-0"
+                className="ml-3 text-xs text-[#00352F]/60 hover:text-[#00352F] underline flex-shrink-0"
               >
                 {lastCreatedMinimized ? 'Show' : 'Hide'}
               </button>
@@ -245,7 +245,7 @@ export default function TeamPage() {
             {/* Collapsible body */}
             {!lastCreatedMinimized && (
               <div className="mt-3 space-y-3">
-                <div className="bg-white rounded-lg border border-[#8DC63F]/40 p-3 space-y-2 text-sm font-mono">
+                <div className="bg-white rounded-lg border border-[#CEDC00]/40 p-3 space-y-2 text-sm font-mono">
                   <div><span className="text-gray-400 font-sans text-xs">Login URL</span><br />{typeof window !== 'undefined' ? `${window.location.origin}/admin/login` : '/admin/login'}</div>
                   <div><span className="text-gray-400 font-sans text-xs">Email</span><br />{lastCreated.email}</div>
                   <div><span className="text-gray-400 font-sans text-xs">Password</span><br />{lastCreated.password}</div>
@@ -253,7 +253,7 @@ export default function TeamPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-[#8DC63F] text-[#1B4D2E] hover:bg-[#8DC63F]/10"
+                  className="border-[#CEDC00] text-[#00352F] hover:bg-[#CEDC00]/10"
                   onClick={() => {
                     const text = `Login URL: ${window.location.origin}/admin/login\nEmail: ${lastCreated.email}\nPassword: ${lastCreated.password}`
                     navigator.clipboard.writeText(text)
@@ -271,7 +271,7 @@ export default function TeamPage() {
 
       {/* Add member form */}
       {adding && (
-        <Card className="border-[#8DC63F]/40">
+        <Card className="border-[#CEDC00]/40">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Add Team Member</CardTitle>
             <CardDescription>Set a temporary password and share the login link with them directly. No email needed.</CardDescription>
@@ -342,7 +342,7 @@ export default function TeamPage() {
                       {pwRules.map(rule => (
                         <div key={rule.label} className="flex items-center gap-2">
                           {rule.pass
-                            ? <Check className="w-3.5 h-3.5 text-[#8DC63F] flex-shrink-0" />
+                            ? <Check className="w-3.5 h-3.5 text-[#CEDC00] flex-shrink-0" />
                             : <X className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />}
                           <span className={`text-xs ${rule.pass ? 'text-gray-500 line-through' : 'text-gray-500'}`}>{rule.label}</span>
                         </div>
@@ -360,13 +360,13 @@ export default function TeamPage() {
                   <SelectContent>
                     <SelectItem value="owner">
                       <div className="flex items-center gap-2">
-                        <Crown className="w-3.5 h-3.5 text-[#1B4D2E]" />
+                        <Crown className="w-3.5 h-3.5 text-[#00352F]" />
                         <span>Owner — Full access including team management</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="admin">
                       <div className="flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5 text-[#2D6A4F]" />
+                        <Shield className="w-3.5 h-3.5 text-[#00594F]" />
                         <span>Admin — Orders, schools, settings, reports</span>
                       </div>
                     </SelectItem>
@@ -384,7 +384,7 @@ export default function TeamPage() {
                   type="submit"
                   disabled={submitting || !inviteEmail.trim() || !pwValid}
                   className="text-white"
-                  style={{ backgroundColor: '#1B4D2E' }}
+                  style={{ backgroundColor: '#00352F' }}
                 >
                   {submitting ? 'Creating...' : 'Create Account'}
                 </Button>
@@ -550,10 +550,10 @@ export default function TeamPage() {
 
       {/* Info note */}
       {members.length > 0 && (
-        <Card className="bg-[#EFF8E8] border-[#8DC63F]/30">
+        <Card className="bg-[#E5F2F0] border-[#CEDC00]/30">
           <CardContent className="p-4 flex gap-3">
-            <Info className="w-4 h-4 text-[#1B4D2E] flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-[#1B4D2E]">
+            <Info className="w-4 h-4 text-[#00352F] flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-[#00352F]">
               <p>Accounts are created immediately — no email invite needed. After creating an account, the login details appear so you can copy and send them directly (text, WhatsApp, etc.).</p>
             </div>
           </CardContent>

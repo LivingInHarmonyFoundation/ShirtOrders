@@ -55,9 +55,9 @@
 
 :root {
   /* LIH Forest Green primary */
-  --brand:      #1B4D2E;
-  --brand-dark: #0D2E1A;
-  --brand-lime: #8DC63F;
+  --brand:      #00352F;
+  --brand-dark: #00352F;
+  --brand-lime: #CEDC00;
 
   --background: oklch(0.99 0.004 110);   /* warm off-white */
   --foreground: oklch(0.145 0 0);
@@ -152,10 +152,10 @@
 @layer utilities {
   /* Branded button shadow */
   .btn-brand-shadow {
-    box-shadow: 0 4px 20px rgba(27, 77, 46, 0.28), 0 1px 4px rgba(27, 77, 46, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 53, 47, 0.28), 0 1px 4px rgba(0, 53, 47, 0.15);
   }
   .btn-brand-shadow:hover {
-    box-shadow: 0 8px 28px rgba(27, 77, 46, 0.36), 0 2px 6px rgba(27, 77, 46, 0.20);
+    box-shadow: 0 8px 28px rgba(0, 53, 47, 0.36), 0 2px 6px rgba(0, 53, 47, 0.20);
   }
 
   /* Glass card */

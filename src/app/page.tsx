@@ -47,7 +47,7 @@ export default async function LandingPage() {
       {/* ── Brand accent bar ────────────────────────────────── */}
       <div
         className="h-[3px] w-full flex-shrink-0"
-        style={{ background: 'linear-gradient(90deg, #1B4D2E 0%, #8DC63F 60%, #1B4D2E 100%)' }}
+        style={{ background: 'linear-gradient(90deg, #00352F 0%, #CEDC00 60%, #00352F 100%)' }}
       />
 
       {/* ── Header ─────────────────────────────────────────── */}
@@ -66,7 +66,7 @@ export default async function LandingPage() {
               <Image src="/logo.png" alt="LIH" width={32} height={32} className="object-contain" />
             </div>
             <div>
-              <p className="font-semibold leading-none" style={{ color: '#1B4D2E', fontSize: '13px' }}>
+              <p className="font-semibold leading-none" style={{ color: '#00352F', fontSize: '13px' }}>
                 <span className="hidden sm:inline">Living in Harmony Foundation</span>
                 <span className="sm:hidden">LIH Foundation</span>
               </p>
@@ -77,7 +77,7 @@ export default async function LandingPage() {
             <Button
               variant="outline"
               size="sm"
-              className="text-xs border-gray-200 text-gray-500 hover:text-[#1B4D2E] hover:border-[#1B4D2E] hover:bg-[#EFF8E8] transition-all duration-200 rounded-lg h-8"
+              className="text-xs border-gray-200 text-gray-500 hover:text-[#00352F] hover:border-[#00352F] hover:bg-[#E5F2F0] transition-all duration-200 rounded-lg h-8"
             >
               Admin Login
             </Button>
@@ -94,9 +94,9 @@ export default async function LandingPage() {
             className="absolute inset-0 pointer-events-none"
             style={{
               background: `
-                radial-gradient(ellipse 60% 80% at 90% 10%, rgba(141,198,63,0.14) 0%, transparent 60%),
-                radial-gradient(ellipse 50% 60% at 5% 90%, rgba(27,77,46,0.08) 0%, transparent 55%),
-                linear-gradient(160deg, #EFF8E8 0%, #d9efd9 55%, #e5f5e5 100%)
+                radial-gradient(ellipse 60% 80% at 90% 10%, rgba(206,220,0,0.14) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 5% 90%, rgba(0,53,47,0.08) 0%, transparent 55%),
+                linear-gradient(160deg, #E5F2F0 0%, #daecea 55%, #e5f2f0 100%)
               `,
             }}
           />
@@ -114,18 +114,18 @@ export default async function LandingPage() {
                 <div
                   className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 mb-5"
                   style={{
-                    border: '1px solid rgba(141,198,63,0.5)',
+                    border: '1px solid rgba(206,220,0,0.5)',
                     backgroundColor: 'rgba(255,255,255,0.75)',
                     backdropFilter: 'blur(8px)',
                   }}
                 >
                   <span
                     className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: '#8DC63F' }}
+                    style={{ backgroundColor: '#CEDC00' }}
                   />
                   <span
                     className="font-bold uppercase tracking-wider"
-                    style={{ color: '#1B4D2E', fontSize: '10px' }}
+                    style={{ color: '#00352F', fontSize: '10px' }}
                   >
                     Official Order Portal
                   </span>
@@ -136,7 +136,7 @@ export default async function LandingPage() {
                   style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#111827' }}
                 >
                   Order Your{' '}
-                  <span style={{ color: '#1B4D2E' }}>Institution</span>{' '}
+                  <span style={{ color: '#00352F' }}>Institution</span>{' '}
                   Shirts
                 </h1>
 
@@ -150,7 +150,7 @@ export default async function LandingPage() {
                   <Button
                     size="lg"
                     className="w-full sm:w-auto text-white h-12 px-8 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
-                    style={{ backgroundColor: '#1B4D2E' }}
+                    style={{ backgroundColor: '#00352F' }}
                   >
                     Place an Order
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -158,7 +158,7 @@ export default async function LandingPage() {
                 </Link>
 
                 <p className="mt-4 flex items-center justify-center lg:justify-start gap-1.5 text-gray-400" style={{ fontSize: '11px' }}>
-                  <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#8DC63F' }} />
+                  <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#CEDC00' }} />
                   Secure payment · Instant confirmation · No account needed
                 </p>
               </div>
@@ -171,13 +171,13 @@ export default async function LandingPage() {
                     className="absolute rounded-full border-2 border-dashed pointer-events-none"
                     style={{
                       inset: '-18px',
-                      borderColor: 'rgba(141,198,63,0.38)',
+                      borderColor: 'rgba(206,220,0,0.38)',
                     }}
                   />
                   {/* Glow */}
                   <div
                     className="absolute inset-[-4px] rounded-full pointer-events-none"
-                    style={{ boxShadow: '0 0 48px 16px rgba(141,198,63,0.15)' }}
+                    style={{ boxShadow: '0 0 48px 16px rgba(206,220,0,0.15)' }}
                   />
                   {/* Image */}
                   <div
@@ -185,7 +185,7 @@ export default async function LandingPage() {
                     style={{
                       width: 'clamp(170px, 28vw, 288px)',
                       height: 'clamp(170px, 28vw, 288px)',
-                      boxShadow: '0 24px 64px rgba(27,77,46,0.22)',
+                      boxShadow: '0 24px 64px rgba(0,53,47,0.22)',
                     }}
                   >
                     <Image
@@ -214,7 +214,7 @@ export default async function LandingPage() {
                 { icon: CreditCard,  label: 'Multiple Payment Options' },
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-1.5">
-                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#8DC63F' }} />
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#CEDC00' }} />
                   <span className="text-gray-500 font-medium whitespace-nowrap" style={{ fontSize: '11px' }}>{label}</span>
                 </div>
               ))}
@@ -240,15 +240,15 @@ export default async function LandingPage() {
           /* Default text version */
           <section
             className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden"
-            style={{ backgroundColor: '#1B4D2E' }}
+            style={{ backgroundColor: '#00352F' }}
           >
             <div
               className="absolute right-[-10%] top-[-40%] w-[500px] h-[500px] rounded-full pointer-events-none"
-              style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.1) 0%, transparent 65%)' }}
+              style={{ background: 'radial-gradient(circle, rgba(206,220,0,0.1) 0%, transparent 65%)' }}
             />
             <div
               className="absolute left-[-8%] bottom-[-30%] w-[340px] h-[340px] rounded-full pointer-events-none"
-              style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.07) 0%, transparent 65%)' }}
+              style={{ background: 'radial-gradient(circle, rgba(206,220,0,0.07) 0%, transparent 65%)' }}
             />
 
             <div className="max-w-3xl mx-auto text-center relative">
@@ -260,13 +260,13 @@ export default async function LandingPage() {
                   <Image src="/logo-full.jpeg" alt="Living in Harmony Foundation" width={56} height={56} className="object-cover w-full h-full" />
                 </div>
               </div>
-              <p className="font-bold uppercase tracking-[0.25em] mb-3" style={{ color: '#8DC63F', fontSize: '11px' }}>
+              <p className="font-bold uppercase tracking-[0.25em] mb-3" style={{ color: '#CEDC00', fontSize: '11px' }}>
                 Our Mission
               </p>
               <h2 className="font-heading text-white font-bold italic leading-snug mb-4" style={{ fontSize: 'clamp(1.6rem, 4vw, 2.6rem)' }}>
                 &ldquo;Que Nadie en PR Envejezca Solo&rdquo;
               </h2>
-              <div className="w-10 h-0.5 mx-auto mb-5" style={{ backgroundColor: '#8DC63F' }} />
+              <div className="w-10 h-0.5 mx-auto mb-5" style={{ backgroundColor: '#CEDC00' }} />
               <p className="leading-relaxed mx-auto" style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '480px', fontSize: '14px' }}>
                 Únete a la lucha contra la soledad NO Deseada — Every shirt purchased supports
                 Living in Harmony Foundation&rsquo;s mission to end unwanted loneliness in Puerto Rico.
@@ -283,9 +283,9 @@ export default async function LandingPage() {
                 <div
                   className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 mb-4 font-bold uppercase tracking-wider"
                   style={{
-                    backgroundColor: '#EFF8E8',
-                    color: '#1B4D2E',
-                    border: '1px solid rgba(141,198,63,0.35)',
+                    backgroundColor: '#E5F2F0',
+                    color: '#00352F',
+                    border: '1px solid rgba(206,220,0,0.35)',
                     fontSize: '10px',
                   }}
                 >
@@ -306,8 +306,8 @@ export default async function LandingPage() {
                 {catalog.map(item => (
                   <div key={item.id} className="group">
                     <div
-                      className="relative aspect-square rounded-2xl overflow-hidden mb-3 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-[#1B4D2E]/10"
-                      style={{ backgroundColor: '#EFF8E8' }}
+                      className="relative aspect-square rounded-2xl overflow-hidden mb-3 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-[#00352F]/10"
+                      style={{ backgroundColor: '#E5F2F0' }}
                     >
                       {item.image_url ? (
                         <Image
@@ -318,13 +318,13 @@ export default async function LandingPage() {
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <ShoppingBag className="w-12 h-12 sm:w-16 sm:h-16" style={{ color: 'rgba(141,198,63,0.35)' }} />
+                          <ShoppingBag className="w-12 h-12 sm:w-16 sm:h-16" style={{ color: 'rgba(206,220,0,0.35)' }} />
                         </div>
                       )}
                       {/* Hover overlay */}
                       <div
                         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        style={{ background: 'linear-gradient(to top, rgba(27,77,46,0.1) 0%, transparent 60%)' }}
+                        style={{ background: 'linear-gradient(to top, rgba(0,53,47,0.1) 0%, transparent 60%)' }}
                       />
                     </div>
                     <h3 className="font-semibold text-gray-900 text-sm">{item.name}</h3>
@@ -340,7 +340,7 @@ export default async function LandingPage() {
                   <Button
                     size="lg"
                     className="w-full sm:w-auto text-white px-10 h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
-                    style={{ backgroundColor: '#1B4D2E' }}
+                    style={{ backgroundColor: '#00352F' }}
                   >
                     Order Now <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -368,13 +368,13 @@ export default async function LandingPage() {
                 <div
                   key={title}
                   className="flex items-start gap-4 p-5 rounded-2xl bg-white shadow-sm transition-all duration-200 hover:shadow-md border-l-[3px]"
-                  style={{ borderLeftColor: '#8DC63F' }}
+                  style={{ borderLeftColor: '#CEDC00' }}
                 >
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: '#EFF8E8' }}
+                    style={{ backgroundColor: '#E5F2F0' }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: '#1B4D2E' }} />
+                    <Icon className="w-5 h-5" style={{ color: '#00352F' }} />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-0.5" style={{ fontSize: '14px' }}>{title}</h3>
@@ -401,7 +401,7 @@ export default async function LandingPage() {
                 className="absolute top-5 bottom-5 w-px"
                 style={{
                   left: '19px',
-                  background: 'linear-gradient(to bottom, #1B4D2E 0%, #8DC63F 100%)',
+                  background: 'linear-gradient(to bottom, #00352F 0%, #CEDC00 100%)',
                 }}
               />
 
@@ -414,7 +414,7 @@ export default async function LandingPage() {
                   <div key={n} className="flex items-start gap-4">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-heading font-bold relative z-10 shadow-md"
-                      style={{ backgroundColor: '#1B4D2E', fontSize: '14px' }}
+                      style={{ backgroundColor: '#00352F', fontSize: '14px' }}
                     >
                       {n}
                     </div>
@@ -428,7 +428,7 @@ export default async function LandingPage() {
                             <h3 className="font-semibold text-gray-900" style={{ fontSize: '14px' }}>{title}</h3>
                             <p className="text-gray-500 mt-0.5 leading-relaxed" style={{ fontSize: '13px' }}>{desc}</p>
                           </div>
-                          <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#8DC63F' }} />
+                          <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#CEDC00' }} />
                         </div>
                       </div>
                     </div>
@@ -442,11 +442,11 @@ export default async function LandingPage() {
         {/* ── Final CTA ────────────────────────────────────────── */}
         <section
           className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden"
-          style={{ backgroundColor: '#0D2E1A' }}
+          style={{ backgroundColor: '#00352F' }}
         >
           <div
             className="absolute top-[-20%] right-[-5%] w-[400px] h-[400px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.12) 0%, transparent 65%)' }}
+            style={{ background: 'radial-gradient(circle, rgba(206,220,0,0.12) 0%, transparent 65%)' }}
           />
           <div className="max-w-2xl mx-auto text-center relative">
             <div className="flex justify-center mb-6">
@@ -469,7 +469,7 @@ export default async function LandingPage() {
                 className="w-full sm:w-auto h-12 px-10 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5"
                 style={{
                   backgroundColor: 'white',
-                  color: '#1B4D2E',
+                  color: '#00352F',
                   boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
                 }}
               >
@@ -491,12 +491,12 @@ export default async function LandingPage() {
           <div className="flex items-center gap-3">
             <div
               className="relative w-9 h-9 flex-shrink-0 rounded-full overflow-hidden border"
-              style={{ borderColor: 'rgba(27,77,46,0.15)' }}
+              style={{ borderColor: 'rgba(0,53,47,0.15)' }}
             >
               <Image src="/badge.jpeg" alt="LIH" fill className="object-contain" />
             </div>
             <div>
-              <p className="font-semibold" style={{ color: '#1B4D2E', fontSize: '13px' }}>Living in Harmony Foundation</p>
+              <p className="font-semibold" style={{ color: '#00352F', fontSize: '13px' }}>Living in Harmony Foundation</p>
               <p className="text-gray-400 italic" style={{ fontSize: '11px' }}>Únete a la lucha contra la soledad NO Deseada</p>
             </div>
           </div>

@@ -32,7 +32,7 @@ export function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
 }
 
 const institutionConfig: Record<InstitutionType, { label: string; className: string }> = {
-  school:          { label: 'School',          className: 'bg-[#EFF8E8] text-[#1B4D2E] border-[#8DC63F]/40' },
+  school:          { label: 'School',          className: 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40' },
   government:      { label: 'Government',      className: 'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
   personal:        { label: 'Personal',        className: 'bg-blue-50 text-blue-700 border-blue-200' },
   private_company: { label: 'Private Company', className: 'bg-orange-50 text-orange-700 border-orange-200' },

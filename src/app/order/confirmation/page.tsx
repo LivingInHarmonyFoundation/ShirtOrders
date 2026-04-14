@@ -54,7 +54,7 @@ function ConfirmationContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F4F0]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1B4D2E]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#00352F]" />
       </div>
     )
   }
@@ -91,7 +91,7 @@ function ConfirmationContent() {
             <Image src="/logo.png" alt="Living in Harmony Foundation" width={36} height={36} className="object-contain" />
           </div>
           <div>
-            <p className="font-bold text-[#1B4D2E] text-sm leading-none">Living in Harmony Foundation</p>
+            <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
             <p className="text-gray-400 text-xs mt-0.5">Shirt Order Manager</p>
           </div>
         </div>
@@ -100,8 +100,8 @@ function ConfirmationContent() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         {/* Success banner */}
         <div className="text-center mb-8 print:hidden">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg" style={{ backgroundColor: '#EFF8E8' }}>
-            <CheckCircle className="w-10 h-10" style={{ color: '#1B4D2E' }} />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg" style={{ backgroundColor: '#E5F2F0' }}>
+            <CheckCircle className="w-10 h-10" style={{ color: '#00352F' }} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
             {order.payment_status === 'paid' || order.payment_status === 'manual' ? 'Order Confirmed!' : 'Order Received!'}
@@ -117,10 +117,10 @@ function ConfirmationContent() {
 
         {/* Receipt card */}
         <div ref={printRef}>
-          <Card className="border-[#8DC63F]/30 shadow-sm">
-            <CardHeader className="bg-[#EFF8E8] rounded-t-xl border-b border-[#8DC63F]/20">
+          <Card className="border-[#CEDC00]/30 shadow-sm">
+            <CardHeader className="bg-[#E5F2F0] rounded-t-xl border-b border-[#CEDC00]/20">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base text-[#1B4D2E]">Order Receipt</CardTitle>
+                <CardTitle className="text-base text-[#00352F]">Order Receipt</CardTitle>
                 <PaymentStatusBadge status={order.payment_status} />
               </div>
               <p className="text-xs text-gray-500 font-mono mt-1">{order.order_number}</p>
@@ -171,7 +171,7 @@ function ConfirmationContent() {
                 <Separator />
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-gray-900">Total</span>
-                  <span className="font-bold text-xl" style={{ color: '#1B4D2E' }}>{formatCurrency(order.total_amount)}</span>
+                  <span className="font-bold text-xl" style={{ color: '#00352F' }}>{formatCurrency(order.total_amount)}</span>
                 </div>
               </div>
 
@@ -218,11 +218,11 @@ function ConfirmationContent() {
 
         {/* Mission badge */}
         <div className="flex flex-col items-center gap-3 mt-10 mb-2 print:hidden">
-          <div className="relative w-24 h-24" style={{ filter: 'drop-shadow(0 8px 20px rgba(27,77,46,0.2))' }}>
+          <div className="relative w-24 h-24" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,53,47,0.2))' }}>
             <Image src="/badge.jpeg" alt="Que Nadie en PR Envejezca Solo" fill className="object-contain rounded-full" />
           </div>
           <p className="text-xs text-gray-400 italic text-center max-w-xs">
-            Thank you for supporting our mission — <span className="text-[#1B4D2E] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
+            Thank you for supporting our mission — <span className="text-[#00352F] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
           </p>
         </div>
       </main>
@@ -234,7 +234,7 @@ export default function ConfirmationPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-[#F5F4F0]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1B4D2E]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#00352F]" />
       </div>
     }>
       <ConfirmationContent />
