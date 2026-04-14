@@ -147,37 +147,62 @@ export default function OrderPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F5F4F0]">
+    <div className="min-h-screen" style={{ backgroundColor: '#F5F4F0' }}>
       {/* Header */}
-      <header className="border-b bg-white shadow-sm sticky top-0 z-10">
+      <header
+        className="border-b sticky top-0 z-10"
+        style={{
+          backgroundColor: 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottomColor: 'rgba(0,0,0,0.06)',
+        }}
+      >
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-0.5 border border-gray-100">
-              <Image src="/logo.png" alt="Living in Harmony Foundation" width={36} height={36} className="object-contain" />
+            <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden p-0.5">
+              <Image src="/logo.png" alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
             </div>
             <div>
-              <p className="font-bold text-[#1B4D2E] text-sm leading-none">Living in Harmony Foundation</p>
-              <p className="text-gray-400 text-xs mt-0.5">Shirt Order Manager</p>
+              <p className="font-semibold text-[13px] leading-none" style={{ color: '#1B4D2E' }}>
+                Living in Harmony Foundation
+              </p>
+              <p className="text-gray-400 text-[11px] mt-0.5">Shirt Order Manager</p>
             </div>
           </div>
-          <Link href="/" className="text-xs text-gray-400 hover:text-[#1B4D2E] transition-colors">← Back</Link>
+          <Link
+            href="/"
+            className="text-xs text-gray-400 hover:text-[#1B4D2E] transition-colors flex items-center gap-1"
+          >
+            <span>←</span> Back
+          </Link>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Place Your Order</h1>
-          <p className="text-gray-500 mt-1 text-sm">Fill out the form below to order your shirts</p>
+        <div className="mb-7">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">Place Your Order</h1>
+          <p className="text-gray-500 mt-1.5 text-sm">Fill out the form below to order your shirts</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
           {/* Shirt Style Picker — only shown when multiple options exist */}
           {showCatalogPicker && (
-            <Card className={cn('border-2 transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50' : 'border-[#8DC63F]/40')}>
+            <Card className={cn('border-2 shadow-sm transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50/60' : 'border-[#8DC63F]/40')}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Choose Your Shirt *</CardTitle>
-                <CardDescription>Select the shirt style you want to order</CardDescription>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
+                    style={{ backgroundColor: '#1B4D2E' }}
+                  >
+                    1
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Choose Your Shirt *</CardTitle>
+                    <CardDescription className="mt-0.5">Select the shirt style you want to order</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -231,10 +256,20 @@ export default function OrderPage() {
           )}
 
           {/* Institution Type */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Order Type</CardTitle>
-              <CardDescription>Select who this order is for</CardDescription>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
+                  style={{ backgroundColor: '#1B4D2E' }}
+                >
+                  {showCatalogPicker ? '2' : '1'}
+                </div>
+                <div>
+                  <CardTitle className="text-base">Order Type</CardTitle>
+                  <CardDescription className="mt-0.5">Select who this order is for</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
@@ -248,15 +283,22 @@ export default function OrderPage() {
                       setValue('institution_type', value, { shouldValidate: true })
                     }}
                     className={cn(
-                      'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-sm font-medium',
+                      'flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 transition-all duration-150 text-sm font-medium',
                       institutionType === value
-                        ? 'border-[#1B4D2E] bg-[#EFF8E8] text-[#1B4D2E]'
-                        : 'border-gray-200 hover:border-[#1B4D2E]/30 text-gray-700',
+                        ? 'border-[#1B4D2E] bg-[#EFF8E8] text-[#1B4D2E] shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-[#1B4D2E]/30 hover:bg-[#F5F4F0] text-gray-600',
                       !enabled && 'opacity-40 cursor-not-allowed'
                     )}
                   >
-                    <Icon className="w-5 h-5" />
-                    {label}
+                    <div
+                      className={cn(
+                        'w-9 h-9 rounded-xl flex items-center justify-center transition-colors',
+                        institutionType === value ? 'bg-[#1B4D2E]/10' : 'bg-gray-100'
+                      )}
+                    >
+                      <Icon className="w-4.5 h-4.5" />
+                    </div>
+                    <span className="text-xs font-semibold">{label}</span>
                   </button>
                 ))}
               </div>
@@ -267,9 +309,17 @@ export default function OrderPage() {
           </Card>
 
           {/* Personal Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Personal Information</CardTitle>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
+                  style={{ backgroundColor: '#1B4D2E' }}
+                >
+                  {showCatalogPicker ? '3' : '2'}
+                </div>
+                <CardTitle className="text-base">Personal Information</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -293,8 +343,15 @@ export default function OrderPage() {
 
           {/* School fields */}
           {institutionType === 'school' && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">School Information</CardTitle></CardHeader>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#1B4D2E' }}>
+                    {showCatalogPicker ? '4' : '3'}
+                  </div>
+                  <CardTitle className="text-base">School Information</CardTitle>
+                </div>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="school_name">School Name *</Label>
@@ -319,8 +376,15 @@ export default function OrderPage() {
 
           {/* Government fields */}
           {institutionType === 'government' && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">Organization Information</CardTitle></CardHeader>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#1B4D2E' }}>
+                    {showCatalogPicker ? '4' : '3'}
+                  </div>
+                  <CardTitle className="text-base">Organization Information</CardTitle>
+                </div>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="organization_name">Organization Name *</Label>
@@ -351,8 +415,15 @@ export default function OrderPage() {
 
           {/* Private Company fields */}
           {institutionType === 'private_company' && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">Company Information</CardTitle></CardHeader>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#1B4D2E' }}>
+                    {showCatalogPicker ? '4' : '3'}
+                  </div>
+                  <CardTitle className="text-base">Company Information</CardTitle>
+                </div>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="company_name">Company Name *</Label>
@@ -369,10 +440,17 @@ export default function OrderPage() {
 
           {/* Personal — delivery address */}
           {institutionType === 'personal' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Delivery Information</CardTitle>
-                <CardDescription>Your shirt will be mailed to this address</CardDescription>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#1B4D2E' }}>
+                    {showCatalogPicker ? '4' : '3'}
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Delivery Information</CardTitle>
+                    <CardDescription className="mt-0.5">Your shirt will be mailed to this address</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -431,9 +509,17 @@ export default function OrderPage() {
           )}
 
           {/* Shirt Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Shirt Details</CardTitle>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
+                  style={{ backgroundColor: '#1B4D2E' }}
+                >
+                  {institutionType ? (showCatalogPicker ? '5' : '4') : (showCatalogPicker ? '4' : '3')}
+                </div>
+                <CardTitle className="text-base">Shirt Details</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Show selected shirt summary if only 1 in catalog */}
@@ -464,10 +550,10 @@ export default function OrderPage() {
                       type="button"
                       onClick={() => setValue('shirt_size', size, { shouldValidate: true })}
                       className={cn(
-                        'px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all',
+                        'min-w-[52px] px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150',
                         watchedSize === size
-                          ? 'border-[#1B4D2E] bg-[#EFF8E8] text-[#1B4D2E]'
-                          : 'border-gray-200 hover:border-[#1B4D2E]/30 text-gray-700'
+                          ? 'border-[#1B4D2E] bg-[#EFF8E8] text-[#1B4D2E] shadow-sm'
+                          : 'border-gray-200 bg-white hover:border-[#1B4D2E]/30 hover:bg-[#F5F4F0] text-gray-600'
                       )}
                     >
                       {size}
@@ -499,9 +585,9 @@ export default function OrderPage() {
 
           {/* Order Summary */}
           {watchedSize && watchedQty > 0 && (
-            <Card className="border-[#8DC63F]/40 bg-[#EFF8E8]">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-[#1B4D2E] mb-3">Order Summary</h3>
+            <Card className="border-0 shadow-sm" style={{ backgroundColor: '#EFF8E8' }}>
+              <CardContent className="p-5">
+                <h3 className="font-heading font-semibold text-base mb-3" style={{ color: '#1B4D2E' }}>Order Summary</h3>
                 <div className="space-y-1 text-sm">
                   {selectedCatalogItem && (
                     <div className="flex justify-between text-gray-600">
@@ -526,7 +612,7 @@ export default function OrderPage() {
           <Button
             type="submit"
             disabled={isSubmitting || !institutionType || (showCatalogPicker && !selectedCatalogItem)}
-            className="w-full text-white h-12 text-base font-semibold"
+            className="w-full text-white h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
             style={{ backgroundColor: '#1B4D2E' }}
           >
             {isSubmitting ? (
