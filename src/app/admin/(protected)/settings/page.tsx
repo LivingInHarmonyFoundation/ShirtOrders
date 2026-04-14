@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -10,12 +10,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase } from 'lucide-react'
+import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2 } from 'lucide-react'
+import Image from 'next/image'
 import type { AppSettings, ShirtSize } from '@/types'
+import { useRole } from '@/components/admin/role-provider'
 
 const ALL_SIZES: ShirtSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 export default function SettingsPage() {
+  const { permissions } = useRole()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -31,6 +34,11 @@ export default function SettingsPage() {
   const [confirmationMessage, setConfirmationMessage] = useState('')
   const [adminPhone, setAdminPhone] = useState('')
   const [smsNotifications, setSmsNotifications] = useState(false)
+
+  // Mission banner state
+  const [missionBannerUrl, setMissionBannerUrl] = useState<string | null>(null)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
+  const bannerRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -49,11 +57,57 @@ export default function SettingsPage() {
           setConfirmationMessage(settings.confirmation_message || '')
           setAdminPhone(settings.admin_phone || '')
           setSmsNotifications(settings.sms_notifications_enabled ?? false)
+          setMissionBannerUrl(settings.mission_banner_url || null)
         }
       })
       .catch(() => toast.error('Failed to load settings'))
       .finally(() => setLoading(false))
   }, [])
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return }
+    if (bannerRef.current) bannerRef.current.value = ''
+
+    setUploadingBanner(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const upRes = await fetch('/api/admin/catalog/upload', { method: 'POST', body: fd })
+      const upJson = await upRes.json()
+      if (!upRes.ok) { toast.error(upJson.error || 'Upload failed'); return }
+
+      const patchRes = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mission_banner_url: upJson.url }),
+      })
+      if (!patchRes.ok) { toast.error('Failed to save banner'); return }
+
+      setMissionBannerUrl(upJson.url)
+      toast.success('Mission banner updated')
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setUploadingBanner(false)
+    }
+  }
+
+  const handleBannerRemove = async () => {
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mission_banner_url: null }),
+      })
+      if (!res.ok) { toast.error('Failed to remove banner'); return }
+      setMissionBannerUrl(null)
+      toast.success('Mission banner removed — text version restored')
+    } catch {
+      toast.error('Something went wrong')
+    }
+  }
 
   const toggleSize = (size: ShirtSize) => {
     setAvailableSizes(prev =>
@@ -142,6 +196,103 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Mission Banner ──────────────────────────────────── */}
+      {permissions.canManageSettings && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <ImagePlus className="w-4 h-4" /> Mission Banner
+            </CardTitle>
+            <CardDescription className="text-xs">
+              The image displayed in the &ldquo;Our Mission&rdquo; section on the public landing page.
+              When set, replaces the text version. Only admins and owners can change this.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Hidden file input */}
+            <input
+              ref={bannerRef}
+              type="file"
+              className="hidden"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleBannerUpload}
+            />
+
+            {missionBannerUrl ? (
+              <>
+                {/* Preview */}
+                <div
+                  className="relative w-full rounded-xl overflow-hidden border border-gray-100"
+                  style={{ height: '180px' }}
+                >
+                  <Image
+                    src={missionBannerUrl}
+                    alt="Mission banner preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => bannerRef.current?.click()}
+                    disabled={uploadingBanner}
+                  >
+                    {uploadingBanner
+                      ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
+                      : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Replace Image</>}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBannerRemove}
+                    disabled={uploadingBanner}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Remove Banner
+                  </Button>
+                </div>
+                <p className="text-[11px] text-gray-400">
+                  Removing the banner restores the styled text version on the public page.
+                </p>
+              </>
+            ) : (
+              <>
+                {/* Empty state */}
+                <div
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-10 cursor-pointer hover:border-[#8DC63F]/50 hover:bg-[#EFF8E8]/30 transition-colors"
+                  onClick={() => bannerRef.current?.click()}
+                >
+                  <ImagePlus className="w-8 h-8 text-gray-300 mb-2" />
+                  <p className="text-sm font-medium text-gray-500">No banner set</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Click to upload an image</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => bannerRef.current?.click()}
+                  disabled={uploadingBanner}
+                  style={{ borderColor: '#1B4D2E', color: '#1B4D2E' }}
+                >
+                  {uploadingBanner
+                    ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
+                    : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Upload Banner</>}
+                </Button>
+              </>
+            )}
+
+            <p className="text-[11px] text-gray-400">
+              Recommended: wide image (16:4 or 16:5 ratio). Max 5 MB. JPG, PNG, or WebP.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Pricing */}
       <Card>

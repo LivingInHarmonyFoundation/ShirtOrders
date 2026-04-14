@@ -23,8 +23,21 @@ async function getCatalog(): Promise<ShirtCatalogItem[]> {
   }
 }
 
+async function getMissionBannerUrl(): Promise<string | null> {
+  try {
+    const admin = await createAdminClient()
+    const { data } = await admin
+      .from('app_settings')
+      .select('mission_banner_url')
+      .single()
+    return data?.mission_banner_url ?? null
+  } catch {
+    return null
+  }
+}
+
 export default async function LandingPage() {
-  const catalog = await getCatalog()
+  const [catalog, missionBannerUrl] = await Promise.all([getCatalog(), getMissionBannerUrl()])
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F5F4F0' }}>
@@ -208,52 +221,57 @@ export default async function LandingPage() {
         </section>
 
         {/* ── Mission ─────────────────────────────────────────── */}
-        <section
-          className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden"
-          style={{ backgroundColor: '#1B4D2E' }}
-        >
-          {/* Decorative radial behind text */}
-          <div
-            className="absolute right-[-10%] top-[-40%] w-[500px] h-[500px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.1) 0%, transparent 65%)' }}
-          />
-          <div
-            className="absolute left-[-8%] bottom-[-30%] w-[340px] h-[340px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.07) 0%, transparent 65%)' }}
-          />
-
-          <div className="max-w-3xl mx-auto text-center relative">
-            <div className="flex justify-center mb-5">
-              <div
-                className="w-14 h-14 rounded-2xl overflow-hidden border-2"
-                style={{
-                  borderColor: 'rgba(255,255,255,0.18)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                }}
-              >
-                <Image src="/logo-full.jpeg" alt="Living in Harmony Foundation" width={56} height={56} className="object-cover w-full h-full" />
-              </div>
+        {missionBannerUrl ? (
+          /* Custom banner image set by admin */
+          <section className="w-full">
+            <div className="relative w-full" style={{ minHeight: '200px', maxHeight: '420px' }}>
+              <Image
+                src={missionBannerUrl}
+                alt="Living in Harmony Foundation — Mission Banner"
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
+          </section>
+        ) : (
+          /* Default text version */
+          <section
+            className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden"
+            style={{ backgroundColor: '#1B4D2E' }}
+          >
+            <div
+              className="absolute right-[-10%] top-[-40%] w-[500px] h-[500px] rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.1) 0%, transparent 65%)' }}
+            />
+            <div
+              className="absolute left-[-8%] bottom-[-30%] w-[340px] h-[340px] rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(circle, rgba(141,198,63,0.07) 0%, transparent 65%)' }}
+            />
 
-            <p
-              className="font-bold uppercase tracking-[0.25em] mb-3"
-              style={{ color: '#8DC63F', fontSize: '11px' }}
-            >
-              Our Mission
-            </p>
-
-            <h2 className="font-heading text-white font-bold italic leading-snug mb-4" style={{ fontSize: 'clamp(1.6rem, 4vw, 2.6rem)' }}>
-              &ldquo;Que Nadie en PR Envejezca Solo&rdquo;
-            </h2>
-
-            <div className="w-10 h-0.5 mx-auto mb-5" style={{ backgroundColor: '#8DC63F' }} />
-
-            <p className="leading-relaxed mx-auto" style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '480px', fontSize: '14px' }}>
-              Únete a la lucha contra la soledad NO Deseada — Every shirt purchased supports
-              Living in Harmony Foundation&rsquo;s mission to end unwanted loneliness in Puerto Rico.
-            </p>
-          </div>
-        </section>
+            <div className="max-w-3xl mx-auto text-center relative">
+              <div className="flex justify-center mb-5">
+                <div
+                  className="w-14 h-14 rounded-2xl overflow-hidden border-2"
+                  style={{ borderColor: 'rgba(255,255,255,0.18)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}
+                >
+                  <Image src="/logo-full.jpeg" alt="Living in Harmony Foundation" width={56} height={56} className="object-cover w-full h-full" />
+                </div>
+              </div>
+              <p className="font-bold uppercase tracking-[0.25em] mb-3" style={{ color: '#8DC63F', fontSize: '11px' }}>
+                Our Mission
+              </p>
+              <h2 className="font-heading text-white font-bold italic leading-snug mb-4" style={{ fontSize: 'clamp(1.6rem, 4vw, 2.6rem)' }}>
+                &ldquo;Que Nadie en PR Envejezca Solo&rdquo;
+              </h2>
+              <div className="w-10 h-0.5 mx-auto mb-5" style={{ backgroundColor: '#8DC63F' }} />
+              <p className="leading-relaxed mx-auto" style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '480px', fontSize: '14px' }}>
+                Únete a la lucha contra la soledad NO Deseada — Every shirt purchased supports
+                Living in Harmony Foundation&rsquo;s mission to end unwanted loneliness in Puerto Rico.
+              </p>
+            </div>
+          </section>
+        )}
 
         {/* ── Shirt Catalog ───────────────────────────────────── */}
         {catalog.length > 0 && (
