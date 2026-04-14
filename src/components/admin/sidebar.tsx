@@ -42,23 +42,16 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
   const NavContent = () => (
     <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 p-1"
-          style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
-        >
+      <div className="px-4 py-4 border-b border-white/10">
+        <div className="bg-white rounded-xl p-3 flex items-center justify-center">
           <Image
             src="/logo.png"
             alt="Living in Harmony Foundation"
-            width={32}
-            height={32}
-            className="object-contain"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+            width={160}
+            height={100}
+            className="object-contain w-full h-auto"
+            priority
           />
-        </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-white text-[12px] leading-none truncate">Living in Harmony</p>
-          <p className="text-[11px] mt-0.5 truncate" style={{ color: '#CEDC00' }}>Foundation</p>
         </div>
       </div>
 
@@ -136,21 +129,16 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
         className="md:hidden fixed top-0 left-0 right-0 z-40 border-b border-white/10 px-4 py-3 flex items-center justify-between"
         style={{ backgroundColor: '#00352F' }}
       >
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center p-0.5"
-            style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
-          >
+        <div className="flex items-center">
+          <div className="bg-white rounded-lg px-2.5 py-1.5">
             <Image
               src="/logo.png"
-              alt="LIH"
-              width={26}
-              height={26}
-              className="object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              alt="Living in Harmony Foundation"
+              width={120}
+              height={38}
+              className="object-contain h-8 w-auto"
             />
           </div>
-          <span className="font-semibold text-white text-sm">LIH Foundation</span>
         </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
