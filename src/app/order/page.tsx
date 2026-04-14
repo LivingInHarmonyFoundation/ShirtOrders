@@ -17,7 +17,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Briefcase, User } from 'lucide-react'
-import type { AppSettings, InstitutionType, ShirtSize, ShirtCatalogItem, GovOrg, PrivateCompany } from '@/types'
+import type { AppSettings, InstitutionType, ShirtSize, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
@@ -69,6 +69,7 @@ export default function OrderPage() {
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
+  const [activeCampaign, setActiveCampaign] = useState<Campaign | null | 'none'>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [institutionType, setInstitutionType] = useState<InstitutionType | ''>('')
 
@@ -103,6 +104,11 @@ export default function OrderPage() {
       .then(r => r.json())
       .then(({ companies }) => { if (companies?.length > 0) setPrivateCompanies(companies) })
       .catch(() => {})
+
+    fetch('/api/campaigns/active')
+      .then(r => r.json())
+      .then(({ campaign }) => setActiveCampaign(campaign ?? 'none'))
+      .catch(() => setActiveCampaign('none'))
   }, [])
 
   // Auto-select if only one shirt
@@ -142,6 +148,17 @@ export default function OrderPage() {
     }
   }
 
+  const today = new Date().toISOString().split('T')[0]
+  const campaignClosed =
+    activeCampaign === 'none' ||
+    (activeCampaign !== null && typeof activeCampaign === 'object' &&
+      activeCampaign.end_date !== null && activeCampaign.end_date < today)
+
+  const closedMessage =
+    activeCampaign === 'none' || activeCampaign === null
+      ? 'Orders are not currently open. Please check back later.'
+      : (activeCampaign as Campaign).ended_message || 'This campaign has ended. Thank you for your participation.'
+
   const sizes: ShirtSize[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const showCatalogPicker = catalog.length > 1
 
@@ -151,6 +168,51 @@ export default function OrderPage() {
     { value: 'personal' as const,        label: 'Personal',        icon: User,      enabled: settings?.personal_orders_enabled !== false },
     { value: 'private_company' as const, label: 'Private Company', icon: Briefcase, enabled: settings?.private_company_orders_enabled !== false },
   ]
+
+  if (activeCampaign === null) {
+    // Still loading — show minimal spinner so form doesn't flash
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F4F0' }}>
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#00352F' }} />
+      </div>
+    )
+  }
+
+  if (campaignClosed) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#F5F4F0' }}>
+        <div className="h-[3px] w-full" style={{ background: 'linear-gradient(90deg, #00352F 0%, #CEDC00 60%, #00352F 100%)' }} />
+        <header className="border-b" style={{ backgroundColor: 'rgba(255,255,255,0.92)', borderBottomColor: 'rgba(0,0,0,0.05)' }}>
+          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden p-0.5">
+              <Image src="/logo.png" alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
+            </div>
+            <div>
+              <p className="font-semibold leading-none" style={{ color: '#00352F', fontSize: '13px' }}>
+                <span className="hidden sm:inline">Living in Harmony Foundation</span>
+                <span className="sm:hidden">LIH Foundation</span>
+              </p>
+              <p className="text-gray-400 mt-0.5" style={{ fontSize: '11px' }}>Shirt Order Manager</p>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-2xl mx-auto px-4 py-16 flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ backgroundColor: '#E5F2F0' }}>
+            <ShoppingBag className="w-8 h-8" style={{ color: '#00352F' }} />
+          </div>
+          <h1 className="font-heading text-2xl font-bold text-gray-900 mb-3">Orders are currently closed</h1>
+          <p className="text-gray-500 max-w-sm leading-relaxed mb-8">{closedMessage}</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm transition-all hover:-translate-y-0.5"
+            style={{ backgroundColor: '#00352F' }}
+          >
+            ← Back to Home
+          </Link>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5F4F0' }}>

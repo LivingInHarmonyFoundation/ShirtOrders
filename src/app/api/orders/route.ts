@@ -32,6 +32,25 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createAdminClient()
 
+    // Validate active campaign
+    const { data: activeCampaign } = await supabase
+      .from('campaigns')
+      .select('id, end_date, ended_message')
+      .eq('is_active', true)
+      .single()
+
+    if (!activeCampaign) {
+      return NextResponse.json({ error: 'Orders are not currently open.' }, { status: 400 })
+    }
+
+    const today = new Date().toISOString().split('T')[0]
+    if (activeCampaign.end_date && activeCampaign.end_date < today) {
+      return NextResponse.json(
+        { error: activeCampaign.ended_message || 'This campaign has ended. Thank you for your participation.' },
+        { status: 400 }
+      )
+    }
+
     const { data: settings } = await supabase
       .from('app_settings')
       .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled')
@@ -103,6 +122,7 @@ export async function POST(request: NextRequest) {
         school_link_id: data.school_link_id || null,
         catalog_item_id: data.catalog_item_id || null,
         catalog_item_name: data.catalog_item_name || null,
+        campaign_id: activeCampaign.id,
         payment_status: 'pending',
         order_status: 'new',
         delivery_status: 'not_delivered',

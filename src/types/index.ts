@@ -113,6 +113,7 @@ export interface OrderFilters {
   shirt_size?: ShirtSize | ''
   date_from?: string
   date_to?: string
+  campaign_id?: string
   sort?: 'newest' | 'oldest' | 'paid' | 'unpaid' | 'delivered' | 'not_delivered'
   page?: number
   limit?: number
@@ -173,5 +174,18 @@ export interface SchoolLink {
   slug: string
   is_active: boolean
   created_at: string
+  order_count?: number
+}
+
+export interface Campaign {
+  id: string
+  name: string
+  description: string | null
+  start_date: string | null
+  end_date: string | null
+  is_active: boolean
+  ended_message: string
+  created_at: string
+  updated_at: string
   order_count?: number
 }

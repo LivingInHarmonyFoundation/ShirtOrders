@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   LayoutDashboard, List, BarChart2, Settings,
-  LogOut, Menu, X, ChevronRight, GraduationCap, Users, Shirt, Building2, Briefcase
+  LogOut, Menu, X, ChevronRight, GraduationCap, Users, Shirt, Building2, Briefcase, Megaphone
 } from 'lucide-react'
 import { useState } from 'react'
 import { useRole } from '@/components/admin/role-provider'
@@ -25,6 +25,7 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
     { href: '/admin/catalog',        label: 'Catalog',       icon: Shirt,         show: permissions.canManageSettings },
     { href: '/admin/government',     label: 'Gobierno',      icon: Building2,     show: permissions.canManageSettings },
     { href: '/admin/companies',      label: 'Companies',     icon: Briefcase,     show: permissions.canManageSettings },
+    { href: '/admin/campaigns',      label: 'Campaigns',     icon: Megaphone,     show: permissions.canManageSettings },
     { href: '/admin/schools',        label: 'Schools',       icon: GraduationCap, show: permissions.canManageSchools },
     { href: '/admin/reports',   label: 'Reports',    icon: BarChart2,       show: permissions.canViewReports },
     { href: '/admin/settings',  label: 'Settings',   icon: Settings,        show: permissions.canManageSettings },
