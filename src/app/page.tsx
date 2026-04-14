@@ -25,21 +25,25 @@ async function getCatalog(): Promise<ShirtCatalogItem[]> {
   }
 }
 
-async function getMissionBannerUrl(): Promise<string | null> {
+async function getPageAssets(): Promise<{ missionBannerUrl: string | null; badgeUrl: string | null }> {
   try {
     const admin = await createAdminClient()
     const { data } = await admin
       .from('app_settings')
-      .select('mission_banner_url')
+      .select('mission_banner_url, badge_url')
       .single()
-    return data?.mission_banner_url ?? null
+    return {
+      missionBannerUrl: data?.mission_banner_url ?? null,
+      badgeUrl: data?.badge_url ?? null,
+    }
   } catch {
-    return null
+    return { missionBannerUrl: null, badgeUrl: null }
   }
 }
 
 export default async function LandingPage() {
-  const [catalog, missionBannerUrl] = await Promise.all([getCatalog(), getMissionBannerUrl()])
+  const [catalog, { missionBannerUrl, badgeUrl }] = await Promise.all([getCatalog(), getPageAssets()])
+  const badgeSrc = badgeUrl || '/badge.jpeg'
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F5F4F0' }}>
@@ -189,7 +193,7 @@ export default async function LandingPage() {
                     }}
                   >
                     <Image
-                      src="/badge.jpeg"
+                      src={badgeSrc}
                       alt="Que Nadie en PR Envejezca Solo — Living in Harmony Foundation"
                       fill
                       className="object-contain"
@@ -454,7 +458,7 @@ export default async function LandingPage() {
                 className="relative w-16 h-16 rounded-full overflow-hidden border-2"
                 style={{ borderColor: 'rgba(255,255,255,0.2)' }}
               >
-                <Image src="/badge.jpeg" alt="LIH Badge" fill className="object-contain" />
+                <Image src={badgeSrc} alt="LIH Badge" fill className="object-contain" />
               </div>
             </div>
             <h2 className="font-heading text-white font-bold leading-snug mb-4" style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)' }}>
@@ -493,7 +497,7 @@ export default async function LandingPage() {
               className="relative w-9 h-9 flex-shrink-0 rounded-full overflow-hidden border"
               style={{ borderColor: 'rgba(0,53,47,0.15)' }}
             >
-              <Image src="/badge.jpeg" alt="LIH" fill className="object-contain" />
+              <Image src={badgeSrc} alt="LIH" fill className="object-contain" />
             </div>
             <div>
               <p className="font-semibold" style={{ color: '#00352F', fontSize: '13px' }}>Living in Harmony Foundation</p>

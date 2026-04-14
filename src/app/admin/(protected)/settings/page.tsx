@@ -40,6 +40,11 @@ export default function SettingsPage() {
   const [uploadingBanner, setUploadingBanner] = useState(false)
   const bannerRef = useRef<HTMLInputElement>(null)
 
+  // Badge state
+  const [badgeUrl, setBadgeUrl] = useState<string | null>(null)
+  const [uploadingBadge, setUploadingBadge] = useState(false)
+  const badgeRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     fetch('/api/admin/settings')
       .then(r => r.json())
@@ -58,6 +63,7 @@ export default function SettingsPage() {
           setAdminPhone(settings.admin_phone || '')
           setSmsNotifications(settings.sms_notifications_enabled ?? false)
           setMissionBannerUrl(settings.mission_banner_url || null)
+          setBadgeUrl(settings.badge_url || null)
         }
       })
       .catch(() => toast.error('Failed to load settings'))
@@ -104,6 +110,51 @@ export default function SettingsPage() {
       if (!res.ok) { toast.error('Failed to remove banner'); return }
       setMissionBannerUrl(null)
       toast.success('Mission banner removed — text version restored')
+    } catch {
+      toast.error('Something went wrong')
+    }
+  }
+
+  const handleBadgeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return }
+    if (badgeRef.current) badgeRef.current.value = ''
+
+    setUploadingBadge(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const upRes = await fetch('/api/admin/catalog/upload', { method: 'POST', body: fd })
+      const upJson = await upRes.json()
+      if (!upRes.ok) { toast.error(upJson.error || 'Upload failed'); return }
+
+      const patchRes = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ badge_url: upJson.url }),
+      })
+      if (!patchRes.ok) { toast.error('Failed to save badge'); return }
+
+      setBadgeUrl(upJson.url)
+      toast.success('Badge updated')
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setUploadingBadge(false)
+    }
+  }
+
+  const handleBadgeRemove = async () => {
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ badge_url: null }),
+      })
+      if (!res.ok) { toast.error('Failed to remove badge'); return }
+      setBadgeUrl(null)
+      toast.success('Badge removed — default badge restored')
     } catch {
       toast.error('Something went wrong')
     }
@@ -289,6 +340,98 @@ export default function SettingsPage() {
 
             <p className="text-[11px] text-gray-400">
               Recommended: wide image (16:4 or 16:5 ratio). Max 5 MB. JPG, PNG, or WebP.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Badge Image ─────────────────────────────────── */}
+      {permissions.canManageSettings && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <ImagePlus className="w-4 h-4" /> Badge Image
+            </CardTitle>
+            <CardDescription className="text-xs">
+              The circular badge displayed in the hero, CTA, and footer of the public landing page.
+              When set, replaces the default badge everywhere it appears.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <input
+              ref={badgeRef}
+              type="file"
+              className="hidden"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleBadgeUpload}
+            />
+
+            {badgeUrl ? (
+              <>
+                {/* Preview — circular to match how it appears on the site */}
+                <div className="flex items-center gap-5">
+                  <div
+                    className="relative rounded-full overflow-hidden border-4 border-white flex-shrink-0"
+                    style={{ width: 120, height: 120, boxShadow: '0 4px 24px rgba(0,53,47,0.18)' }}
+                  >
+                    <Image src={badgeUrl} alt="Badge preview" fill className="object-contain" />
+                  </div>
+                  <div className="text-xs text-gray-400 space-y-1">
+                    <p>Shown as a circle on the landing page.</p>
+                    <p>Use a square image for best results.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => badgeRef.current?.click()}
+                    disabled={uploadingBadge}
+                  >
+                    {uploadingBadge
+                      ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
+                      : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Replace Badge</>}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBadgeRemove}
+                    disabled={uploadingBadge}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Remove Badge
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-10 cursor-pointer hover:border-[#CEDC00]/50 hover:bg-[#E5F2F0]/30 transition-colors"
+                  onClick={() => badgeRef.current?.click()}
+                >
+                  <ImagePlus className="w-8 h-8 text-gray-300 mb-2" />
+                  <p className="text-sm font-medium text-gray-500">No custom badge set</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Click to upload an image</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => badgeRef.current?.click()}
+                  disabled={uploadingBadge}
+                  style={{ borderColor: '#00352F', color: '#00352F' }}
+                >
+                  {uploadingBadge
+                    ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
+                    : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Upload Badge</>}
+                </Button>
+              </>
+            )}
+
+            <p className="text-[11px] text-gray-400">
+              Recommended: square image (1:1 ratio). Max 5 MB. JPG, PNG, or WebP.
             </p>
           </CardContent>
         </Card>

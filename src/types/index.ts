@@ -66,6 +66,7 @@ export interface AppSettings {
   app_name: string
   logo_url: string | null
   mission_banner_url: string | null
+  badge_url: string | null
   shirt_price: number
   available_sizes: ShirtSize[]
   school_orders_enabled: boolean
