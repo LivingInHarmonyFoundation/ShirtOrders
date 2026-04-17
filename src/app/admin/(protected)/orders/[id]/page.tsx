@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils'
-import type { Order, AuditLog } from '@/types'
+import type { Order, AuditLog, OrderItem } from '@/types'
 
 export default function OrderDetailPage() {
   const params = useParams()
@@ -25,6 +25,7 @@ export default function OrderDetailPage() {
   const orderId = params.id as string
 
   const [order, setOrder] = useState<Order | null>(null)
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -42,6 +43,7 @@ export default function OrderDetailPage() {
       const { order, auditLogs } = await res.json()
       if (order) {
         setOrder(order)
+        setOrderItems(order.items || [])
         setAuditLogs(auditLogs || [])
         setPaymentStatus(order.payment_status)
         setOrderStatus(order.order_status)
@@ -226,26 +228,83 @@ export default function OrderDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Shirt Size</p>
-                  <p className="font-bold text-gray-900 dark:text-white mt-0.5 text-base">{order.shirt_size}</p>
+              {/* Line items breakdown (when order has multiple items) */}
+              {orderItems.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Line Items ({orderItems.length})
+                  </p>
+                  <div className="rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-900/50">
+                          <th className="text-left px-3 py-2 text-gray-500 font-semibold">Shirt</th>
+                          <th className="text-center px-3 py-2 text-gray-500 font-semibold">Size</th>
+                          <th className="text-center px-3 py-2 text-gray-500 font-semibold">Qty</th>
+                          <th className="text-right px-3 py-2 text-gray-500 font-semibold">Price</th>
+                          <th className="text-right px-3 py-2 text-gray-500 font-semibold">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orderItems.map((item, idx) => (
+                          <tr
+                            key={item.id}
+                            className={idx % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-gray-50/50 dark:bg-gray-900/20'}
+                          >
+                            <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">
+                              {item.catalog_item_name}
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md font-bold text-[#00352F] bg-[#E5F2F0] text-xs">
+                                {item.shirt_size}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">{item.quantity}</td>
+                            <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{formatCurrency(item.unit_price)}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-gray-900 dark:text-white">{formatCurrency(item.subtotal)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-500">Quantity</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={e => setQuantity(Number(e.target.value))}
-                    className="mt-0.5 h-8 text-sm w-20"
-                  />
+              ) : (
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Shirt Size</p>
+                    <p className="font-bold text-gray-900 dark:text-white mt-0.5 text-base">{order.shirt_size}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Quantity</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={e => setQuantity(Number(e.target.value))}
+                      className="mt-0.5 h-8 text-sm w-20"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Unit Price</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5">{formatCurrency(order.unit_price)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Unit Price</p>
-                  <p className="font-medium text-gray-900 dark:text-white mt-0.5">{formatCurrency(order.unit_price)}</p>
+              )}
+              {/* When we have line items, still allow quantity edit via the raw field */}
+              {orderItems.length > 0 && (
+                <div className="flex items-center gap-4 pt-1">
+                  <div>
+                    <Label className="text-xs text-gray-500">Total Qty (editable)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={e => setQuantity(Number(e.target.value))}
+                      className="mt-0.5 h-8 text-sm w-24"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="font-bold text-gray-900 dark:text-white">Total Amount</span>

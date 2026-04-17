@@ -10,6 +10,28 @@ export type OrderStatus = 'new' | 'processing' | 'ready' | 'completed' | 'cancel
 
 export type DeliveryStatus = 'not_delivered' | 'partially_delivered' | 'delivered'
 
+export interface OrderItem {
+  id: string
+  order_id: string
+  catalog_item_id: string | null
+  catalog_item_name: string
+  shirt_size: string
+  quantity: number
+  unit_price: number
+  subtotal: number
+  created_at: string
+}
+
+export interface CartItem {
+  id: string
+  catalog_item_id: string | null
+  catalog_item_name: string
+  catalog_item_image: string | null
+  shirt_size: string
+  quantity: number
+  unit_price: number
+}
+
 export interface Order {
   id: string
   order_number: string
@@ -46,6 +68,7 @@ export interface Order {
   admin_notes: string | null
   created_at: string
   updated_at: string
+  items?: OrderItem[]
 }
 
 export interface OrderFormData {

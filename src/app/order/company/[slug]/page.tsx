@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,10 +11,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { Briefcase, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShoppingBag } from 'lucide-react'
+import { Briefcase, Loader2, AlertCircle, CheckCircle2, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import ShirtViewer from '@/components/shared/ShirtViewer'
+import CartIcon from '@/components/shared/CartIcon'
+import CartDrawer from '@/components/shared/CartDrawer'
+import { useCart } from '@/contexts/CartContext'
 import type { AppSettings, ShirtCatalogItem } from '@/types'
 
 const schema = z.object({
@@ -40,17 +42,27 @@ interface CompanyInfo {
 
 export default function CompanyOrderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
-  const router = useRouter()
 
+  const { addItem, openCart, items: cartItems, totalItems } = useCart()
   const [company, setCompany] = useState<CompanyInfo | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
+  const [checkoutPayload, setCheckoutPayload] = useState<null | {
+    full_name: string
+    email: string
+    phone?: string
+    institution_type: string
+    company_name?: string
+    company_department?: string
+    company_link_id?: string
+    notes?: string
+  }>(null)
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, trigger, getValues, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { quantity: 1 },
   })
@@ -82,46 +94,74 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
 
   const onSubmit = async (data: FormData) => {
     if (!company) return
-    setIsSubmitting(true)
+    setIsAdding(true)
     try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          quantity: Number(data.quantity),
-          institution_type: 'private_company',
-          company_name: company.name,
-          company_link_id: company.id,
-          catalog_item_id: selectedCatalogItem?.id || null,
-          catalog_item_name: selectedCatalogItem?.name || null,
-        }),
-      })
-      const json = await res.json()
-      if (!res.ok) {
-        toast.error(json.error || 'Failed to submit order')
-        return
+      const payload = {
+        full_name: data.full_name,
+        email: data.email,
+        phone: data.phone,
+        institution_type: 'private_company',
+        company_name: company.name,
+        company_department: data.company_department,
+        company_link_id: company.id,
+        notes: data.notes,
       }
-      router.push(`/order/checkout?order_id=${json.order.id}`)
-    } catch {
-      toast.error('Something went wrong. Please try again.')
+      setCheckoutPayload(payload)
+
+      addItem({
+        catalog_item_id: selectedCatalogItem?.id ?? null,
+        catalog_item_name: selectedCatalogItem?.name ?? 'Shirt',
+        catalog_item_image: selectedCatalogItem?.image_url ?? null,
+        shirt_size: data.shirt_size,
+        quantity: Number(data.quantity),
+        unit_price: unitPrice,
+      })
+
+      setValue('shirt_size', '', { shouldValidate: false })
+      setValue('quantity', 1, { shouldValidate: false })
+      if (catalog.length > 1) setSelectedCatalogItem(null)
+
+      toast.success(`Added ${data.quantity}× ${data.shirt_size} to cart`)
+      openCart()
     } finally {
-      setIsSubmitting(false)
+      setIsAdding(false)
     }
+  }
+
+  const handleCheckoutValidate = async () => {
+    const result = await trigger(['full_name', 'email'])
+    if (!result) return false
+    const data = getValues()
+    if (!company) return false
+    setCheckoutPayload({
+      full_name: data.full_name,
+      email: data.email,
+      phone: data.phone,
+      institution_type: 'private_company',
+      company_name: company.name,
+      company_department: data.company_department,
+      company_link_id: company.id,
+      notes: data.notes,
+    })
+    return true
   }
 
   const sizes: string[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const showCatalogPicker = catalog.length > 1
+
   const Header = () => (
-    <header className="border-b bg-white shadow-sm">
-      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-0.5 border border-gray-100">
-          <Image src="/logo.png" alt="Living in Harmony Foundation" width={36} height={36} className="object-contain" />
+    <header className="border-b bg-white shadow-sm sticky top-0 z-10">
+      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-0.5 border border-gray-100">
+            <Image src="/logo.png" alt="Living in Harmony Foundation" width={36} height={36} className="object-contain" />
+          </div>
+          <div>
+            <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
+            <p className="text-gray-400 text-xs mt-0.5">Shirt Order Manager</p>
+          </div>
         </div>
-        <div>
-          <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
-          <p className="text-gray-400 text-xs mt-0.5">Shirt Order Manager</p>
-        </div>
+        <CartIcon />
       </div>
     </header>
   )
@@ -145,6 +185,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           <h1 className="text-xl font-bold text-gray-900 mb-2">Link Unavailable</h1>
           <p className="text-gray-500">{loadError || 'This company order link could not be found.'}</p>
         </main>
+        <CartDrawer checkoutPayload={null} />
       </div>
     )
   }
@@ -334,7 +375,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           {watchedSize && watchedQty > 0 && (
             <Card className="border-[#CEDC00]/40 bg-[#E5F2F0]">
               <CardContent className="p-4">
-                <h3 className="font-semibold text-[#00352F] mb-3">Order Summary</h3>
+                <h3 className="font-semibold text-[#00352F] mb-3">This Item</h3>
                 <div className="space-y-1 text-sm">
                   {selectedCatalogItem && (
                     <div className="flex justify-between text-gray-600">
@@ -348,7 +389,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold text-gray-900">
-                    <span>Total</span>
+                    <span>Subtotal</span>
                     <span className="text-[#00352F]">{formatCurrency(unitPrice * (watchedQty || 0))}</span>
                   </div>
                 </div>
@@ -356,20 +397,42 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
             </Card>
           )}
 
+          {/* Cart summary strip */}
+          {cartItems.length > 0 && (
+            <button
+              type="button"
+              onClick={openCart}
+              className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl border-2 text-sm font-semibold transition-all hover:bg-[#E5F2F0]"
+              style={{ borderColor: '#CEDC00', backgroundColor: '#F5FCDE' }}
+            >
+              <div className="flex items-center gap-2" style={{ color: '#00352F' }}>
+                <ShoppingCart className="w-4 h-4" />
+                <span>{totalItems} item{totalItems !== 1 ? 's' : ''} in cart</span>
+              </div>
+              <span style={{ color: '#00352F' }}>View Cart →</span>
+            </button>
+          )}
+
           <Button
             type="submit"
-            disabled={isSubmitting || (showCatalogPicker && !selectedCatalogItem)}
+            disabled={isAdding || (showCatalogPicker && !selectedCatalogItem)}
             className="w-full text-white h-12 text-base font-semibold"
             style={{ backgroundColor: '#00352F' }}
           >
-            {isSubmitting ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
+            {isAdding ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</>
             ) : (
-              <>Continue to Payment <ArrowRight className="w-4 h-4 ml-2" /></>
+              <><ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart</>
             )}
           </Button>
         </form>
       </main>
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        checkoutPayload={checkoutPayload}
+        onCheckoutValidate={handleCheckoutValidate}
+      />
     </div>
   )
 }

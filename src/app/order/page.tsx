@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,11 +11,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { School, Building2, ArrowRight, Loader2, CheckCircle2, ShoppingBag } from 'lucide-react'
+import { School, Building2, Loader2, CheckCircle2, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import ShirtViewer from '@/components/shared/ShirtViewer'
+import CartIcon from '@/components/shared/CartIcon'
+import CartDrawer from '@/components/shared/CartDrawer'
+import { useCart } from '@/contexts/CartContext'
 import { Briefcase, User } from 'lucide-react'
 import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
 
@@ -64,7 +66,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function OrderPage() {
-  const router = useRouter()
+  const { addItem, openCart, items: cartItems, totalItems } = useCart()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
@@ -72,10 +74,26 @@ export default function OrderPage() {
   const [selectedGovOrg, setSelectedGovOrg] = useState<GovOrg | null>(null)
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
   const [activeCampaign, setActiveCampaign] = useState<Campaign | null | 'none'>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
   const [institutionType, setInstitutionType] = useState<InstitutionType | ''>('')
+  // Track whether personal info has been entered (for drawer checkout validation)
+  const [checkoutPayload, setCheckoutPayload] = useState<null | {
+    full_name: string
+    email: string
+    phone?: string
+    institution_type: string
+    school_name?: string
+    grade?: string
+    classroom?: string
+    organization_name?: string
+    department_office?: string
+    company_name?: string
+    company_department?: string
+    delivery_address?: string
+    notes?: string
+  }>(null)
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, reset, trigger, getValues, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { quantity: 1 },
   })
@@ -120,34 +138,83 @@ export default function OrderPage() {
 
   const onSubmit = async (data: FormData) => {
     if (catalog.length > 1 && !selectedCatalogItem) {
-      toast.error('Please select a shirt style before continuing')
+      toast.error('Please select a shirt style before adding to cart')
       return
     }
-    setIsSubmitting(true)
+    setIsAdding(true)
     try {
       const delivery_address = data.institution_type === 'personal'
         ? [data.delivery_street, data.delivery_street2, data.delivery_city, data.delivery_state, data.delivery_zip]
             .filter(Boolean).join(', ')
         : undefined
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          delivery_address,
-          quantity: Number(data.quantity),
-          catalog_item_id: selectedCatalogItem?.id || null,
-          catalog_item_name: selectedCatalogItem?.name || null,
-        }),
+
+      // Build checkout payload for the drawer
+      const payload = {
+        full_name: data.full_name,
+        email: data.email,
+        phone: data.phone,
+        institution_type: data.institution_type,
+        school_name: data.school_name,
+        grade: data.grade,
+        classroom: data.classroom,
+        organization_name: data.organization_name,
+        department_office: data.department_office,
+        company_name: data.company_name,
+        company_department: data.company_department,
+        delivery_address,
+        notes: data.notes,
+      }
+      setCheckoutPayload(payload)
+
+      // Add to cart
+      addItem({
+        catalog_item_id: selectedCatalogItem?.id ?? null,
+        catalog_item_name: selectedCatalogItem?.name ?? 'Shirt',
+        catalog_item_image: selectedCatalogItem?.image_url ?? null,
+        shirt_size: data.shirt_size,
+        quantity: Number(data.quantity),
+        unit_price: unitPrice,
       })
-      const json = await res.json()
-      if (!res.ok) { toast.error(json.error || 'Failed to submit order'); return }
-      router.push(`/order/checkout?order_id=${json.order.id}`)
-    } catch {
-      toast.error('Something went wrong. Please try again.')
+
+      // Reset only shirt/size fields so user can add more
+      setValue('shirt_size', '', { shouldValidate: false })
+      setValue('quantity', 1, { shouldValidate: false })
+      if (catalog.length > 1) setSelectedCatalogItem(null)
+
+      toast.success(`Added ${data.quantity}× ${data.shirt_size} to cart`)
+      openCart()
     } finally {
-      setIsSubmitting(false)
+      setIsAdding(false)
     }
+  }
+
+  // Called by CartDrawer to validate required personal info before checkout
+  const handleCheckoutValidate = async () => {
+    const result = await trigger(['full_name', 'email', 'institution_type'])
+    if (!result) return false
+
+    const data = getValues()
+    // Build payload on validation success
+    const delivery_address = data.institution_type === 'personal'
+      ? [data.delivery_street, data.delivery_street2, data.delivery_city, data.delivery_state, data.delivery_zip]
+          .filter(Boolean).join(', ')
+      : undefined
+    setCheckoutPayload({
+      full_name: data.full_name,
+      email: data.email,
+      phone: data.phone,
+      institution_type: data.institution_type,
+      school_name: data.school_name,
+      grade: data.grade,
+      classroom: data.classroom,
+      organization_name: data.organization_name,
+      department_office: data.department_office,
+      company_name: data.company_name,
+      company_department: data.company_department,
+      delivery_address,
+      notes: data.notes,
+    })
+    return true
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -171,7 +238,6 @@ export default function OrderPage() {
   ]
 
   if (activeCampaign === null) {
-    // Still loading — show minimal spinner so form doesn't flash
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F4F0' }}>
         <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#00352F' }} />
@@ -245,20 +311,25 @@ export default function OrderPage() {
               <p className="text-gray-400 mt-0.5" style={{ fontSize: '11px' }}>Shirt Order Manager</p>
             </div>
           </div>
-          <Link
-            href="/"
-            className="text-gray-400 hover:text-[#00352F] transition-colors flex items-center gap-1 font-medium"
-            style={{ fontSize: '12px' }}
-          >
-            <span>←</span> Back
-          </Link>
+          <div className="flex items-center gap-2">
+            <CartIcon />
+            <Link
+              href="/"
+              className="text-gray-400 hover:text-[#00352F] transition-colors flex items-center gap-1 font-medium"
+              style={{ fontSize: '12px' }}
+            >
+              <span>←</span> Back
+            </Link>
+          </div>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
         <div className="mb-6">
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">Place Your Order</h1>
-          <p className="text-gray-500 mt-1" style={{ fontSize: '14px' }}>Fill out the form below to order your shirts</p>
+          <p className="text-gray-500 mt-1" style={{ fontSize: '14px' }}>
+            Fill out the form and add items to your cart, then checkout when ready
+          </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -368,7 +439,6 @@ export default function OrderPage() {
                         !enabled && 'opacity-40 cursor-not-allowed'
                       )}
                     >
-                      {/* Active top accent stripe */}
                       {active && (
                         <div
                           className="absolute top-0 left-0 right-0 h-[3px]"
@@ -713,7 +783,7 @@ export default function OrderPage() {
           {watchedSize && watchedQty > 0 && (
             <Card className="border-0 shadow-sm" style={{ backgroundColor: '#E5F2F0' }}>
               <CardContent className="p-5">
-                <h3 className="font-heading font-semibold text-base mb-3" style={{ color: '#00352F' }}>Order Summary</h3>
+                <h3 className="font-heading font-semibold text-base mb-3" style={{ color: '#00352F' }}>This Item</h3>
                 <div className="space-y-1 text-sm">
                   {selectedCatalogItem && (
                     <div className="flex justify-between text-gray-600">
@@ -727,7 +797,7 @@ export default function OrderPage() {
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold text-gray-900">
-                    <span>Total</span>
+                    <span>Subtotal</span>
                     <span className="text-[#00352F]">{formatCurrency(unitPrice * (watchedQty || 0))}</span>
                   </div>
                 </div>
@@ -735,20 +805,42 @@ export default function OrderPage() {
             </Card>
           )}
 
+          {/* Cart summary strip (when cart has items) */}
+          {cartItems.length > 0 && (
+            <button
+              type="button"
+              onClick={openCart}
+              className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl border-2 text-sm font-semibold transition-all hover:bg-[#E5F2F0]"
+              style={{ borderColor: '#CEDC00', backgroundColor: '#F5FCDE' }}
+            >
+              <div className="flex items-center gap-2" style={{ color: '#00352F' }}>
+                <ShoppingCart className="w-4 h-4" />
+                <span>{totalItems} item{totalItems !== 1 ? 's' : ''} in cart</span>
+              </div>
+              <span style={{ color: '#00352F' }}>View Cart →</span>
+            </button>
+          )}
+
           <Button
             type="submit"
-            disabled={isSubmitting || !institutionType || (showCatalogPicker && !selectedCatalogItem)}
+            disabled={isAdding || !institutionType || (showCatalogPicker && !selectedCatalogItem)}
             className="w-full text-white h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
             style={{ backgroundColor: '#00352F' }}
           >
-            {isSubmitting ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
+            {isAdding ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</>
             ) : (
-              <>Continue to Payment <ArrowRight className="w-4 h-4 ml-2" /></>
+              <><ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart</>
             )}
           </Button>
         </form>
       </main>
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        checkoutPayload={checkoutPayload}
+        onCheckoutValidate={handleCheckoutValidate}
+      />
     </div>
   )
 }

@@ -4,6 +4,13 @@ import { generateOrderNumber } from '@/lib/utils'
 import { sendOrderNotifications } from '@/lib/notifications'
 import { z } from 'zod'
 
+const cartItemSchema = z.object({
+  catalog_item_id: z.string().uuid().nullable().optional(),
+  catalog_item_name: z.string().min(1),
+  shirt_size: z.string().min(1).max(20),
+  quantity: z.number().int().positive().max(500),
+})
+
 const orderSchema = z.object({
   full_name: z.string().min(1),
   email: z.string().email(),
@@ -17,11 +24,14 @@ const orderSchema = z.object({
   company_name: z.string().optional(),
   company_department: z.string().optional(),
   delivery_address: z.string().optional(),
-  shirt_size: z.string().min(1).max(20),
-  quantity: z.number().int().positive().max(500),
   notes: z.string().optional(),
   school_link_id: z.string().uuid().optional(),
   company_link_id: z.string().uuid().optional(),
+  // Multi-item cart submission
+  items: z.array(cartItemSchema).min(1).max(50).optional(),
+  // Legacy single-item fields (kept for backwards compat; ignored when items is present)
+  shirt_size: z.string().min(1).max(20).optional(),
+  quantity: z.number().int().positive().max(500).optional(),
   catalog_item_id: z.string().uuid().optional(),
   catalog_item_name: z.string().optional(),
 })
@@ -74,17 +84,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Private company orders are currently disabled' }, { status: 400 })
     }
 
-    if (!settings.available_sizes.includes(data.shirt_size)) {
-      return NextResponse.json({ error: 'Selected shirt size is not available' }, { status: 400 })
+    // Normalise items: if `items` array provided use it; otherwise fall back to legacy single-item fields
+    const cartItems = data.items && data.items.length > 0
+      ? data.items
+      : (data.shirt_size && data.quantity)
+        ? [{
+            catalog_item_id: data.catalog_item_id ?? null,
+            catalog_item_name: data.catalog_item_name ?? 'Shirt',
+            shirt_size: data.shirt_size,
+            quantity: data.quantity,
+          }]
+        : null
+
+    if (!cartItems || cartItems.length === 0) {
+      return NextResponse.json({ error: 'No items provided' }, { status: 400 })
     }
 
+    // Validate all sizes
+    for (const item of cartItems) {
+      if (!settings.available_sizes.includes(item.shirt_size)) {
+        return NextResponse.json(
+          { error: `Shirt size "${item.shirt_size}" is not available` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Duplicate-submission guard (based on first item for legacy compat)
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const firstItem = cartItems[0]
     const { data: existing } = await supabase
       .from('orders')
       .select('id')
       .eq('email', data.email)
-      .eq('shirt_size', data.shirt_size)
-      .eq('quantity', data.quantity)
+      .eq('shirt_size', firstItem.shirt_size)
+      .eq('quantity', firstItem.quantity)
       .gte('created_at', tenMinutesAgo)
       .limit(1)
 
@@ -130,8 +164,15 @@ export async function POST(request: NextRequest) {
     }
 
     const unit_price = settings.shirt_price
-    const total_amount = unit_price * data.quantity
+
+    // Compute totals from cart items
+    const total_quantity = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+    const total_amount = cartItems.reduce((sum, item) => sum + item.quantity * unit_price, 0)
+
     const order_number = generateOrderNumber()
+
+    // For the orders row, store the first item's fields for backwards compat
+    const primaryItem = cartItems[0]
 
     const { data: order, error } = await supabase
       .from('orders')
@@ -149,16 +190,16 @@ export async function POST(request: NextRequest) {
         company_name: data.company_name || null,
         company_department: data.company_department || null,
         delivery_address: data.delivery_address || null,
-        shirt_size: data.shirt_size,
-        quantity: data.quantity,
+        shirt_size: primaryItem.shirt_size,
+        quantity: total_quantity,
         unit_price,
         total_amount,
         notes: data.notes || null,
         school_link_id: data.school_link_id || null,
         company_link_id: data.company_link_id || null,
         order_allowed_payment_methods: orderAllowedPaymentMethods,
-        catalog_item_id: data.catalog_item_id || null,
-        catalog_item_name: data.catalog_item_name || null,
+        catalog_item_id: primaryItem.catalog_item_id || null,
+        catalog_item_name: primaryItem.catalog_item_name || null,
         campaign_id: activeCampaign.id,
         payment_status: 'pending',
         order_status: 'new',
@@ -167,9 +208,29 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
-    if (error) {
+    if (error || !order) {
       console.error('Error creating order:', error)
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
+    }
+
+    // Bulk-insert into order_items
+    const orderItemsPayload = cartItems.map(item => ({
+      order_id: order.id,
+      catalog_item_id: item.catalog_item_id || null,
+      catalog_item_name: item.catalog_item_name,
+      shirt_size: item.shirt_size,
+      quantity: item.quantity,
+      unit_price,
+      subtotal: item.quantity * unit_price,
+    }))
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItemsPayload)
+
+    if (itemsError) {
+      // Non-fatal: order row is already created; log but don't fail the request
+      console.error('Error inserting order_items:', itemsError)
     }
 
     sendOrderNotifications(order, settings).catch(e => console.error('Notification error:', e))
