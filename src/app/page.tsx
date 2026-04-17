@@ -1,12 +1,12 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import {
   School, Building2, User, Briefcase,
-  CheckCircle, Shield, CreditCard, FileText, ShoppingBag, ArrowRight,
+  CheckCircle, Shield, CreditCard, FileText, ArrowRight,
 } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/server'
 import type { ShirtCatalogItem } from '@/types'
+import ShirtViewer from '@/components/shared/ShirtViewer'
 
 export const dynamic = 'force-dynamic'
 
@@ -309,26 +309,11 @@ export default async function LandingPage() {
               }`}>
                 {catalog.map(item => (
                   <div key={item.id} className="group">
-                    <div
-                      className="relative aspect-square rounded-2xl overflow-hidden mb-3 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-[#00352F]/10"
-                      style={{ backgroundColor: '#E5F2F0' }}
-                    >
-                      {item.image_url ? (
-                        <Image
-                          src={item.image_url}
-                          alt={item.name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <ShoppingBag className="w-12 h-12 sm:w-16 sm:h-16" style={{ color: 'rgba(206,220,0,0.35)' }} />
-                        </div>
-                      )}
-                      {/* Hover overlay */}
-                      <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        style={{ background: 'linear-gradient(to top, rgba(0,53,47,0.1) 0%, transparent 60%)' }}
+                    <div className="mb-3 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-[#00352F]/10 rounded-2xl">
+                      <ShirtViewer
+                        frontUrl={item.image_url}
+                        backUrl={item.back_image_url ?? null}
+                        name={item.name}
                       />
                     </div>
                     <h3 className="font-semibold text-gray-900 text-sm">{item.name}</h3>

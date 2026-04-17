@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator'
 import { Briefcase, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShoppingBag } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
+import ShirtViewer from '@/components/shared/ShirtViewer'
 import type { AppSettings, ShirtCatalogItem } from '@/types'
 
 const schema = z.object({
@@ -111,10 +112,6 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
 
   const sizes: string[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const showCatalogPicker = catalog.length > 1
-  const [viewSide, setViewSide] = useState<Record<string, 'front' | 'back'>>({})
-  const getItemImage = (item: ShirtCatalogItem) =>
-    viewSide[item.id] === 'back' && item.back_image_url ? item.back_image_url : item.image_url
-
   const Header = () => (
     <header className="border-b bg-white shadow-sm">
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -196,24 +193,16 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                           selected ? 'border-[#00352F] shadow-md ring-2 ring-[#00352F]/20' : 'border-gray-200 hover:border-[#00352F]/40'
                         )}
                       >
-                        <div className="relative aspect-square bg-[#E5F2F0]">
-                          {getItemImage(item) ? (
-                            <Image src={getItemImage(item)!} alt={item.name} fill className="object-cover" />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <ShoppingBag className="w-8 h-8 text-[#CEDC00]/50" />
-                            </div>
-                          )}
+                        <div className="relative" onClick={e => e.stopPropagation()}>
+                          <ShirtViewer
+                            frontUrl={item.image_url}
+                            backUrl={item.back_image_url ?? null}
+                            name={item.name}
+                            variant="compact"
+                          />
                           {selected && (
-                            <div className="absolute top-2 right-2 w-6 h-6 bg-[#00352F] rounded-full flex items-center justify-center shadow">
+                            <div className="absolute top-2 right-2 z-10 w-6 h-6 bg-[#00352F] rounded-full flex items-center justify-center shadow pointer-events-none">
                               <CheckCircle2 className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                          {item.image_url && item.back_image_url && (
-                            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex rounded-lg overflow-hidden border border-white/80 shadow-sm" onClick={e => e.stopPropagation()}>
-                              {(['front', 'back'] as const).map(side => (
-                                <button key={side} type="button" onClick={() => setViewSide(prev => ({ ...prev, [item.id]: side }))} className={`px-2.5 py-1 text-[10px] font-medium capitalize transition-colors ${(viewSide[item.id] ?? 'front') === side ? 'bg-[#00352F] text-white' : 'bg-white/90 text-gray-600 hover:bg-white'}`}>{side}</button>
-                              ))}
                             </div>
                           )}
                         </div>
