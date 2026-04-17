@@ -17,7 +17,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Briefcase, User } from 'lucide-react'
-import type { AppSettings, InstitutionType, ShirtSize, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
+import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
 
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
@@ -36,7 +36,7 @@ const schema = z.object({
   delivery_city: z.string().optional(),
   delivery_state: z.string().optional(),
   delivery_zip: z.string().optional(),
-  shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const),
+  shirt_size: z.string().min(1, 'Please select a size'),
   quantity: z.number().int().positive('Quantity must be at least 1'),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -160,8 +160,11 @@ export default function OrderPage() {
       ? 'Orders are not currently open. Please check back later.'
       : (activeCampaign as Campaign).ended_message || 'This campaign has ended. Thank you for your participation.'
 
-  const sizes: ShirtSize[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  const sizes: string[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const showCatalogPicker = catalog.length > 1
+  const [viewSide, setViewSide] = useState<Record<string, 'front' | 'back'>>({})
+  const getItemImage = (item: ShirtCatalogItem) =>
+    viewSide[item.id] === 'back' && item.back_image_url ? item.back_image_url : item.image_url
 
   const institutionOptions = [
     { value: 'school' as const,          label: 'School',          icon: School,    enabled: settings?.school_orders_enabled !== false },
@@ -298,8 +301,8 @@ export default function OrderPage() {
                       >
                         {/* Image */}
                         <div className="relative aspect-square bg-[#E5F2F0]">
-                          {item.image_url ? (
-                            <Image src={item.image_url} alt={item.name} fill className="object-cover" />
+                          {getItemImage(item) ? (
+                            <Image src={getItemImage(item)!} alt={item.name} fill className="object-cover" />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center">
                               <ShoppingBag className="w-8 h-8 text-[#CEDC00]/50" />
@@ -308,6 +311,24 @@ export default function OrderPage() {
                           {selected && (
                             <div className="absolute top-2 right-2 w-6 h-6 bg-[#00352F] rounded-full flex items-center justify-center shadow">
                               <CheckCircle2 className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                          {/* Front/Back toggle */}
+                          {item.image_url && item.back_image_url && (
+                            <div
+                              className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex rounded-lg overflow-hidden border border-white/80 shadow-sm"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              {(['front', 'back'] as const).map(side => (
+                                <button
+                                  key={side}
+                                  type="button"
+                                  onClick={() => setViewSide(prev => ({ ...prev, [item.id]: side }))}
+                                  className={`px-2.5 py-1 text-[10px] font-medium capitalize transition-colors ${(viewSide[item.id] ?? 'front') === side ? 'bg-[#00352F] text-white' : 'bg-white/90 text-gray-600 hover:bg-white'}`}
+                                >
+                                  {side}
+                                </button>
+                              ))}
                             </div>
                           )}
                         </div>

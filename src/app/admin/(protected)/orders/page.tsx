@@ -11,10 +11,27 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
-import { Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw, Megaphone } from 'lucide-react'
+import { Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw, Megaphone, ShoppingBag, DollarSign, Shirt } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Order, PaginatedOrders, GovOrg, SchoolLink, PrivateCompany, Campaign } from '@/types'
+import type { Order, GovOrg, SchoolLink, PrivateCompany, Campaign } from '@/types'
+
+interface OrderSummary {
+  total_orders: number
+  total_shirts: number
+  total_revenue: number
+  by_size: { size: string; orders: number; shirts: number }[]
+  by_catalog_item: { name: string; orders: number; shirts: number }[]
+}
+
+interface PaginatedOrders {
+  orders: Order[]
+  total: number
+  page: number
+  limit: number
+  total_pages: number
+  summary?: OrderSummary
+}
 import { toast } from 'sonner'
 
 export default function AdminOrdersPage() {
@@ -145,13 +162,82 @@ export default function AdminOrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Orders</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
-            {data ? `${data.total} total orders` : 'Loading...'}
+            {data ? `${data.total} order${data.total === 1 ? '' : 's'}` : 'Loading...'}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchOrders}>
           <RefreshCw className="w-4 h-4 mr-1" /> Refresh
         </Button>
       </div>
+
+      {/* Summary stats */}
+      {data?.summary && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                <ShoppingBag className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{data.summary.total_orders.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">Orders</p>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#E5F2F0] flex items-center justify-center flex-shrink-0">
+                <Shirt className="w-4 h-4 text-[#00352F]" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{data.summary.total_shirts.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">Shirts</p>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center flex-shrink-0">
+                <DollarSign className="w-4 h-4 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.summary.total_revenue)}</p>
+                <p className="text-xs text-gray-500">Revenue</p>
+              </div>
+            </div>
+          </div>
+
+          {/* By size breakdown */}
+          {data.summary.by_size.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">By Size</p>
+              <div className="flex flex-wrap gap-2">
+                {[...data.summary.by_size].sort((a, b) => b.shirts - a.shirts).map(s => (
+                  <div key={s.size} className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700/50 border rounded-lg px-3 py-1.5">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{s.size}</span>
+                    <span className="text-xs text-gray-400">·</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-300">{s.shirts} shirts</span>
+                    <span className="text-xs text-gray-400">·</span>
+                    <span className="text-xs text-gray-500">{s.orders} orders</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* By catalog item (only if multiple items) */}
+          {data.summary.by_catalog_item.length > 1 && (
+            <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">By Shirt Style</p>
+              <div className="flex flex-wrap gap-2">
+                {data.summary.by_catalog_item.map(item => (
+                  <div key={item.name} className="flex items-center gap-1.5 bg-[#E5F2F0] border border-[#CEDC00]/30 rounded-lg px-3 py-1.5">
+                    <span className="text-sm font-medium text-[#00352F]">{item.name}</span>
+                    <span className="text-xs text-gray-400">·</span>
+                    <span className="text-xs text-[#00352F]/70">{item.shirts} shirts</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filters */}
       <Card>

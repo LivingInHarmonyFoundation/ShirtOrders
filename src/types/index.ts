@@ -73,7 +73,7 @@ export interface AppSettings {
   mission_banner_url: string | null
   badge_url: string | null
   shirt_price: number
-  available_sizes: ShirtSize[]
+  available_sizes: string[]
   school_orders_enabled: boolean
   government_orders_enabled: boolean
   personal_orders_enabled: boolean
@@ -154,6 +154,7 @@ export interface ShirtCatalogItem {
   name: string
   description: string | null
   image_url: string | null
+  back_image_url: string | null
   display_order: number
   is_active: boolean
   created_at: string

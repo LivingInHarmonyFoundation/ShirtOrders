@@ -80,13 +80,62 @@ export async function GET(request: NextRequest) {
       query = query.order('created_at', { ascending: false })
   }
 
-  query = query.range(offset, offset + limit - 1)
+  // Run paginated query and summary aggregation in parallel
+  const pagedQuery = query.range(offset, offset + limit - 1)
 
-  const { data: orders, error, count } = await query
+  // Summary query uses same filters but fetches only the fields needed for aggregation
+  let summaryQuery = adminSupabase
+    .from('orders')
+    .select('quantity, total_amount, shirt_size, catalog_item_name')
+
+  if (search) {
+    summaryQuery = summaryQuery.or(
+      `full_name.ilike.%${search}%,email.ilike.%${search}%,order_number.ilike.%${search}%,school_name.ilike.%${search}%,organization_name.ilike.%${search}%,department_office.ilike.%${search}%,company_name.ilike.%${search}%,company_department.ilike.%${search}%,grade.ilike.%${search}%,classroom.ilike.%${search}%`
+    )
+  }
+  if (institution_type) summaryQuery = summaryQuery.eq('institution_type', institution_type)
+  if (payment_status) summaryQuery = summaryQuery.eq('payment_status', payment_status)
+  if (delivery_status) summaryQuery = summaryQuery.eq('delivery_status', delivery_status)
+  if (shirt_size) summaryQuery = summaryQuery.eq('shirt_size', shirt_size)
+  if (date_from) summaryQuery = summaryQuery.gte('created_at', date_from)
+  if (date_to) summaryQuery = summaryQuery.lte('created_at', date_to + 'T23:59:59')
+  if (grade) summaryQuery = summaryQuery.ilike('grade', `%${grade}%`)
+  if (classroom) summaryQuery = summaryQuery.ilike('classroom', `%${classroom}%`)
+  if (department) summaryQuery = summaryQuery.or(`department_office.ilike.%${department}%,company_department.ilike.%${department}%`)
+  if (organization_name) summaryQuery = summaryQuery.eq('organization_name', organization_name)
+  if (school_name) summaryQuery = summaryQuery.eq('school_name', school_name)
+  if (company_name) summaryQuery = summaryQuery.eq('company_name', company_name)
+  if (campaign_id && campaign_id !== 'all') summaryQuery = summaryQuery.eq('campaign_id', campaign_id)
+
+  const [{ data: orders, error, count }, { data: summaryRows }] = await Promise.all([
+    pagedQuery,
+    summaryQuery,
+  ])
 
   if (error) {
     console.error('Error fetching orders:', error)
     return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
+  }
+
+  // Compute summary aggregates
+  const allRows = summaryRows || []
+  const totalShirts = allRows.reduce((s, r) => s + (r.quantity || 0), 0)
+  const totalRevenue = allRows.reduce((s, r) => s + (r.total_amount || 0), 0)
+
+  const bySize: Record<string, { orders: number; shirts: number }> = {}
+  const byItem: Record<string, { orders: number; shirts: number }> = {}
+  for (const r of allRows) {
+    const sz = r.shirt_size || 'Unknown'
+    if (!bySize[sz]) bySize[sz] = { orders: 0, shirts: 0 }
+    bySize[sz].orders++
+    bySize[sz].shirts += r.quantity || 0
+
+    const item = r.catalog_item_name || null
+    if (item) {
+      if (!byItem[item]) byItem[item] = { orders: 0, shirts: 0 }
+      byItem[item].orders++
+      byItem[item].shirts += r.quantity || 0
+    }
   }
 
   return NextResponse.json({
@@ -95,6 +144,13 @@ export async function GET(request: NextRequest) {
     page,
     limit,
     total_pages: Math.ceil((count || 0) / limit),
+    summary: {
+      total_orders: count || 0,
+      total_shirts: totalShirts,
+      total_revenue: totalRevenue,
+      by_size: Object.entries(bySize).map(([size, v]) => ({ size, ...v })),
+      by_catalog_item: Object.entries(byItem).map(([name, v]) => ({ name, ...v })),
+    },
   })
 }
 

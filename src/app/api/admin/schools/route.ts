@@ -34,6 +34,8 @@ export async function GET() {
     school_name: s.school_name,
     slug: s.slug,
     is_active: s.is_active,
+    grades: s.grades ?? null,
+    allowed_payment_methods: s.allowed_payment_methods ?? null,
     created_at: s.created_at,
     order_count: Array.isArray(s.orders) ? (s.orders[0] as { count: number })?.count ?? 0 : 0,
   }))

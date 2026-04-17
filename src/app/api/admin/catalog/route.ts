@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   const auth = await requirePermission(user.id, 'canManageSettings')
   if (auth instanceof NextResponse) return auth
 
-  const { name, description, image_url, display_order } = await request.json()
+  const { name, description, image_url, back_image_url, display_order } = await request.json()
   if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
   const admin = await createAdminClient()
@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       description: description?.trim() || null,
       image_url: image_url || null,
+      back_image_url: back_image_url || null,
       display_order: display_order ?? 0,
     })
     .select()

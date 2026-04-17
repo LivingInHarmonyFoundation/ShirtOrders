@@ -12,10 +12,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2, CreditCard, Banknote } from 'lucide-react'
 import Image from 'next/image'
-import type { AppSettings, ShirtSize } from '@/types'
+import type { AppSettings } from '@/types'
 import { useRole } from '@/components/admin/role-provider'
 
-const ALL_SIZES: ShirtSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 export default function SettingsPage() {
   const { permissions } = useRole()
@@ -28,7 +28,8 @@ export default function SettingsPage() {
   // Form fields
   const [appName, setAppName] = useState('')
   const [shirtPrice, setShirtPrice] = useState('')
-  const [availableSizes, setAvailableSizes] = useState<ShirtSize[]>([])
+  const [availableSizes, setAvailableSizes] = useState<string[]>([])
+  const [customSizeInput, setCustomSizeInput] = useState('')
   const [schoolEnabled, setSchoolEnabled] = useState(true)
   const [govEnabled, setGovEnabled] = useState(true)
   const [personalEnabled, setPersonalEnabled] = useState(true)
@@ -58,7 +59,7 @@ export default function SettingsPage() {
           setSettings(settings)
           setAppName(settings.app_name || '')
           setShirtPrice(String(settings.shirt_price || '15.00'))
-          setAvailableSizes(settings.available_sizes || ALL_SIZES)
+          setAvailableSizes(settings.available_sizes || PRESET_SIZES)
           setSchoolEnabled(settings.school_orders_enabled ?? true)
           setGovEnabled(settings.government_orders_enabled ?? true)
           setPersonalEnabled(settings.personal_orders_enabled ?? true)
@@ -168,10 +169,17 @@ export default function SettingsPage() {
     }
   }
 
-  const toggleSize = (size: ShirtSize) => {
+  const toggleSize = (size: string) => {
     setAvailableSizes(prev =>
       prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
     )
+  }
+
+  const addCustomSize = () => {
+    const val = customSizeInput.trim().toUpperCase()
+    if (!val || availableSizes.includes(val)) { setCustomSizeInput(''); return }
+    setAvailableSizes(prev => [...prev, val])
+    setCustomSizeInput('')
   }
 
   const handleSave = async () => {
@@ -475,22 +483,55 @@ export default function SettingsPage() {
           <Separator />
           <div>
             <Label>Available Shirt Sizes</Label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-2">Select which sizes customers can order</p>
-            <div className="flex flex-wrap gap-2">
-              {ALL_SIZES.map(size => (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-2">Toggle sizes on/off, or add custom sizes (e.g. "Youth M", "2XL")</p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {PRESET_SIZES.map(size => (
                 <button
                   key={size}
                   type="button"
                   onClick={() => toggleSize(size)}
                   className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                     availableSizes.includes(size)
-                      ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
+                      ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F] dark:bg-[#00352F]/20 dark:text-green-300'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500'
                   }`}
                 >
                   {size}
                 </button>
               ))}
+              {/* Custom sizes (non-preset) */}
+              {availableSizes.filter(s => !PRESET_SIZES.includes(s)).map(size => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => toggleSize(size)}
+                  className="px-4 py-2 rounded-lg border-2 border-[#CEDC00] bg-[#CEDC00]/10 text-[#00352F] text-sm font-medium transition-all flex items-center gap-1.5"
+                  title="Click to remove custom size"
+                >
+                  {size}
+                  <span className="text-xs text-[#00352F]/50 hover:text-red-500">×</span>
+                </button>
+              ))}
+            </div>
+            {/* Add custom size */}
+            <div className="flex gap-2 max-w-xs">
+              <Input
+                placeholder="Custom size, e.g. Youth M"
+                value={customSizeInput}
+                onChange={e => setCustomSizeInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomSize() } }}
+                className="h-9 text-sm"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={addCustomSize}
+                disabled={!customSizeInput.trim()}
+                className="h-9 px-3"
+              >
+                Add
+              </Button>
             </div>
           </div>
         </CardContent>
