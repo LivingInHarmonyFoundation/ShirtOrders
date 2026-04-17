@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/require-role'
 
 export async function PATCH(
   request: NextRequest,
@@ -9,6 +10,9 @@ export async function PATCH(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const auth = await requirePermission(user.id, 'canManageSchools')
+  if (auth instanceof NextResponse) return auth
 
   const admin = await createAdminClient()
   const body = await request.json()
@@ -36,6 +40,9 @@ export async function DELETE(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const auth = await requirePermission(user.id, 'canManageSchools')
+  if (auth instanceof NextResponse) return auth
 
   const admin = await createAdminClient()
   const { error } = await admin.from('school_links').delete().eq('id', id)

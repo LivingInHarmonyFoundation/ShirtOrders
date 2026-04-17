@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/require-role'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -7,17 +8,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const auth = await requirePermission(user.id, 'canManageSettings')
+  if (auth instanceof NextResponse) return auth
+
   const admin = await createAdminClient()
   const body = await request.json()
   const updates: Record<string, unknown> = {}
   if ('name' in body) updates.name = body.name
   if ('is_active' in body) updates.is_active = body.is_active
 
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+  }
+
   const { error } = await admin.from('private_companies').update(updates).eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to update company' }, { status: 500 })
 
   const { data, error: fetchError } = await admin.from('private_companies').select('*').eq('id', id).single()
-  if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 })
+  if (fetchError) return NextResponse.json({ error: 'Failed to fetch updated company' }, { status: 500 })
   return NextResponse.json({ company: data })
 }
 
@@ -27,8 +35,11 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const auth = await requirePermission(user.id, 'canManageSettings')
+  if (auth instanceof NextResponse) return auth
+
   const admin = await createAdminClient()
   const { error } = await admin.from('private_companies').delete().eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to delete company' }, { status: 500 })
   return NextResponse.json({ success: true })
 }

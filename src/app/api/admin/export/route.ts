@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { CSV_HEADERS, buildOrderCsvRow } from '@/lib/utils'
+import { requirePermission } from '@/lib/supabase/require-role'
+
+const FORMULA_PREFIXES = ['=', '+', '-', '@', '\t', '\r']
 
 function escapeCsvValue(value: string): string {
+  // Neutralize potential formula injection (Excel/LibreOffice/Google Sheets)
+  if (FORMULA_PREFIXES.some(p => value.startsWith(p))) {
+    value = `'${value}`
+  }
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`
   }
@@ -13,6 +20,9 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const auth = await requirePermission(user.id, 'canExportData')
+  if (auth instanceof NextResponse) return auth
 
   const adminSupabase = await createAdminClient()
   const { searchParams } = request.nextUrl

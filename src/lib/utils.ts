@@ -34,7 +34,7 @@ export function formatDateTime(dateString: string | null | undefined): string {
 
 export function generateOrderNumber(): string {
   const date = format(new Date(), 'yyyyMMdd')
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+  const random = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()
   return `ORD-${date}-${random}`
 }
 
@@ -65,7 +65,7 @@ export const CSV_HEADERS = [
   'Institution Type', 'School Name', 'Grade', 'Classroom',
   'Organization Name', 'Department/Office', 'Shirt Size',
   'Quantity', 'Unit Price', 'Total Amount',
-  'Payment Status', 'Order Status', 'Delivery Status',
+  'Payment Status', 'Payment Method', 'Order Status', 'Delivery Status',
   'Date Submitted', 'Date Paid', 'Date Delivered',
   'Notes', 'Admin Notes',
 ]
@@ -87,6 +87,7 @@ export function buildOrderCsvRow(order: Record<string, unknown>): string[] {
     String(order.unit_price ?? ''),
     String(order.total_amount ?? ''),
     String(order.payment_status ?? ''),
+    String(order.payment_method ?? ''),
     String(order.order_status ?? ''),
     String(order.delivery_status ?? ''),
     String(order.date_submitted ?? ''),

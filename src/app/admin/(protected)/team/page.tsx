@@ -44,6 +44,7 @@ function InitialsAvatar({ name, email, role }: { name: string | null; email: str
 }
 
 export default function TeamPage() {
+  // ── State ──
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
@@ -52,6 +53,7 @@ export default function TeamPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [changingRoleId, setChangingRoleId] = useState<string | null>(null)
 
+  // Add member form
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteName, setInviteName] = useState('')
   const [inviteRole, setInviteRole] = useState<UserRole>('staff')
@@ -61,6 +63,7 @@ export default function TeamPage() {
   const [lastCreatedMinimized, setLastCreatedMinimized] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // Password strength — derived from invitePassword on every render
   const pwRules = [
     { label: 'At least 8 characters', pass: invitePassword.length >= 8 },
     { label: 'One uppercase letter (A–Z)', pass: /[A-Z]/.test(invitePassword) },
@@ -71,6 +74,8 @@ export default function TeamPage() {
   const pwStrengthColor = pwScore === 0 ? '' : pwScore === 1 ? 'bg-red-400' : pwScore === 2 ? 'bg-yellow-400' : 'bg-[#CEDC00]'
   const pwStrengthLabel = ['', 'Weak', 'Almost', 'Strong'][pwScore]
   const pwStrengthTextColor = pwScore === 1 ? 'text-red-500' : pwScore === 2 ? 'text-yellow-600' : 'text-[#00352F]'
+
+  // ── Handlers ──
 
   const fetchTeam = async () => {
     try {
@@ -83,6 +88,8 @@ export default function TeamPage() {
       setLoading(false)
     }
   }
+
+  // ── Effects ──
 
   useEffect(() => { fetchTeam() }, [])
 
@@ -181,8 +188,10 @@ export default function TeamPage() {
     }
   }
 
+  // Must have at least one active owner — used to guard deactivate/delete buttons
   const ownerCount = members.filter(m => m.role === 'owner' && m.is_active).length
 
+  // ── Render ──
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}

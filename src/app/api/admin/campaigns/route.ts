@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/require-role'
 
 export async function GET() {
   const supabase = await createClient()
@@ -37,6 +38,9 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const auth = await requirePermission(user.id, 'canManageSettings')
+  if (auth instanceof NextResponse) return auth
+
   const admin = await createAdminClient()
   const body = await request.json()
 
@@ -56,6 +60,6 @@ export async function POST(request: NextRequest) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to create campaign' }, { status: 500 })
   return NextResponse.json({ campaign: { ...data, order_count: 0 } }, { status: 201 })
 }

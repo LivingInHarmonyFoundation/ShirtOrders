@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { UserRole } from '@/types'
 
+// Local variant: null means no record OR inactive — both treated as non-member.
+// Bootstrap owner has no record, so null passes the `role !== null` owner check below.
 async function getCallerRole(userId: string): Promise<UserRole | null> {
   const admin = await createAdminClient()
   const { data } = await admin
@@ -19,7 +21,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const role = await getCallerRole(user.id)
-  // Bootstrap: no record = owner
+  // null = no record = bootstrap owner; any other non-owner role is forbidden
   if (role !== null && role !== 'owner') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

@@ -3,65 +3,65 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { CreditCard, ArrowLeft, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import Image from 'next/image'
-import type { Order } from '@/types'
+import type { Order, AppSettings } from '@/types'
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const orderId = searchParams.get('order_id')
-  const cancelled = searchParams.get('cancelled')
 
+  // ── State ──
   const [order, setOrder] = useState<Order | null>(null)
+  const [settings, setSettings] = useState<Partial<AppSettings> | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isRedirecting, setIsRedirecting] = useState(false)
-  const [manualPaySettings, setManualPaySettings] = useState(false)
+  const [cashConfirmed, setCashConfirmed] = useState(false)
+  const [cashLoading, setCashLoading] = useState(false)
+
+  // ── Effects ──
 
   useEffect(() => {
     if (!orderId) { router.push('/order'); return }
 
-    if (cancelled) {
-      toast.error('Payment was cancelled. You can try again below.')
-    }
+    Promise.all([
+      fetch(`/api/orders/${orderId}`).then(r => r.json()),
+      fetch('/api/admin/settings').then(r => r.json()),
+    ]).then(([orderData, settingsData]) => {
+      setOrder(orderData.order ?? null)
+      setSettings(settingsData.settings ?? null)
+    }).catch(() => {
+      toast.error('Could not load order')
+    }).finally(() => setLoading(false))
+  }, [orderId, router])
 
-    fetch(`/api/orders/${orderId}`)
-      .then(r => r.json())
-      .then(({ order }) => { setOrder(order); setLoading(false) })
-      .catch(() => { setLoading(false); toast.error('Could not load order') })
+  // ── Handlers ──
 
-    fetch('/api/admin/settings')
-      .then(r => r.json())
-      .then(({ settings }) => { if (settings) setManualPaySettings(settings.manual_payment_enabled) })
-      .catch(() => {})
-  }, [orderId, cancelled, router])
-
-  const handleStripeCheckout = async () => {
+  const handleCashSelect = async () => {
     if (!order) return
-    setIsRedirecting(true)
+    setCashLoading(true)
     try {
-      const res = await fetch('/api/stripe/create-checkout', {
+      const res = await fetch(`/api/orders/${order.id}/payment-method`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: order.id }),
+        body: JSON.stringify({ payment_method: 'cash' }),
       })
-      const json = await res.json()
-      if (!res.ok) {
-        toast.error(json.error || 'Failed to create checkout session')
-        setIsRedirecting(false)
-        return
-      }
-      window.location.href = json.url
+      if (!res.ok) throw new Error()
+      setCashConfirmed(true)
     } catch {
       toast.error('Something went wrong. Please try again.')
-      setIsRedirecting(false)
+    } finally {
+      setCashLoading(false)
     }
   }
+
+  // ── Render ──
 
   if (loading) {
     return (
@@ -92,9 +92,17 @@ function CheckoutContent() {
     return null
   }
 
-  const institutionDisplay = order.institution_type === 'school'
-    ? `${order.school_name} — Grade ${order.grade}, ${order.classroom}`
-    : `${order.organization_name} — ${order.department_office}`
+  const institutionDisplay = (() => {
+    switch (order.institution_type) {
+      case 'school': return `${order.school_name || ''} — Grade ${order.grade || ''}, ${order.classroom || ''}`
+      case 'government': return `${order.organization_name || ''} — ${order.department_office || ''}`
+      case 'private_company': return `${order.company_name || ''} — ${order.company_department || ''}`
+      case 'personal': return order.delivery_address || 'Personal Order'
+      default: return ''
+    }
+  })()
+
+  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
   return (
     <div className="min-h-screen bg-[#F5F4F0]">
@@ -121,17 +129,8 @@ function CheckoutContent() {
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Review & Pay</h1>
-          <p className="text-gray-500 mt-1 text-sm">Review your order before completing payment</p>
+          <p className="text-gray-500 mt-1 text-sm">Review your order and complete payment below</p>
         </div>
-
-        {cancelled && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-yellow-800">
-              Your payment was not completed. Your order is saved — you can try again below.
-            </p>
-          </div>
-        )}
 
         <div className="space-y-4">
           {/* Order Summary */}
@@ -191,38 +190,107 @@ function CheckoutContent() {
               <CardTitle className="text-base flex items-center gap-2">
                 <CreditCard className="w-4 h-4" /> Payment
               </CardTitle>
+              <p className="text-xs text-gray-500">Pay securely via PayPal, Venmo, or debit/credit card</p>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button
-                onClick={handleStripeCheckout}
-                disabled={isRedirecting}
-                className="w-full text-white h-12 font-semibold"
-                style={{ backgroundColor: '#00352F' }}
-              >
-                {isRedirecting ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting...</>
-                ) : (
-                  <><CreditCard className="w-4 h-4 mr-2" /> Pay {formatCurrency(order.total_amount)} Securely</>
-                )}
-              </Button>
-              <p className="text-xs text-center text-gray-500">
-                Powered by Stripe. Your card details are never stored on our servers.
-              </p>
-              {manualPaySettings && (
-                <div className="pt-2 border-t border-dashed">
-                  <p className="text-xs text-gray-500 text-center">
-                    Prefer to pay by cash or check? Contact us with order number <strong>{order.order_number}</strong>
-                  </p>
+              {!clientId ? (
+                // PayPal not configured — show contact message
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                  Online payment is not yet configured. Contact us with your order number{' '}
+                  <strong className="font-mono">{order.order_number}</strong> to arrange payment.
                 </div>
+              ) : cashConfirmed ? (
+                // Cash instructions shown after customer selects cash
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
+                  <p className="font-semibold text-green-900">Cash Payment Selected</p>
+                  <p className="text-sm text-green-800">
+                    Bring <strong>{formatCurrency(order.total_amount)}</strong> in cash at pickup.
+                  </p>
+                  <p className="text-sm text-green-800">
+                    Reference your order number:{' '}
+                    <span className="font-mono font-medium">{order.order_number}</span>
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Your order is saved and awaiting payment confirmation.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => router.push(`/order/confirmation?order_id=${order.id}`)}
+                  >
+                    View Order Status →
+                  </Button>
+                </div>
+              ) : (
+                // PayPal buttons + optional cash option
+                <PayPalScriptProvider options={{
+                  clientId,
+                  currency: 'USD',
+                  enableFunding: 'venmo,card',
+                  disableFunding: 'credit,paylater',
+                }}>
+                  <div className="space-y-3">
+                    <PayPalButtons
+                      style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' }}
+                      createOrder={async () => {
+                        const res = await fetch('/api/paypal/create-order', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ orderId: order.id }),
+                        })
+                        const { paypalOrderId, error } = await res.json()
+                        if (error) throw new Error(error)
+                        return paypalOrderId
+                      }}
+                      onApprove={async (data) => {
+                        const res = await fetch('/api/paypal/capture-order', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ paypalOrderId: data.orderID, orderId: order.id }),
+                        })
+                        if (!res.ok) {
+                          toast.error('Payment capture failed. Please contact us.')
+                          return
+                        }
+                        router.push(`/order/confirmation?order_id=${order.id}`)
+                      }}
+                      onError={() => {
+                        toast.error('Payment failed. Please try again or choose a different method.')
+                      }}
+                    />
+
+                    {/* Cash option shown below PayPal buttons when enabled in settings */}
+                    {settings?.cash_enabled && (
+                      <>
+                        <div className="flex items-center gap-3 text-xs text-gray-400">
+                          <div className="flex-1 border-t" />
+                          <span>or</span>
+                          <div className="flex-1 border-t" />
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={handleCashSelect}
+                          disabled={cashLoading}
+                        >
+                          {cashLoading
+                            ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            : <Banknote className="w-4 h-4 mr-2" />
+                          }
+                          Pay with Cash
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </PayPalScriptProvider>
               )}
             </CardContent>
           </Card>
 
-          <div className="flex items-center gap-2 text-xs text-gray-400 justify-center">
-            <CheckCircle className="w-3 h-3 text-[#00352F]" /> SSL encrypted
-            <span className="mx-1">•</span>
-            <CheckCircle className="w-3 h-3 text-[#00352F]" /> Secure checkout
-          </div>
+          <p className="text-xs text-center text-gray-400">
+            Your card details are processed securely by PayPal and never stored on our servers.
+          </p>
         </div>
       </main>
     </div>

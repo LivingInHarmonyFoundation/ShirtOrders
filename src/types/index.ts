@@ -4,6 +4,8 @@ export type ShirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL'
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'manual'
 
+export type PaymentMethod = 'paypal' | 'venmo' | 'card' | 'cash'
+
 export type OrderStatus = 'new' | 'processing' | 'ready' | 'completed' | 'cancelled'
 
 export type DeliveryStatus = 'not_delivered' | 'partially_delivered' | 'delivered'
@@ -32,6 +34,7 @@ export interface Order {
   delivery_status: DeliveryStatus
   stripe_payment_intent_id: string | null
   stripe_checkout_session_id: string | null
+  payment_method: PaymentMethod | null
   date_submitted: string
   date_paid: string | null
   date_delivered: string | null
@@ -74,6 +77,7 @@ export interface AppSettings {
   personal_orders_enabled: boolean
   private_company_orders_enabled: boolean
   manual_payment_enabled: boolean
+  cash_enabled: boolean
   confirmation_message: string
   admin_phone: string | null
   sms_notifications_enabled: boolean

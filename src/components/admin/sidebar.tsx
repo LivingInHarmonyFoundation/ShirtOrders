@@ -20,16 +20,16 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
   const { permissions } = useRole()
 
   const allNavItems = [
-    { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
-    { href: '/admin/orders',    label: 'Orders',     icon: List,            show: true },
-    { href: '/admin/catalog',        label: 'Catalog',       icon: Shirt,         show: permissions.canManageSettings },
-    { href: '/admin/government',     label: 'Gobierno',      icon: Building2,     show: permissions.canManageSettings },
-    { href: '/admin/companies',      label: 'Companies',     icon: Briefcase,     show: permissions.canManageSettings },
-    { href: '/admin/campaigns',      label: 'Campaigns',     icon: Megaphone,     show: permissions.canManageSettings },
-    { href: '/admin/schools',        label: 'Schools',       icon: GraduationCap, show: permissions.canManageSchools },
-    { href: '/admin/reports',   label: 'Reports',    icon: BarChart2,       show: permissions.canViewReports },
-    { href: '/admin/settings',  label: 'Settings',   icon: Settings,        show: permissions.canManageSettings },
-    { href: '/admin/team',      label: 'Team',       icon: Users,           show: permissions.canManageTeam },
+    { href: '/admin/dashboard',  label: 'Dashboard', icon: LayoutDashboard, show: true },
+    { href: '/admin/orders',     label: 'Orders',    icon: List,            show: true },
+    { href: '/admin/catalog',    label: 'Catalog',   icon: Shirt,           show: permissions.canManageSettings },
+    { href: '/admin/government', label: 'Gobierno',  icon: Building2,       show: permissions.canManageSettings },
+    { href: '/admin/companies',  label: 'Companies', icon: Briefcase,       show: permissions.canManageSettings },
+    { href: '/admin/campaigns',  label: 'Campaigns', icon: Megaphone,       show: permissions.canManageSettings },
+    { href: '/admin/schools',    label: 'Schools',   icon: GraduationCap,   show: permissions.canManageSchools },
+    { href: '/admin/reports',    label: 'Reports',   icon: BarChart2,       show: permissions.canViewReports },
+    { href: '/admin/settings',   label: 'Settings',  icon: Settings,        show: permissions.canManageSettings },
+    { href: '/admin/team',       label: 'Team',      icon: Users,           show: permissions.canManageTeam },
   ]
 
   const navItems = allNavItems.filter(item => item.show)

@@ -18,7 +18,7 @@ const orderSchema = z.object({
   company_department: z.string().optional(),
   delivery_address: z.string().optional(),
   shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']),
-  quantity: z.number().int().positive(),
+  quantity: z.number().int().positive().max(500),
   notes: z.string().optional(),
   school_link_id: z.string().uuid().optional(),
   catalog_item_id: z.string().uuid().optional(),

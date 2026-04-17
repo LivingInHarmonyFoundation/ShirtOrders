@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2 } from 'lucide-react'
+import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2, CreditCard, Banknote } from 'lucide-react'
 import Image from 'next/image'
 import type { AppSettings, ShirtSize } from '@/types'
 import { useRole } from '@/components/admin/role-provider'
@@ -19,10 +19,13 @@ const ALL_SIZES: ShirtSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 export default function SettingsPage() {
   const { permissions } = useRole()
+
+  // ── State ──
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
+  // Form fields
   const [appName, setAppName] = useState('')
   const [shirtPrice, setShirtPrice] = useState('')
   const [availableSizes, setAvailableSizes] = useState<ShirtSize[]>([])
@@ -30,20 +33,21 @@ export default function SettingsPage() {
   const [govEnabled, setGovEnabled] = useState(true)
   const [personalEnabled, setPersonalEnabled] = useState(true)
   const [privateCompanyEnabled, setPrivateCompanyEnabled] = useState(true)
-  const [manualPayEnabled, setManualPayEnabled] = useState(true)
+  const [cashEnabled, setCashEnabled] = useState(false)
   const [confirmationMessage, setConfirmationMessage] = useState('')
   const [adminPhone, setAdminPhone] = useState('')
   const [smsNotifications, setSmsNotifications] = useState(false)
 
-  // Mission banner state
+  // Image uploads
   const [missionBannerUrl, setMissionBannerUrl] = useState<string | null>(null)
   const [uploadingBanner, setUploadingBanner] = useState(false)
   const bannerRef = useRef<HTMLInputElement>(null)
 
-  // Badge state
   const [badgeUrl, setBadgeUrl] = useState<string | null>(null)
   const [uploadingBadge, setUploadingBadge] = useState(false)
   const badgeRef = useRef<HTMLInputElement>(null)
+
+  // ── Effects ──
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -58,7 +62,7 @@ export default function SettingsPage() {
           setGovEnabled(settings.government_orders_enabled ?? true)
           setPersonalEnabled(settings.personal_orders_enabled ?? true)
           setPrivateCompanyEnabled(settings.private_company_orders_enabled ?? true)
-          setManualPayEnabled(settings.manual_payment_enabled ?? true)
+          setCashEnabled(settings.cash_enabled ?? false)
           setConfirmationMessage(settings.confirmation_message || '')
           setAdminPhone(settings.admin_phone || '')
           setSmsNotifications(settings.sms_notifications_enabled ?? false)
@@ -69,6 +73,8 @@ export default function SettingsPage() {
       .catch(() => toast.error('Failed to load settings'))
       .finally(() => setLoading(false))
   }, [])
+
+  // ── Handlers ──
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -190,7 +196,7 @@ export default function SettingsPage() {
           government_orders_enabled: govEnabled,
           personal_orders_enabled: personalEnabled,
           private_company_orders_enabled: privateCompanyEnabled,
-          manual_payment_enabled: manualPayEnabled,
+          cash_enabled: cashEnabled,
           confirmation_message: confirmationMessage,
           admin_phone: adminPhone || null,
           sms_notifications_enabled: smsNotifications,
@@ -209,6 +215,8 @@ export default function SettingsPage() {
       setSaving(false)
     }
   }
+
+  // ── Render ──
 
   if (loading) {
     return (
@@ -537,13 +545,37 @@ export default function SettingsPage() {
             </div>
             <Switch checked={privateCompanyEnabled} onCheckedChange={setPrivateCompanyEnabled} />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Methods */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <CreditCard className="w-4 h-4" /> Payment Methods
+          </CardTitle>
+          <CardDescription className="text-xs">Configure which payment methods are available at checkout</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* PayPal / Venmo / Card — always on, controlled by PayPal SDK */}
+          <div className="p-3 bg-[#E5F2F0] rounded-lg text-xs text-[#00352F] space-y-1">
+            <p className="font-medium">PayPal, Venmo & Card — Always Available</p>
+            <p className="text-[#00594F]">
+              These payment buttons are handled by PayPal&apos;s secure checkout. To enable or disable Venmo and card payments,
+              configure funding sources in your <strong>PayPal merchant dashboard</strong>.
+            </p>
+          </div>
           <Separator />
+          {/* Cash toggle */}
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Manual Payment Option</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Show note for cash/check payments on checkout page</p>
+            <div className="flex items-center gap-3">
+              <Banknote className="w-4 h-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Cash Payment</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Show a cash option below the PayPal buttons at checkout</p>
+              </div>
             </div>
-            <Switch checked={manualPayEnabled} onCheckedChange={setManualPayEnabled} />
+            <Switch checked={cashEnabled} onCheckedChange={setCashEnabled} />
           </div>
         </CardContent>
       </Card>

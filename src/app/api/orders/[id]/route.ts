@@ -54,6 +54,7 @@ export async function PATCH(
     'full_name', 'email', 'phone', 'shirt_size', 'quantity',
     'notes', 'school_name', 'grade', 'classroom',
     'organization_name', 'department_office',
+    'payment_method',
   ]
 
   const updateData: Record<string, unknown> = {}

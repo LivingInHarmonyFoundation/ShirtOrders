@@ -16,13 +16,18 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Order, DashboardStats, GovOrg, SchoolLink, PrivateCompany, Campaign } from '@/types'
 import { toast } from 'sonner'
 
+// Color cycle for the catalog style cards
+const CATALOG_COLORS = ['#00352F', '#00594F', '#CEDC00', '#00594F', '#00352F']
+
 export default function ReportsPage() {
+  // ── State ──
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [catalogBreakdown, setCatalogBreakdown] = useState<DashboardStats['orders_by_catalog_item']>([])
   const [hasCatalog, setHasCatalog] = useState(false)
 
+  // Filters
   const [institutionType, setInstitutionType] = useState('')
   const [paymentStatus, setPaymentStatus] = useState('')
   const [deliveryStatus, setDeliveryStatus] = useState('')
@@ -36,12 +41,16 @@ export default function ReportsPage() {
   const [schoolName, setSchoolName] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [campaignId, setCampaignId] = useState('')
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
 
+  // Sub-filter dropdown lists (loaded once)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [schools, setSchools] = useState<SchoolLink[]>([])
   const [companies, setCompanies] = useState<PrivateCompany[]>([])
 
+  // ── Effects ──
+
+  // Load filter dropdown options on mount
   useEffect(() => {
     fetch('/api/admin/campaigns')
       .then(r => r.json()).then(j => setCampaigns(j.campaigns || [])).catch(() => {})
@@ -112,7 +121,10 @@ export default function ReportsPage() {
     }
   }
 
+  // Run report with default (no) filters on first load
   useEffect(() => { fetchReport() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Handlers ──
 
   const handleExport = () => {
     window.open(buildExportUrl(), '_blank')
@@ -121,6 +133,7 @@ export default function ReportsPage() {
 
   const handlePrint = () => window.print()
 
+  // ── Render ──
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between print:hidden">
@@ -368,25 +381,22 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {catalogBreakdown.map(({ name, orders: o, shirts: s }, i) => {
-                const colors = ['#00352F', '#00594F', '#CEDC00', '#00594F', '#00352F']
-                return (
-                  <div key={name} className="rounded-xl border p-4 flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-                      style={{ backgroundColor: colors[i % colors.length] }}
-                    >
-                      {name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm truncate">{name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        <span className="font-bold text-[#00352F]">{s}</span> shirts &middot; {o} order{o !== 1 ? 's' : ''}
-                      </p>
-                    </div>
+              {catalogBreakdown.map(({ name, orders: o, shirts: s }, i) => (
+                <div key={name} className="rounded-xl border p-4 flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+                    style={{ backgroundColor: CATALOG_COLORS[i % CATALOG_COLORS.length] }}
+                  >
+                    {name.charAt(0).toUpperCase()}
                   </div>
-                )
-              })}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 text-sm truncate">{name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      <span className="font-bold text-[#00352F]">{s}</span> shirts &middot; {o} order{o !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

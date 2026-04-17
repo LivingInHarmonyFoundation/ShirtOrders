@@ -33,6 +33,7 @@ const EMPTY_FORM = {
 }
 
 export default function CampaignsPage() {
+  // ── State ──
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -41,6 +42,8 @@ export default function CampaignsPage() {
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+
+  // ── Handlers ──
 
   const fetchCampaigns = async () => {
     try {
@@ -147,6 +150,15 @@ export default function CampaignsPage() {
 
   const activeCampaign = campaigns.find(c => c.is_active)
 
+  // ── Render ──
+
+  // Compute banner state ahead of return to avoid an IIFE in JSX
+  const today = new Date().toISOString().split('T')[0]
+  const activeBannerEnded = activeCampaign?.end_date && activeCampaign.end_date < today
+  const activeBannerLive = activeCampaign
+    && (!activeCampaign.start_date || activeCampaign.start_date <= today)
+    && (!activeCampaign.end_date || activeCampaign.end_date >= today)
+
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
@@ -162,34 +174,28 @@ export default function CampaignsPage() {
         </Button>
       </div>
 
-      {/* Active campaign banner */}
-      {activeCampaign && (() => {
-        const today = new Date().toISOString().split('T')[0]
-        const isLive = (!activeCampaign.start_date || activeCampaign.start_date <= today)
-          && (!activeCampaign.end_date || activeCampaign.end_date >= today)
-        const hasEnded = activeCampaign.end_date && activeCampaign.end_date < today
-        return (
+      {/* Active campaign status banner */}
+      {activeCampaign && (
+        <div
+          className="rounded-xl px-4 py-3 flex items-center gap-3 border"
+          style={{
+            backgroundColor: activeBannerEnded ? '#FFF7ED' : '#E5F2F0',
+            borderColor: activeBannerEnded ? '#FED7AA' : 'rgba(0,53,47,0.2)',
+          }}
+        >
           <div
-            className="rounded-xl px-4 py-3 flex items-center gap-3 border"
-            style={{
-              backgroundColor: hasEnded ? '#FFF7ED' : '#E5F2F0',
-              borderColor: hasEnded ? '#FED7AA' : 'rgba(0,53,47,0.2)',
-            }}
-          >
-            <div
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: hasEnded ? '#F97316' : '#00352F' }}
-            />
-            <p className="text-sm font-medium" style={{ color: hasEnded ? '#9A3412' : '#00352F' }}>
-              {hasEnded
-                ? `"${activeCampaign.name}" has ended — orders are currently closed.`
-                : isLive
-                  ? `"${activeCampaign.name}" is live — orders are open.`
-                  : `"${activeCampaign.name}" is scheduled to start ${activeCampaign.start_date}.`}
-            </p>
-          </div>
-        )
-      })()}
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: activeBannerEnded ? '#F97316' : '#00352F' }}
+          />
+          <p className="text-sm font-medium" style={{ color: activeBannerEnded ? '#9A3412' : '#00352F' }}>
+            {activeBannerEnded
+              ? `"${activeCampaign.name}" has ended — orders are currently closed.`
+              : activeBannerLive
+                ? `"${activeCampaign.name}" is live — orders are open.`
+                : `"${activeCampaign.name}" is scheduled to start ${activeCampaign.start_date}.`}
+          </p>
+        </div>
+      )}
 
       {/* New / Edit form */}
       {showForm && (

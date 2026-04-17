@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/require-role'
+
+const BULK_ORDER_ALLOWED_FIELDS = [
+  'payment_status', 'order_status', 'delivery_status',
+  'admin_notes', 'date_paid', 'date_delivered',
+]
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const auth = await requirePermission(user.id, 'canManageOrders')
+  if (auth instanceof NextResponse) return auth
 
   const adminSupabase = await createAdminClient()
   const { searchParams } = request.nextUrl
@@ -25,7 +34,8 @@ export async function GET(request: NextRequest) {
   const campaign_id = searchParams.get('campaign_id') || ''
   const sort = searchParams.get('sort') || 'newest'
   const page = parseInt(searchParams.get('page') || '1')
-  const limit = parseInt(searchParams.get('limit') || '20')
+  const rawLimit = parseInt(searchParams.get('limit') || '20')
+  const limit = Math.min(Math.max(1, rawLimit), 200)
   const offset = (page - 1) * limit
 
   let query = adminSupabase.from('orders').select('*', { count: 'exact' })
@@ -93,6 +103,9 @@ export async function PATCH(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const auth = await requirePermission(user.id, 'canManageOrders')
+  if (auth instanceof NextResponse) return auth
+
   const adminSupabase = await createAdminClient()
   const { ids, updates } = await request.json()
 
@@ -100,9 +113,23 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'No order IDs provided' }, { status: 400 })
   }
 
+  if (!updates || typeof updates !== 'object') {
+    return NextResponse.json({ error: 'No updates provided' }, { status: 400 })
+  }
+
+  // Whitelist allowed fields to prevent mass-assignment
+  const safeUpdates: Record<string, unknown> = {}
+  for (const field of BULK_ORDER_ALLOWED_FIELDS) {
+    if (field in updates) safeUpdates[field] = updates[field]
+  }
+
+  if (Object.keys(safeUpdates).length === 0) {
+    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+  }
+
   const { error } = await adminSupabase
     .from('orders')
-    .update(updates)
+    .update(safeUpdates)
     .in('id', ids)
 
   if (error) {

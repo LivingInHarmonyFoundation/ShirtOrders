@@ -212,7 +212,7 @@ export default async function LandingPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2.5">
               {[
-                { icon: Shield,      label: 'Stripe-Secured Payments' },
+                { icon: Shield,      label: 'Secure PayPal Payments' },
                 { icon: CheckCircle, label: 'Instant Confirmation' },
                 { icon: FileText,    label: 'Order Tracking Included' },
                 { icon: CreditCard,  label: 'Multiple Payment Options' },
@@ -412,7 +412,7 @@ export default async function LandingPage() {
               <div className="space-y-3">
                 {[
                   { n: '1', title: 'Fill Out the Form',  desc: 'Enter your institution type, contact details, and shirt preferences.' },
-                  { n: '2', title: 'Review & Pay',       desc: 'Review your order summary and complete payment securely via Stripe.' },
+                  { n: '2', title: 'Review & Pay',       desc: 'Review your order and pay securely via PayPal, Venmo, card, or cash.' },
                   { n: '3', title: 'Get Confirmation',   desc: 'Receive your order confirmation number instantly by email.' },
                 ].map(({ n, title, desc }) => (
                   <div key={n} className="flex items-start gap-4">

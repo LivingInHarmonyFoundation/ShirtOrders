@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   ShoppingBag, DollarSign, CreditCard, Package,
-  TrendingUp, Users, Truck, Clock, Settings2, Megaphone, X
+  TrendingUp, Users, Truck, Clock, Settings2, Megaphone, X, Shirt
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import type { DashboardStats, Campaign } from '@/types'
@@ -16,8 +16,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts'
-import { Shirt } from 'lucide-react'
 
+// Chart palette — intentional repeats keep the cycle visually varied
 const COLORS = ['#00352F', '#CEDC00', '#00594F', '#00594F', '#00352F', '#4a8a28', '#3d7a20']
 const WIDGET_STORAGE_KEY = 'lih_hidden_widgets'
 
@@ -45,6 +45,7 @@ function getDateRange(preset: DatePreset): { from: string; to: string } {
 }
 
 export default function DashboardPage() {
+  // ── State ──
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -55,17 +56,29 @@ export default function DashboardPage() {
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
 
-  // Widget toggles
+  // Widget visibility
   const [hiddenWidgets, setHiddenWidgets] = useState<Set<string>>(new Set())
   const [showWidgetPanel, setShowWidgetPanel] = useState(false)
 
-  // Load hidden widgets from localStorage
+  // ── Effects ──
+
+  // Restore hidden-widget preferences from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem(WIDGET_STORAGE_KEY)
       if (saved) setHiddenWidgets(new Set(JSON.parse(saved)))
     } catch { /* ignore */ }
   }, [])
+
+  // Load campaigns list for the filter dropdown
+  useEffect(() => {
+    fetch('/api/admin/campaigns')
+      .then(r => r.json())
+      .then(j => setCampaigns(j.campaigns || []))
+      .catch(() => {})
+  }, [])
+
+  // ── Handlers ──
 
   const saveHiddenWidgets = (next: Set<string>) => {
     setHiddenWidgets(next)
@@ -77,14 +90,6 @@ export default function DashboardPage() {
     if (next.has(id)) next.delete(id); else next.add(id)
     saveHiddenWidgets(next)
   }
-
-  // Load campaigns list
-  useEffect(() => {
-    fetch('/api/admin/campaigns')
-      .then(r => r.json())
-      .then(j => setCampaigns(j.campaigns || []))
-      .catch(() => {})
-  }, [])
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
@@ -107,6 +112,8 @@ export default function DashboardPage() {
   }, [selectedCampaign, datePreset, customFrom, customTo])
 
   useEffect(() => { fetchStats() }, [fetchStats])
+
+  // ── Render helpers ──
 
   const activeCampaign = campaigns.find(c => c.is_active)
   const selectedCampaignName = selectedCampaign
@@ -135,6 +142,7 @@ export default function DashboardPage() {
 
   const show = (id: string) => !hiddenWidgets.has(id)
 
+  // ── Render ──
   return (
     <div className="space-y-5">
       {/* Header */}

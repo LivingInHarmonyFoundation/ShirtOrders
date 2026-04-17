@@ -18,8 +18,11 @@ import type { Order, PaginatedOrders, GovOrg, SchoolLink, PrivateCompany, Campai
 import { toast } from 'sonner'
 
 export default function AdminOrdersPage() {
+  // ── State ──
   const [data, setData] = useState<PaginatedOrders | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Filters
   const [search, setSearch] = useState('')
   const [institutionType, setInstitutionType] = useState('')
   const [paymentStatus, setPaymentStatus] = useState('')
@@ -33,20 +36,23 @@ export default function AdminOrdersPage() {
   const [organizationName, setOrganizationName] = useState('')
   const [schoolName, setSchoolName] = useState('')
   const [companyName, setCompanyName] = useState('')
+  const [campaignId, setCampaignId] = useState('')
   const [sort, setSort] = useState('newest')
   const [page, setPage] = useState(1)
+
+  // Bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
 
-  const [campaignId, setCampaignId] = useState('')
+  // Sub-filter dropdown lists (loaded once)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
-
-  // Sub-filter dropdown lists
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [schools, setSchools] = useState<SchoolLink[]>([])
   const [companies, setCompanies] = useState<PrivateCompany[]>([])
 
-  // Load sub-filter lists once on mount
+  // ── Effects ──
+
+  // Load filter dropdown options on mount
   useEffect(() => {
     fetch('/api/admin/campaigns')
       .then(r => r.json()).then(j => setCampaigns(j.campaigns || [])).catch(() => {})
@@ -82,10 +88,13 @@ export default function AdminOrdersPage() {
     }
   }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, grade, classroom, department, organizationName, schoolName, companyName, campaignId, sort, page])
 
+  // Debounce the fetch so search-as-you-type doesn't fire on every keystroke
   useEffect(() => {
     const t = setTimeout(fetchOrders, search ? 400 : 0)
     return () => clearTimeout(t)
   }, [fetchOrders, search])
+
+  // ── Handlers ──
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
@@ -126,8 +135,10 @@ export default function AdminOrdersPage() {
     setSort('newest'); setPage(1)
   }
 
+  // True when any filter is active — drives the "Clear filters" button visibility
   const hasFilters = search || institutionType || paymentStatus || deliveryStatus || shirtSize || dateFrom || dateTo || grade || classroom || department || organizationName || schoolName || companyName || campaignId
 
+  // ── Render ──
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

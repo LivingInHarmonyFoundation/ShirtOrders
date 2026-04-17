@@ -177,6 +177,14 @@ function ConfirmationContent() {
 
               <Separator />
 
+              {/* Payment method */}
+              {order.payment_method && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Payment Via</span>
+                  <span className="font-medium text-gray-900 capitalize">{order.payment_method}</span>
+                </div>
+              )}
+
               {/* Dates */}
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>

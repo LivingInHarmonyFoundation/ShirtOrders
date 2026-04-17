@@ -375,10 +375,16 @@ export default function OrderDetailPage() {
                 <span>Status</span>
                 <PaymentStatusBadge status={order.payment_status} />
               </div>
+              {order.payment_method && (
+                <div className="flex justify-between">
+                  <span>Payment Via</span>
+                  <span className="font-medium capitalize">{order.payment_method}</span>
+                </div>
+              )}
               {order.stripe_payment_intent_id && (
                 <div>
-                  <span className="block">Stripe PI</span>
-                  <span className="font-mono text-xs text-gray-400 break-all">{order.stripe_payment_intent_id}</span>
+                  <span className="block text-gray-400">Legacy Stripe PI</span>
+                  <span className="font-mono text-xs text-gray-300 break-all">{order.stripe_payment_intent_id}</span>
                 </div>
               )}
               {order.date_paid && (
