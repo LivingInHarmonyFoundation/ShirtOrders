@@ -179,20 +179,38 @@ function CheckoutContent() {
                 </div>
               </div>
               <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-500 text-xs">Shirt Size</p>
-                  <p className="font-semibold text-gray-900">{order.shirt_size}</p>
+              {/* Items breakdown */}
+              {order.items && order.items.length > 0 ? (
+                <div className="space-y-2">
+                  {order.items.map((item, i) => (
+                    <div key={item.id ?? i} className="flex items-center justify-between text-sm">
+                      <div>
+                        <p className="font-medium text-gray-900">{item.catalog_item_name}</p>
+                        <p className="text-xs text-gray-500">
+                          Size <span className="font-semibold text-gray-700">{item.shirt_size}</span>
+                          {' · '}{item.quantity} × {formatCurrency(item.unit_price)}
+                        </p>
+                      </div>
+                      <p className="font-semibold text-gray-900">{formatCurrency(item.subtotal)}</p>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-right">
-                  <p className="text-gray-500 text-xs">Quantity</p>
-                  <p className="font-semibold text-gray-900">{order.quantity}</p>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 text-xs">Shirt Size</p>
+                    <p className="font-semibold text-gray-900">{order.shirt_size}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-500 text-xs">Quantity</p>
+                    <p className="font-semibold text-gray-900">{order.quantity}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-500 text-xs">Unit Price</p>
+                    <p className="font-semibold text-gray-900">{formatCurrency(order.unit_price)}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-gray-500 text-xs">Unit Price</p>
-                  <p className="font-semibold text-gray-900">{formatCurrency(order.unit_price)}</p>
-                </div>
-              </div>
+              )}
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="font-bold text-gray-900">Total Amount</span>

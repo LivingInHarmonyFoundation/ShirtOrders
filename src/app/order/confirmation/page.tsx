@@ -156,18 +156,35 @@ function ConfirmationContent() {
 
               {/* Order items */}
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Shirt Size</span>
-                  <span className="font-semibold text-gray-900">{order.shirt_size}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Quantity</span>
-                  <span className="font-semibold text-gray-900">{order.quantity} shirts</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Unit Price</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(order.unit_price)}</span>
-                </div>
+                {order.items && order.items.length > 0 ? (
+                  order.items.map((item, i) => (
+                    <div key={item.id ?? i} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{item.catalog_item_name}</p>
+                        <p className="text-xs text-gray-500">
+                          Size <span className="font-semibold text-gray-700">{item.shirt_size}</span>
+                          {' · '}{item.quantity} × {formatCurrency(item.unit_price)}
+                        </p>
+                      </div>
+                      <span className="font-semibold text-gray-900">{formatCurrency(item.subtotal)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Shirt Size</span>
+                      <span className="font-semibold text-gray-900">{order.shirt_size}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Quantity</span>
+                      <span className="font-semibold text-gray-900">{order.quantity} shirts</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Unit Price</span>
+                      <span className="font-semibold text-gray-900">{formatCurrency(order.unit_price)}</span>
+                    </div>
+                  </>
+                )}
                 <Separator />
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-gray-900">Total</span>

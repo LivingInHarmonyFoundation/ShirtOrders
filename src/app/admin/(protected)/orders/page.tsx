@@ -548,8 +548,18 @@ export default function AdminOrdersPage() {
                         ? <span className="font-medium">{order.catalog_item_name}</span>
                         : <span className="text-gray-300">—</span>}
                     </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {order.shirt_size} × {order.quantity}
+                    <TableCell className="text-sm">
+                      {order.items && order.items.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {order.items.map((item, i) => (
+                            <p key={item.id ?? i} className="text-xs font-medium text-gray-800 whitespace-nowrap">
+                              <span className="font-bold">{item.shirt_size}</span> × {item.quantity}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="font-medium">{order.shirt_size} × {order.quantity}</span>
+                      )}
                     </TableCell>
                     <TableCell className="font-semibold text-sm">{formatCurrency(order.total_amount)}</TableCell>
                     <TableCell><PaymentStatusBadge status={order.payment_status} /></TableCell>

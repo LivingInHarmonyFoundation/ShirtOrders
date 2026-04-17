@@ -8,15 +8,18 @@ export async function GET(
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: order, error } = await supabase
+  const { data: raw, error } = await supabase
     .from('orders')
-    .select('*')
+    .select('*, order_items(id, shirt_size, quantity, catalog_item_name, unit_price, subtotal, created_at)')
     .eq('id', id)
     .single()
 
-  if (error || !order) {
+  if (error || !raw) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
+
+  const { order_items, ...rest } = raw as typeof raw & { order_items: unknown[] }
+  const order = { ...rest, items: order_items || [] }
 
   return NextResponse.json({ order })
 }

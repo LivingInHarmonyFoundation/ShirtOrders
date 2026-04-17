@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(Math.max(1, rawLimit), 200)
   const offset = (page - 1) * limit
 
-  let query = adminSupabase.from('orders').select('*', { count: 'exact' })
+  let query = adminSupabase.from('orders').select('*, order_items(id, shirt_size, quantity, catalog_item_name, unit_price, subtotal)', { count: 'exact' })
 
   if (search) {
     query = query.or(
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
   // Summary query uses same filters but fetches only the fields needed for aggregation
   let summaryQuery = adminSupabase
     .from('orders')
-    .select('quantity, total_amount, shirt_size, catalog_item_name')
+    .select('quantity, total_amount, shirt_size, catalog_item_name, order_items(shirt_size, quantity)')
 
   if (search) {
     summaryQuery = summaryQuery.or(
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
   if (company_name) summaryQuery = summaryQuery.eq('company_name', company_name)
   if (campaign_id && campaign_id !== 'all') summaryQuery = summaryQuery.eq('campaign_id', campaign_id)
 
-  const [{ data: orders, error, count }, { data: summaryRows }] = await Promise.all([
+  const [{ data: ordersRaw, error, count }, { data: summaryRows }] = await Promise.all([
     pagedQuery,
     summaryQuery,
   ])
@@ -117,18 +117,41 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
   }
 
-  // Compute summary aggregates
-  const allRows = summaryRows || []
+  // Reshape orders: expose order_items as `items`
+  const orders = (ordersRaw || []).map((o: Record<string, unknown>) => {
+    const { order_items, ...rest } = o
+    return { ...rest, items: (order_items as unknown[]) || [] }
+  })
+
+  // Compute summary aggregates — use order_items for accurate by-size counts
+  const allRows = (summaryRows || []) as Array<{
+    quantity: number; total_amount: number; shirt_size: string; catalog_item_name: string | null;
+    order_items: Array<{ shirt_size: string; quantity: number }> | null
+  }>
   const totalShirts = allRows.reduce((s, r) => s + (r.quantity || 0), 0)
   const totalRevenue = allRows.reduce((s, r) => s + (r.total_amount || 0), 0)
 
   const bySize: Record<string, { orders: number; shirts: number }> = {}
   const byItem: Record<string, { orders: number; shirts: number }> = {}
   for (const r of allRows) {
-    const sz = r.shirt_size || 'Unknown'
-    if (!bySize[sz]) bySize[sz] = { orders: 0, shirts: 0 }
-    bySize[sz].orders++
-    bySize[sz].shirts += r.quantity || 0
+    const items = r.order_items
+    if (items && items.length > 0) {
+      // Use line items for accurate per-size counts
+      const sizesInOrder = new Set<string>()
+      for (const item of items) {
+        const sz = item.shirt_size || 'Unknown'
+        if (!bySize[sz]) bySize[sz] = { orders: 0, shirts: 0 }
+        bySize[sz].shirts += item.quantity || 0
+        sizesInOrder.add(sz)
+      }
+      for (const sz of sizesInOrder) bySize[sz].orders++
+    } else {
+      // Legacy fallback for orders before order_items existed
+      const sz = r.shirt_size || 'Unknown'
+      if (!bySize[sz]) bySize[sz] = { orders: 0, shirts: 0 }
+      bySize[sz].orders++
+      bySize[sz].shirts += r.quantity || 0
+    }
 
     const item = r.catalog_item_name || null
     if (item) {
@@ -139,7 +162,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({
-    orders: orders || [],
+    orders,
     total: count || 0,
     page,
     limit,

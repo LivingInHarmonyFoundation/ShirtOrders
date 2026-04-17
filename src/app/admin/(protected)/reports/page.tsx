@@ -479,7 +479,19 @@ export default function ReportsPage() {
                         ? <span className="font-medium">{order.catalog_item_name}</span>
                         : <span className="text-gray-300">—</span>}
                     </TableCell>
-                    <TableCell className="font-medium">{order.shirt_size}</TableCell>
+                    <TableCell>
+                      {order.items && order.items.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {order.items.map((item, i) => (
+                            <p key={item.id ?? i} className="text-xs font-medium whitespace-nowrap">
+                              <span className="font-bold">{item.shirt_size}</span> × {item.quantity}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="font-medium">{order.shirt_size}</span>
+                      )}
+                    </TableCell>
                     <TableCell>{order.quantity}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(order.total_amount)}</TableCell>
                     <TableCell><PaymentStatusBadge status={order.payment_status} /></TableCell>
