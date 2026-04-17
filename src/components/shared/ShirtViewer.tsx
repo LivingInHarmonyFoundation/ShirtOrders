@@ -217,18 +217,6 @@ export default function ShirtViewer({ frontUrl, backUrl, name, variant = 'square
         </div>
       )}
 
-      {/* Drag hint — only shows on items with a back image, fades after first drag */}
-      {hasBack && (
-        <div
-          className="absolute top-2.5 right-2.5 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide pointer-events-none"
-          style={{
-            backgroundColor: 'rgba(206,220,0,0.85)',
-            color: '#00352F',
-          }}
-        >
-          Drag to rotate
-        </div>
-      )}
     </div>
   )
 }
