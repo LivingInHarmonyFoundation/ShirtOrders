@@ -104,6 +104,24 @@ function CheckoutContent() {
 
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
+  const allowedMethods = order.order_allowed_payment_methods
+  const hasRestrictions = allowedMethods !== null && allowedMethods.length > 0
+
+  const paypalEnabled = !hasRestrictions || allowedMethods.includes('paypal')
+  const venmoEnabled = !hasRestrictions || allowedMethods.includes('venmo')
+  const cardEnabled = !hasRestrictions || allowedMethods.includes('card')
+  const cashAllowed = (!hasRestrictions || allowedMethods.includes('cash')) && !!settings?.cash_enabled
+
+  const enableFundingParts: string[] = []
+  if (venmoEnabled) enableFundingParts.push('venmo')
+  if (cardEnabled) enableFundingParts.push('card')
+
+  const disableFundingParts: string[] = ['credit', 'paylater']
+  if (!venmoEnabled) disableFundingParts.push('venmo')
+  if (!cardEnabled) disableFundingParts.push('card')
+
+  const onlinePaymentAvailable = paypalEnabled || venmoEnabled || cardEnabled
+
   return (
     <div className="min-h-screen bg-[#F5F4F0]">
       {/* Header */}
@@ -222,13 +240,38 @@ function CheckoutContent() {
                     View Order Status →
                   </Button>
                 </div>
+              ) : !onlinePaymentAvailable && cashAllowed ? (
+                // Only cash is available
+                <div className="space-y-3">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                    Online payment is not available for this order. Please pay with cash at pickup.
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleCashSelect}
+                    disabled={cashLoading}
+                  >
+                    {cashLoading
+                      ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      : <Banknote className="w-4 h-4 mr-2" />
+                    }
+                    Pay with Cash
+                  </Button>
+                </div>
+              ) : !onlinePaymentAvailable && !cashAllowed ? (
+                // No payment methods available
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                  No payment methods are currently available for this order. Contact us with your order number{' '}
+                  <strong className="font-mono">{order.order_number}</strong> to arrange payment.
+                </div>
               ) : (
                 // PayPal buttons + optional cash option
                 <PayPalScriptProvider options={{
-                  clientId,
+                  clientId: clientId!,
                   currency: 'USD',
-                  enableFunding: 'venmo,card',
-                  disableFunding: 'credit,paylater',
+                  ...(enableFundingParts.length > 0 ? { enableFunding: enableFundingParts.join(',') } : {}),
+                  disableFunding: disableFundingParts.join(','),
                 }}>
                   <div className="space-y-3">
                     <PayPalButtons
@@ -260,8 +303,8 @@ function CheckoutContent() {
                       }}
                     />
 
-                    {/* Cash option shown below PayPal buttons when enabled in settings */}
-                    {settings?.cash_enabled && (
+                    {/* Cash option shown below PayPal buttons when allowed */}
+                    {cashAllowed && (
                       <>
                         <div className="flex items-center gap-3 text-xs text-gray-400">
                           <div className="flex-1 border-t" />

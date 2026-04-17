@@ -68,6 +68,7 @@ export default function OrderPage() {
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
+  const [selectedGovOrg, setSelectedGovOrg] = useState<GovOrg | null>(null)
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
   const [activeCampaign, setActiveCampaign] = useState<Campaign | null | 'none'>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -358,6 +359,7 @@ export default function OrderPage() {
                       onClick={() => {
                         setInstitutionType(value)
                         setValue('institution_type', value, { shouldValidate: true })
+                        if (value !== 'government') setSelectedGovOrg(null)
                       }}
                       className={cn(
                         'relative flex flex-col items-center gap-3 py-5 px-3 rounded-2xl border-2 transition-all duration-150 overflow-hidden',
@@ -485,6 +487,12 @@ export default function OrderPage() {
                     <select
                       id="organization_name"
                       {...register('organization_name')}
+                      onChange={e => {
+                        const found = govOrgs.find(o => o.name === e.target.value) || null
+                        setSelectedGovOrg(found)
+                        setValue('organization_name', e.target.value, { shouldValidate: true })
+                        setValue('department_office', '', { shouldValidate: false })
+                      }}
                       className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                       <option value="">Select an organization...</option>
@@ -499,7 +507,20 @@ export default function OrderPage() {
                 </div>
                 <div>
                   <Label htmlFor="department_office">Department / Office *</Label>
-                  <Input id="department_office" {...register('department_office')} placeholder="IT Department" className="mt-1" />
+                  {selectedGovOrg?.departments && selectedGovOrg.departments.length > 0 ? (
+                    <select
+                      id="department_office"
+                      {...register('department_office')}
+                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <option value="">Select a department...</option>
+                      {selectedGovOrg.departments.map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input id="department_office" {...register('department_office')} placeholder="IT Department" className="mt-1" />
+                  )}
                   {errors.department_office && <p className="text-red-500 text-xs mt-1">{errors.department_office.message}</p>}
                 </div>
               </CardContent>

@@ -5,7 +5,7 @@ export async function GET() {
   const admin = await createAdminClient()
   const { data, error } = await admin
     .from('private_companies')
-    .select('id, name')
+    .select('id, name, slug, allowed_payment_methods')
     .eq('is_active', true)
     .order('name', { ascending: true })
 

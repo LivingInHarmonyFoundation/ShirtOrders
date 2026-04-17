@@ -21,6 +21,7 @@ const orderSchema = z.object({
   quantity: z.number().int().positive().max(500),
   notes: z.string().optional(),
   school_link_id: z.string().uuid().optional(),
+  company_link_id: z.string().uuid().optional(),
   catalog_item_id: z.string().uuid().optional(),
   catalog_item_name: z.string().optional(),
 })
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const { data: settings } = await supabase
       .from('app_settings')
-      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled')
+      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled, personal_allowed_payment_methods, cash_enabled')
       .single()
 
     if (!settings) {
@@ -94,6 +95,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Resolve allowed payment methods for this order from the entity
+    let orderAllowedPaymentMethods: string[] | null = null
+
+    if (data.institution_type === 'school' && data.school_link_id) {
+      const { data: school } = await supabase
+        .from('school_links')
+        .select('allowed_payment_methods')
+        .eq('id', data.school_link_id)
+        .single()
+      orderAllowedPaymentMethods = school?.allowed_payment_methods ?? null
+    } else if (data.institution_type === 'private_company' && data.company_link_id) {
+      const { data: company } = await supabase
+        .from('private_companies')
+        .select('allowed_payment_methods')
+        .eq('id', data.company_link_id)
+        .single()
+      orderAllowedPaymentMethods = company?.allowed_payment_methods ?? null
+    } else if (data.institution_type === 'government' && data.organization_name) {
+      const { data: org } = await supabase
+        .from('government_orgs')
+        .select('allowed_payment_methods')
+        .ilike('name', data.organization_name)
+        .eq('is_active', true)
+        .single()
+      orderAllowedPaymentMethods = org?.allowed_payment_methods ?? null
+    } else if (data.institution_type === 'personal') {
+      orderAllowedPaymentMethods = settings.personal_allowed_payment_methods ?? null
+    }
+
+    // If cash is globally disabled, strip it from allowed methods
+    if (!settings.cash_enabled && orderAllowedPaymentMethods) {
+      orderAllowedPaymentMethods = orderAllowedPaymentMethods.filter(m => m !== 'cash')
+    }
+
     const unit_price = settings.shirt_price
     const total_amount = unit_price * data.quantity
     const order_number = generateOrderNumber()
@@ -120,6 +155,8 @@ export async function POST(request: NextRequest) {
         total_amount,
         notes: data.notes || null,
         school_link_id: data.school_link_id || null,
+        company_link_id: data.company_link_id || null,
+        order_allowed_payment_methods: orderAllowedPaymentMethods,
         catalog_item_id: data.catalog_item_id || null,
         catalog_item_name: data.catalog_item_name || null,
         campaign_id: activeCampaign.id,

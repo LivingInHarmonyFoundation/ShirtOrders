@@ -9,9 +9,24 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   GraduationCap, Plus, Copy, Check, Trash2, ToggleLeft, ToggleRight,
-  ExternalLink, Link2, Users
+  ExternalLink, Link2, Users, Settings2, ChevronDown, ChevronUp, Tag, X
 } from 'lucide-react'
 import type { SchoolLink } from '@/types'
+
+const PAYMENT_METHODS = ['paypal', 'venmo', 'card', 'cash'] as const
+type PaymentMethod = typeof PAYMENT_METHODS[number]
+
+const METHOD_LABELS: Record<PaymentMethod, string> = {
+  paypal: 'PayPal',
+  venmo: 'Venmo',
+  card: 'Card',
+  cash: 'Cash',
+}
+
+function isMethodEnabled(methods: string[] | null, method: PaymentMethod): boolean {
+  if (methods === null) return true
+  return methods.includes(method)
+}
 
 export default function SchoolsPage() {
   const [schools, setSchools] = useState<SchoolLink[]>([])
@@ -22,6 +37,12 @@ export default function SchoolsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+
+  const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set())
+  const [expandedPayment, setExpandedPayment] = useState<Set<string>>(new Set())
+  const [newGrade, setNewGrade] = useState<Record<string, string>>({})
+  const [savingGradeId, setSavingGradeId] = useState<string | null>(null)
+  const [savingPaymentId, setSavingPaymentId] = useState<string | null>(null)
 
   const fetchSchools = async () => {
     try {
@@ -109,6 +130,104 @@ export default function SchoolsPage() {
     }
   }
 
+  const toggleGradesExpand = (id: string) => {
+    setExpandedGrades(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else {
+        next.add(id)
+        setExpandedPayment(p => { const np = new Set(p); np.delete(id); return np })
+      }
+      return next
+    })
+  }
+
+  const togglePaymentExpand = (id: string) => {
+    setExpandedPayment(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else {
+        next.add(id)
+        setExpandedGrades(p => { const np = new Set(p); np.delete(id); return np })
+      }
+      return next
+    })
+  }
+
+  const handleAddGrade = async (school: SchoolLink) => {
+    const grade = (newGrade[school.id] || '').trim()
+    if (!grade) return
+    const updated = [...(school.grades || []), grade]
+    setSavingGradeId(school.id)
+    try {
+      const res = await fetch(`/api/admin/schools/${school.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grades: updated }),
+      })
+      if (!res.ok) throw new Error()
+      setSchools(prev => prev.map(s => s.id === school.id ? { ...s, grades: updated } : s))
+      setNewGrade(prev => ({ ...prev, [school.id]: '' }))
+    } catch {
+      toast.error('Failed to add grade')
+    } finally {
+      setSavingGradeId(null)
+    }
+  }
+
+  const handleRemoveGrade = async (school: SchoolLink, grade: string) => {
+    const updated = (school.grades || []).filter(g => g !== grade)
+    setSavingGradeId(school.id)
+    try {
+      const res = await fetch(`/api/admin/schools/${school.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grades: updated }),
+      })
+      if (!res.ok) throw new Error()
+      setSchools(prev => prev.map(s => s.id === school.id ? { ...s, grades: updated } : s))
+    } catch {
+      toast.error('Failed to remove grade')
+    } finally {
+      setSavingGradeId(null)
+    }
+  }
+
+  const handlePaymentToggle = async (school: SchoolLink, method: PaymentMethod) => {
+    const current = school.allowed_payment_methods
+    const currentEnabled = isMethodEnabled(current, method)
+
+    let updated: string[] | null
+    if (current === null) {
+      updated = PAYMENT_METHODS.filter(m => m !== method)
+    } else {
+      if (currentEnabled) {
+        updated = current.filter(m => m !== method)
+      } else {
+        updated = [...current, method]
+      }
+    }
+
+    if (updated !== null && updated.length === PAYMENT_METHODS.length) {
+      updated = null
+    }
+
+    setSavingPaymentId(school.id)
+    try {
+      const res = await fetch(`/api/admin/schools/${school.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allowed_payment_methods: updated }),
+      })
+      if (!res.ok) throw new Error()
+      setSchools(prev => prev.map(s => s.id === school.id ? { ...s, allowed_payment_methods: updated } : s))
+    } catch {
+      toast.error('Failed to update payment methods')
+    } finally {
+      setSavingPaymentId(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
@@ -178,7 +297,7 @@ export default function SchoolsPage() {
             </div>
             <p className="font-medium text-gray-900 dark:text-white">No schools yet</p>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Add a school to generate a unique order link.</p>
-            <Button onClick={() => setAdding(true)} className="mt-4 text-white">
+            <Button onClick={() => setAdding(true)} className="mt-4 text-white" style={{ backgroundColor: '#00352F' }}>
               <Plus className="w-4 h-4 mr-2" /> Add First School
             </Button>
           </CardContent>
@@ -186,7 +305,8 @@ export default function SchoolsPage() {
       ) : (
         <div className="space-y-3">
           {schools.map(school => {
-            const link = typeof window !== 'undefined' ? getLink(school.slug) : `/order/${school.slug}`
+            const gradesOpen = expandedGrades.has(school.id)
+            const paymentOpen = expandedPayment.has(school.id)
             return (
               <Card key={school.id} className={!school.is_active ? 'opacity-60' : ''}>
                 <CardContent className="p-4">
@@ -219,6 +339,116 @@ export default function SchoolsPage() {
                       <p className="text-xs text-gray-400 mt-1">
                         Created {new Date(school.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
+
+                      {/* Expand buttons */}
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => toggleGradesExpand(school.id)}
+                          className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${gradesOpen ? 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40' : 'text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}
+                        >
+                          <Tag className="w-3.5 h-3.5" />
+                          Grades
+                          {(school.grades || []).length > 0 && (
+                            <span className="bg-[#CEDC00]/30 text-[#00352F] px-1.5 rounded-full text-[10px] font-bold">
+                              {(school.grades || []).length}
+                            </span>
+                          )}
+                          {gradesOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => togglePaymentExpand(school.id)}
+                          className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${paymentOpen ? 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40' : 'text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}
+                        >
+                          <Settings2 className="w-3.5 h-3.5" />
+                          Payment Settings
+                          {paymentOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
+                      </div>
+
+                      {/* Grades expandable */}
+                      {gradesOpen && (
+                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-100 dark:border-gray-700">
+                          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Grades</p>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {(school.grades || []).length === 0 ? (
+                              <p className="text-xs text-gray-400">No grades added yet — grade field will be a text input</p>
+                            ) : (
+                              (school.grades || []).map(grade => (
+                                <span
+                                  key={grade}
+                                  className="flex items-center gap-1 px-2.5 py-1 bg-[#E5F2F0] text-[#00352F] text-xs font-medium rounded-full"
+                                >
+                                  {grade}
+                                  <button
+                                    type="button"
+                                    disabled={savingGradeId === school.id}
+                                    onClick={() => handleRemoveGrade(school, grade)}
+                                    className="ml-0.5 text-[#00352F]/60 hover:text-red-500 transition-colors disabled:opacity-50"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              ))
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="e.g. Grade 5"
+                              value={newGrade[school.id] || ''}
+                              onChange={e => setNewGrade(prev => ({ ...prev, [school.id]: e.target.value }))}
+                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddGrade(school) } }}
+                              className="flex-1 h-8 text-sm"
+                              disabled={savingGradeId === school.id}
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => handleAddGrade(school)}
+                              disabled={savingGradeId === school.id || !(newGrade[school.id] || '').trim()}
+                              className="text-white h-8"
+                              style={{ backgroundColor: '#00352F' }}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Payment Settings expandable */}
+                      {paymentOpen && (
+                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-100 dark:border-gray-700">
+                          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Allowed Payment Methods</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {PAYMENT_METHODS.map(method => {
+                              const enabled = isMethodEnabled(school.allowed_payment_methods, method)
+                              return (
+                                <button
+                                  key={method}
+                                  type="button"
+                                  disabled={savingPaymentId === school.id}
+                                  onClick={() => handlePaymentToggle(school, method)}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                                    enabled
+                                      ? 'bg-[#00352F] text-white border-[#00352F]'
+                                      : 'bg-white dark:bg-gray-900 text-gray-500 border-gray-200 dark:border-gray-600 hover:border-gray-400'
+                                  } disabled:opacity-50`}
+                                >
+                                  {enabled && <span className="mr-1">✓</span>}
+                                  {METHOD_LABELS[method]}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-2">
+                            {school.allowed_payment_methods === null
+                              ? 'All methods enabled (default)'
+                              : school.allowed_payment_methods.length === 0
+                                ? 'No payment methods allowed'
+                                : `${school.allowed_payment_methods.length} method${school.allowed_payment_methods.length === 1 ? '' : 's'} enabled`}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}

@@ -7,25 +7,44 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, Trash2, Eye, EyeOff, Briefcase, Pencil, Check, X } from 'lucide-react'
+import {
+  Briefcase, Plus, Copy, Check, Trash2, ToggleLeft, ToggleRight,
+  ExternalLink, Link2, Users, Settings2, ChevronDown, ChevronUp
+} from 'lucide-react'
 import type { PrivateCompany } from '@/types'
+
+const PAYMENT_METHODS = ['paypal', 'venmo', 'card', 'cash'] as const
+type PaymentMethod = typeof PAYMENT_METHODS[number]
+
+const METHOD_LABELS: Record<PaymentMethod, string> = {
+  paypal: 'PayPal',
+  venmo: 'Venmo',
+  card: 'Card',
+  cash: 'Cash',
+}
+
+function isMethodEnabled(methods: string[] | null, method: PaymentMethod): boolean {
+  if (methods === null) return true
+  return methods.includes(method)
+}
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<PrivateCompany[]>([])
   const [loading, setLoading] = useState(true)
-  const [newName, setNewName] = useState('')
   const [adding, setAdding] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editName, setEditName] = useState('')
-  const [savingId, setSavingId] = useState<string | null>(null)
+  const [newCompanyName, setNewCompanyName] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [expandedPayment, setExpandedPayment] = useState<Set<string>>(new Set())
+  const [savingPaymentId, setSavingPaymentId] = useState<string | null>(null)
 
   const fetchCompanies = async () => {
     try {
       const res = await fetch('/api/admin/private-companies')
       const json = await res.json()
-      setCompanies(json.companies || [])
+      if (json.companies) setCompanies(json.companies)
     } catch {
       toast.error('Failed to load companies')
     } finally {
@@ -35,56 +54,16 @@ export default function CompaniesPage() {
 
   useEffect(() => { fetchCompanies() }, [])
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newName.trim()) return
-    setAdding(true)
+  const getLink = (slug: string) => `${window.location.origin}/order/company/${slug}`
+
+  const handleCopy = async (company: PrivateCompany) => {
     try {
-      const res = await fetch('/api/admin/private-companies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName.trim() }),
-      })
-      const json = await res.json()
-      if (!res.ok) { toast.error(json.error || 'Failed to add company'); return }
-      setCompanies(prev => [...prev, json.company].sort((a, b) => a.name.localeCompare(b.name)))
-      setNewName('')
-      toast.success(`"${json.company.name}" added`)
+      await navigator.clipboard.writeText(getLink(company.slug))
+      setCopiedId(company.id)
+      toast.success('Link copied to clipboard!')
+      setTimeout(() => setCopiedId(null), 2000)
     } catch {
-      toast.error('Something went wrong')
-    } finally {
-      setAdding(false)
-    }
-  }
-
-  const startEdit = (company: PrivateCompany) => {
-    setEditingId(company.id)
-    setEditName(company.name)
-  }
-
-  const cancelEdit = () => {
-    setEditingId(null)
-    setEditName('')
-  }
-
-  const handleSaveName = async (company: PrivateCompany) => {
-    if (!editName.trim() || editName.trim() === company.name) { cancelEdit(); return }
-    setSavingId(company.id)
-    try {
-      const res = await fetch(`/api/admin/private-companies/${company.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName.trim() }),
-      })
-      const json = await res.json()
-      if (!res.ok) { toast.error(json.error || 'Failed to update'); return }
-      setCompanies(prev => prev.map(c => c.id === company.id ? json.company : c).sort((a, b) => a.name.localeCompare(b.name)))
-      cancelEdit()
-      toast.success('Company renamed')
-    } catch {
-      toast.error('Failed to update')
-    } finally {
-      setSavingId(null)
+      toast.error('Failed to copy link')
     }
   }
 
@@ -96,177 +75,344 @@ export default function CompaniesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !company.is_active }),
       })
-      const json = await res.json()
-      if (!res.ok) { toast.error(json.error || 'Failed to update'); return }
-      setCompanies(prev => prev.map(c => c.id === company.id ? json.company : c))
-      toast.success(company.is_active ? 'Hidden from order form' : 'Visible in order form')
+      if (!res.ok) throw new Error()
+      toast.success(`Company link ${company.is_active ? 'deactivated' : 'activated'}`)
+      setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, is_active: !c.is_active } : c))
     } catch {
-      toast.error('Failed to update')
+      toast.error('Failed to update company')
     } finally {
       setTogglingId(null)
     }
   }
 
   const handleDelete = async (company: PrivateCompany) => {
-    if (!confirm(`Remove "${company.name}"? This cannot be undone.`)) return
+    if (!confirm(`Delete "${company.name}"? This cannot be undone.`)) return
     setDeletingId(company.id)
     try {
       const res = await fetch(`/api/admin/private-companies/${company.id}`, { method: 'DELETE' })
-      if (!res.ok) { toast.error('Failed to delete'); return }
+      if (!res.ok) throw new Error()
+      toast.success('Company deleted')
       setCompanies(prev => prev.filter(c => c.id !== company.id))
-      toast.success(`"${company.name}" removed`)
     } catch {
-      toast.error('Failed to delete')
+      toast.error('Failed to delete company')
     } finally {
       setDeletingId(null)
     }
   }
 
-  const activeCount = companies.filter(c => c.is_active).length
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCompanyName.trim()) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/admin/private-companies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCompanyName.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || 'Failed to create company')
+        return
+      }
+      toast.success(`Company link created for "${json.company.name}"`)
+      setCompanies(prev => [{ ...json.company, order_count: 0 }, ...prev])
+      setNewCompanyName('')
+      setAdding(false)
+    } catch {
+      toast.error('Failed to create company')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const togglePaymentExpand = (id: string) => {
+    setExpandedPayment(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handlePaymentToggle = async (company: PrivateCompany, method: PaymentMethod) => {
+    const current = company.allowed_payment_methods
+    const currentEnabled = isMethodEnabled(current, method)
+
+    let updated: string[] | null
+    if (current === null) {
+      updated = PAYMENT_METHODS.filter(m => m !== method)
+    } else {
+      if (currentEnabled) {
+        updated = current.filter(m => m !== method)
+      } else {
+        updated = [...current, method]
+      }
+    }
+
+    if (updated !== null && updated.length === PAYMENT_METHODS.length) {
+      updated = null
+    }
+
+    setSavingPaymentId(company.id)
+    try {
+      const res = await fetch(`/api/admin/private-companies/${company.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allowed_payment_methods: updated }),
+      })
+      if (!res.ok) throw new Error()
+      setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, allowed_payment_methods: updated } : c))
+    } catch {
+      toast.error('Failed to update payment methods')
+    } finally {
+      setSavingPaymentId(null)
+    }
+  }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Private Companies</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Manage the companies available in the private company order dropdown
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Private Companies</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            Generate unique order links for each private company
+          </p>
+        </div>
+        {!adding && (
+          <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#00352F' }}>
+            <Plus className="w-4 h-4 mr-2" /> Add Company
+          </Button>
+        )}
       </div>
 
-      {/* Stats */}
-      <div className="flex gap-3">
-        <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
-          <p className="text-2xl font-bold text-gray-900">{companies.length}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total</p>
-        </div>
-        <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
-          <p className="text-2xl font-bold text-[#00352F]">{activeCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Active</p>
-        </div>
-        <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
-          <p className="text-2xl font-bold text-gray-400">{companies.length - activeCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Hidden</p>
-        </div>
-      </div>
+      {/* Add company form */}
+      {adding && (
+        <Card className="border-blue-200 dark:border-blue-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-blue-600" />
+              New Company Link
+            </CardTitle>
+            <CardDescription>Enter the company name to generate a unique shareable order link.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdd} className="flex gap-3">
+              <Input
+                autoFocus
+                placeholder="e.g. Acme Corporation"
+                value={newCompanyName}
+                onChange={e => setNewCompanyName(e.target.value)}
+                className="flex-1"
+                disabled={submitting}
+              />
+              <Button type="submit" disabled={submitting || !newCompanyName.trim()} className="text-white" style={{ backgroundColor: '#00352F' }}>
+                {submitting ? 'Creating...' : 'Create Link'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => { setAdding(false); setNewCompanyName('') }} disabled={submitting}>
+                Cancel
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Add form */}
-      <Card className="border-[#CEDC00]/40">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Plus className="w-4 h-4 text-[#00352F]" /> Add Company
-          </CardTitle>
-          <CardDescription>Add a new private company to the dropdown list</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAdd} className="flex gap-2">
-            <Input
-              placeholder="e.g. Acme Corporation"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              disabled={adding}
-              className="flex-1"
-            />
-            <Button
-              type="submit"
-              disabled={adding || !newName.trim()}
-              className="text-white"
-              style={{ backgroundColor: '#00352F' }}
-            >
-              {adding ? 'Adding...' : 'Add'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* List */}
+      {/* Companies list */}
       {loading ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-72" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : companies.length === 0 ? (
         <Card>
           <CardContent className="py-16 flex flex-col items-center text-center">
-            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Briefcase className="w-7 h-7 text-gray-300" />
+            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+              <Briefcase className="w-6 h-6 text-gray-400" />
             </div>
-            <p className="font-semibold text-gray-900">No companies yet</p>
-            <p className="text-gray-500 text-sm mt-1">Add your first company above.</p>
+            <p className="font-medium text-gray-900 dark:text-white">No companies yet</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Add a company to generate a unique order link.</p>
+            <Button onClick={() => setAdding(true)} className="mt-4 text-white" style={{ backgroundColor: '#00352F' }}>
+              <Plus className="w-4 h-4 mr-2" /> Add First Company
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {companies.map(company => (
-            <div
-              key={company.id}
-              className={`bg-white border rounded-xl px-4 py-3 flex items-center gap-3 transition-opacity ${!company.is_active ? 'opacity-60' : ''}`}
-            >
-              <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
+        <div className="space-y-3">
+          {companies.map(company => {
+            const link = typeof window !== 'undefined' ? getLink(company.slug) : `/order/company/${company.slug}`
+            const paymentOpen = expandedPayment.has(company.id)
+            return (
+              <Card key={company.id} className={!company.is_active ? 'opacity-60' : ''}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    {/* Icon */}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${company.is_active ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                      <Briefcase className={`w-5 h-5 ${company.is_active ? 'text-blue-600' : 'text-gray-400'}`} />
+                    </div>
 
-              {editingId === company.id ? (
-                <input
-                  autoFocus
-                  value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSaveName(company); if (e.key === 'Escape') cancelEdit() }}
-                  className="flex-1 text-sm border border-[#CEDC00] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#00352F]/20"
-                />
-              ) : (
-                <span className="flex-1 text-sm font-medium text-gray-800">{company.name}</span>
-              )}
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-900 dark:text-white">{company.name}</span>
+                        <Badge variant={company.is_active ? 'default' : 'secondary'} className={company.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0' : 'bg-gray-100 text-gray-500 border-0'}>
+                          {company.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                        {(company.order_count ?? 0) > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                            <Users className="w-3 h-3" />
+                            {company.order_count} {company.order_count === 1 ? 'order' : 'orders'}
+                          </span>
+                        )}
+                      </div>
+                      {/* Link display */}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <Link2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">/order/company/{company.slug}</span>
+                      </div>
+                      {/* Created date */}
+                      <p className="text-xs text-gray-400 mt-1">
+                        Created {new Date(company.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
 
-              {!company.is_active && <Badge variant="outline" className="text-xs text-gray-400">Hidden</Badge>}
+                      {/* Payment Settings expandable */}
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={() => togglePaymentExpand(company.id)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-[#00352F] transition-colors"
+                        >
+                          <Settings2 className="w-3.5 h-3.5" />
+                          Payment Settings
+                          {paymentOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
 
-              <div className="flex gap-1 flex-shrink-0">
-                {editingId === company.id ? (
-                  <>
-                    <button
-                      onClick={() => handleSaveName(company)}
-                      disabled={savingId === company.id}
-                      className="p-1.5 rounded-lg text-[#00352F] hover:bg-[#E5F2F0] transition-colors"
-                      title="Save"
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={cancelEdit}
-                      className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
-                      title="Cancel"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => startEdit(company)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                      title="Rename"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleToggle(company)}
-                      disabled={togglingId === company.id}
-                      className={`p-1.5 rounded-lg transition-colors ${company.is_active ? 'text-[#00352F] hover:bg-[#E5F2F0]' : 'text-gray-400 hover:bg-gray-100'}`}
-                      title={company.is_active ? 'Hide from order form' : 'Show in order form'}
-                    >
-                      {company.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(company)}
-                      disabled={deletingId === company.id}
-                      className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
+                        {paymentOpen && (
+                          <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-100 dark:border-gray-700">
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Allowed Payment Methods</p>
+                            <div className="flex gap-2 flex-wrap">
+                              {PAYMENT_METHODS.map(method => {
+                                const enabled = isMethodEnabled(company.allowed_payment_methods, method)
+                                return (
+                                  <button
+                                    key={method}
+                                    type="button"
+                                    disabled={savingPaymentId === company.id}
+                                    onClick={() => handlePaymentToggle(company, method)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                                      enabled
+                                        ? 'bg-[#00352F] text-white border-[#00352F]'
+                                        : 'bg-white dark:bg-gray-900 text-gray-500 border-gray-200 dark:border-gray-600 hover:border-gray-400'
+                                    } disabled:opacity-50`}
+                                  >
+                                    {enabled && <span className="mr-1">✓</span>}
+                                    {METHOD_LABELS[method]}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                            <p className="text-[11px] text-gray-400 mt-2">
+                              {company.allowed_payment_methods === null
+                                ? 'All methods enabled (default)'
+                                : company.allowed_payment_methods.length === 0
+                                  ? 'No payment methods allowed'
+                                  : `${company.allowed_payment_methods.length} method${company.allowed_payment_methods.length === 1 ? '' : 's'} enabled`}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Copy link */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopy(company)}
+                        className="gap-1.5"
+                        disabled={!company.is_active}
+                        title={company.is_active ? 'Copy shareable link' : 'Link is inactive'}
+                      >
+                        {copiedId === company.id ? (
+                          <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</>
+                        ) : (
+                          <><Copy className="w-3.5 h-3.5" /> Copy Link</>
+                        )}
+                      </Button>
+
+                      {/* Open link */}
+                      {company.is_active && (
+                        <a
+                          href={`/order/company/${company.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button size="sm" variant="outline" title="Open order form">
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Button>
+                        </a>
+                      )}
+
+                      {/* Toggle active */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggle(company)}
+                        disabled={togglingId === company.id}
+                        title={company.is_active ? 'Deactivate link' : 'Activate link'}
+                        className={company.is_active ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}
+                      >
+                        {togglingId === company.id ? (
+                          <span className="text-xs">...</span>
+                        ) : company.is_active ? (
+                          <ToggleRight className="w-4 h-4" />
+                        ) : (
+                          <ToggleLeft className="w-4 h-4" />
+                        )}
+                      </Button>
+
+                      {/* Delete */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDelete(company)}
+                        disabled={deletingId === company.id}
+                        title="Delete company"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        {deletingId === company.id ? (
+                          <span className="text-xs">...</span>
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
+      )}
+
+      {/* Info card */}
+      {companies.length > 0 && (
+        <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+          <CardContent className="p-4 flex gap-3">
+            <Link2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Each company link opens an order form pre-filled with the company name. Share it with employees so orders are automatically attributed to the correct company.
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

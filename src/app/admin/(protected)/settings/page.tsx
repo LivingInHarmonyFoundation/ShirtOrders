@@ -34,6 +34,7 @@ export default function SettingsPage() {
   const [personalEnabled, setPersonalEnabled] = useState(true)
   const [privateCompanyEnabled, setPrivateCompanyEnabled] = useState(true)
   const [cashEnabled, setCashEnabled] = useState(false)
+  const [personalAllowedPaymentMethods, setPersonalAllowedPaymentMethods] = useState<string[] | null>(null)
   const [confirmationMessage, setConfirmationMessage] = useState('')
   const [adminPhone, setAdminPhone] = useState('')
   const [smsNotifications, setSmsNotifications] = useState(false)
@@ -63,6 +64,7 @@ export default function SettingsPage() {
           setPersonalEnabled(settings.personal_orders_enabled ?? true)
           setPrivateCompanyEnabled(settings.private_company_orders_enabled ?? true)
           setCashEnabled(settings.cash_enabled ?? false)
+          setPersonalAllowedPaymentMethods(settings.personal_allowed_payment_methods ?? null)
           setConfirmationMessage(settings.confirmation_message || '')
           setAdminPhone(settings.admin_phone || '')
           setSmsNotifications(settings.sms_notifications_enabled ?? false)
@@ -197,6 +199,7 @@ export default function SettingsPage() {
           personal_orders_enabled: personalEnabled,
           private_company_orders_enabled: privateCompanyEnabled,
           cash_enabled: cashEnabled,
+          personal_allowed_payment_methods: personalAllowedPaymentMethods,
           confirmation_message: confirmationMessage,
           admin_phone: adminPhone || null,
           sms_notifications_enabled: smsNotifications,
@@ -576,6 +579,55 @@ export default function SettingsPage() {
               </div>
             </div>
             <Switch checked={cashEnabled} onCheckedChange={setCashEnabled} />
+          </div>
+          <Separator />
+          {/* Personal orders payment methods */}
+          <div className="space-y-2">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Personal Orders — Payment Methods</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Allowed payment methods for personal orders</p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {(['paypal', 'venmo', 'card', 'cash'] as const).map(method => {
+                const labels = { paypal: 'PayPal', venmo: 'Venmo', card: 'Card', cash: 'Cash' }
+                const enabled = personalAllowedPaymentMethods === null || personalAllowedPaymentMethods.includes(method)
+                return (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => {
+                      const all = ['paypal', 'venmo', 'card', 'cash']
+                      const current = personalAllowedPaymentMethods
+                      let updated: string[] | null
+                      if (current === null) {
+                        updated = all.filter(m => m !== method)
+                      } else if (enabled) {
+                        updated = current.filter(m => m !== method)
+                      } else {
+                        updated = [...current, method]
+                      }
+                      if (updated !== null && updated.length === all.length) updated = null
+                      setPersonalAllowedPaymentMethods(updated)
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      enabled
+                        ? 'bg-[#00352F] text-white border-[#00352F]'
+                        : 'bg-white dark:bg-gray-900 text-gray-500 border-gray-200 dark:border-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {enabled && <span className="mr-1">✓</span>}
+                    {labels[method]}
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-[11px] text-gray-400">
+              {personalAllowedPaymentMethods === null
+                ? 'All methods enabled (default)'
+                : personalAllowedPaymentMethods.length === 0
+                  ? 'No payment methods allowed'
+                  : `${personalAllowedPaymentMethods.length} method${personalAllowedPaymentMethods.length === 1 ? '' : 's'} enabled`}
+            </p>
           </div>
         </CardContent>
       </Card>

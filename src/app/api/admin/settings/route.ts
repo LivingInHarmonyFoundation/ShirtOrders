@@ -6,7 +6,7 @@ const PUBLIC_FIELDS = [
   'id', 'app_name', 'logo_url', 'mission_banner_url', 'badge_url', 'shirt_price', 'available_sizes',
   'school_orders_enabled', 'government_orders_enabled',
   'personal_orders_enabled', 'private_company_orders_enabled',
-  'manual_payment_enabled', 'cash_enabled', 'confirmation_message',
+  'manual_payment_enabled', 'cash_enabled', 'personal_allowed_payment_methods', 'confirmation_message',
 ]
 
 export async function GET() {
@@ -50,7 +50,7 @@ export async function PATCH(request: NextRequest) {
     'app_name', 'logo_url', 'mission_banner_url', 'badge_url', 'shirt_price', 'available_sizes',
     'school_orders_enabled', 'government_orders_enabled',
     'personal_orders_enabled', 'private_company_orders_enabled',
-    'manual_payment_enabled', 'cash_enabled', 'confirmation_message',
+    'manual_payment_enabled', 'cash_enabled', 'personal_allowed_payment_methods', 'confirmation_message',
     'admin_phone', 'sms_notifications_enabled',
   ]
 

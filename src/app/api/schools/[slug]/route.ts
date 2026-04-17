@@ -10,7 +10,7 @@ export async function GET(
 
   const { data: school, error } = await admin
     .from('school_links')
-    .select('id, school_name, slug, is_active')
+    .select('id, school_name, slug, is_active, grades, allowed_payment_methods')
     .eq('slug', slug)
     .single()
 

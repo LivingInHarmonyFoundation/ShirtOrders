@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { School, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShoppingBag } from 'lucide-react'
+import { Briefcase, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShoppingBag } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import Image from 'next/image'
 import type { AppSettings, ShirtSize, ShirtCatalogItem } from '@/types'
@@ -21,8 +21,7 @@ const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Valid email is required'),
   phone: z.string().optional(),
-  grade: z.string().min(1, 'Grade is required'),
-  classroom: z.string().min(1, 'Classroom is required'),
+  company_department: z.string().optional(),
   shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const),
   quantity: z.number().int().positive('Quantity must be at least 1'),
   notes: z.string().optional(),
@@ -30,20 +29,19 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-interface SchoolInfo {
+interface CompanyInfo {
   id: string
-  school_name: string
+  name: string
   slug: string
   is_active: boolean
-  grades: string[] | null
   allowed_payment_methods: string[] | null
 }
 
-export default function SchoolOrderPage({ params }: { params: Promise<{ slug: string }> }) {
+export default function CompanyOrderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const router = useRouter()
 
-  const [school, setSchool] = useState<SchoolInfo | null>(null)
+  const [company, setCompany] = useState<CompanyInfo | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
@@ -62,14 +60,14 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/schools/${slug}`).then(r => r.json()),
+      fetch(`/api/companies/${slug}`).then(r => r.json()),
       fetch('/api/admin/settings').then(r => r.json()),
       fetch('/api/catalog').then(r => r.json()),
-    ]).then(([schoolData, settingsData, catalogData]) => {
-      if (schoolData.error) {
-        setLoadError(schoolData.error)
+    ]).then(([companyData, settingsData, catalogData]) => {
+      if (companyData.error) {
+        setLoadError(companyData.error)
       } else {
-        setSchool(schoolData.school)
+        setCompany(companyData.company)
       }
       if (settingsData.settings) setSettings(settingsData.settings)
       if (catalogData.items?.length > 0) {
@@ -82,7 +80,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
   }, [slug])
 
   const onSubmit = async (data: FormData) => {
-    if (!school) return
+    if (!company) return
     setIsSubmitting(true)
     try {
       const res = await fetch('/api/orders', {
@@ -91,9 +89,9 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
         body: JSON.stringify({
           ...data,
           quantity: Number(data.quantity),
-          institution_type: 'school',
-          school_name: school.school_name,
-          school_link_id: school.id,
+          institution_type: 'private_company',
+          company_name: company.name,
+          company_link_id: company.id,
           catalog_item_id: selectedCatalogItem?.id || null,
           catalog_item_name: selectedCatalogItem?.name || null,
         }),
@@ -136,7 +134,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
     )
   }
 
-  if (loadError || !school) {
+  if (loadError || !company) {
     return (
       <div className="min-h-screen bg-[#F5F4F0]">
         <Header />
@@ -145,7 +143,7 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
             <AlertCircle className="w-7 h-7 text-red-500" />
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">Link Unavailable</h1>
-          <p className="text-gray-500">{loadError || 'This school order link could not be found.'}</p>
+          <p className="text-gray-500">{loadError || 'This company order link could not be found.'}</p>
         </main>
       </div>
     )
@@ -156,21 +154,21 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
       <Header />
 
       <main className="max-w-2xl mx-auto px-4 py-8">
-        {/* School banner */}
+        {/* Company banner */}
         <div className="mb-6 rounded-2xl px-5 py-4 flex items-center gap-3 text-white shadow-md" style={{ backgroundColor: '#00352F' }}>
           <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center flex-shrink-0">
-            <School className="w-5 h-5" />
+            <Briefcase className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[#CEDC00] text-xs font-semibold uppercase tracking-wide">School Order Form</p>
-            <p className="font-bold text-lg leading-tight">{school.school_name}</p>
+            <p className="text-[#CEDC00] text-xs font-semibold uppercase tracking-wide">Company Order Form</p>
+            <p className="font-bold text-lg leading-tight">{company.name}</p>
           </div>
         </div>
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Place Your Order</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Fill out the form to order shirts for <strong>{school.school_name}</strong>.
+            Fill out the form to order shirts for <strong>{company.name}</strong>.
           </p>
         </div>
 
@@ -249,44 +247,23 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
             </CardContent>
           </Card>
 
-          {/* School Info */}
+          {/* Company Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">School Information</CardTitle>
+              <CardTitle className="text-base">Company Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>School Name</Label>
+                <Label>Company Name</Label>
                 <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-[#E5F2F0] border border-[#CEDC00]/30 rounded-lg">
-                  <School className="w-4 h-4 text-[#00352F] flex-shrink-0" />
-                  <span className="text-sm text-[#00352F] font-semibold">{school.school_name}</span>
+                  <Briefcase className="w-4 h-4 text-[#00352F] flex-shrink-0" />
+                  <span className="text-sm text-[#00352F] font-semibold">{company.name}</span>
                   <span className="ml-auto text-xs text-[#00352F]/50 bg-[#CEDC00]/20 px-2 py-0.5 rounded">Pre-filled</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="grade">Grade *</Label>
-                  {school.grades && school.grades.length > 0 ? (
-                    <select
-                      id="grade"
-                      {...register('grade')}
-                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    >
-                      <option value="">Select a grade...</option>
-                      {school.grades.map(g => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <Input id="grade" {...register('grade')} placeholder="Grade 5" className="mt-1" />
-                  )}
-                  {errors.grade && <p className="text-red-500 text-xs mt-1">{errors.grade.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="classroom">Classroom *</Label>
-                  <Input id="classroom" {...register('classroom')} placeholder="Room 101" className="mt-1" />
-                  {errors.classroom && <p className="text-red-500 text-xs mt-1">{errors.classroom.message}</p>}
-                </div>
+              <div>
+                <Label htmlFor="company_department">Department <span className="text-gray-400">(optional)</span></Label>
+                <Input id="company_department" {...register('company_department')} placeholder="e.g. Marketing, HR, Engineering" className="mt-1" />
               </div>
             </CardContent>
           </Card>

@@ -20,6 +20,8 @@ export async function PATCH(
   const allowed: Record<string, unknown> = {}
   if ('is_active' in body) allowed.is_active = body.is_active
   if ('school_name' in body) allowed.school_name = body.school_name
+  if ('grades' in body) allowed.grades = body.grades
+  if ('allowed_payment_methods' in body) allowed.allowed_payment_methods = body.allowed_payment_methods
 
   const { data, error } = await admin
     .from('school_links')

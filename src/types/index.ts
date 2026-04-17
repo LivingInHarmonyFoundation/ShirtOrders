@@ -35,6 +35,8 @@ export interface Order {
   stripe_payment_intent_id: string | null
   stripe_checkout_session_id: string | null
   payment_method: PaymentMethod | null
+  company_link_id: string | null
+  order_allowed_payment_methods: string[] | null
   date_submitted: string
   date_paid: string | null
   date_delivered: string | null
@@ -78,6 +80,7 @@ export interface AppSettings {
   private_company_orders_enabled: boolean
   manual_payment_enabled: boolean
   cash_enabled: boolean
+  personal_allowed_payment_methods: string[] | null
   confirmation_message: string
   admin_phone: string | null
   sms_notifications_enabled: boolean
@@ -161,6 +164,8 @@ export interface GovOrg {
   id: string
   name: string
   is_active: boolean
+  departments: string[] | null
+  allowed_payment_methods: string[] | null
   created_at: string
   updated_at: string
 }
@@ -168,9 +173,12 @@ export interface GovOrg {
 export interface PrivateCompany {
   id: string
   name: string
+  slug: string
   is_active: boolean
+  allowed_payment_methods: string[] | null
   created_at: string
   updated_at: string
+  order_count?: number
 }
 
 export interface SchoolLink {
@@ -178,6 +186,8 @@ export interface SchoolLink {
   school_name: string
   slug: string
   is_active: boolean
+  grades: string[] | null
+  allowed_payment_methods: string[] | null
   created_at: string
   order_count?: number
 }
