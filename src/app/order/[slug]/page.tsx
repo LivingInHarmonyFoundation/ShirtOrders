@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { School, Loader2, AlertCircle, CheckCircle2, ShoppingBag, ShoppingCart } from 'lucide-react'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import Image from 'next/image'
 import ShirtViewer from '@/components/shared/ShirtViewer'
 import CartIcon from '@/components/shared/CartIcon'
@@ -23,7 +23,7 @@ import type { AppSettings, ShirtCatalogItem } from '@/types'
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Valid email is required'),
-  phone: z.string().optional(),
+  phone: z.string().optional().refine(v => !v || v.replace(/\D/g, '').length === 10, { message: 'Enter a valid 10-digit phone number' }),
   grade: z.string().min(1, 'Grade is required'),
   classroom: z.string().min(1, 'Classroom is required'),
   shirt_size: z.string().min(1, 'Please select a size'),
@@ -286,7 +286,17 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
                 </div>
                 <div>
                   <Label htmlFor="phone">Phone <span className="text-gray-400">(optional)</span></Label>
-                  <Input id="phone" type="tel" {...register('phone')} placeholder="+1 (555) 000-0000" className="mt-1" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    {...register('phone')}
+                    onChange={e => setValue('phone', formatPhone(e.target.value), { shouldValidate: true })}
+                    placeholder="(787) 555 - 1234"
+                    maxLength={16}
+                    className="mt-1"
+                  />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                 </div>
               </div>
             </CardContent>
