@@ -9,6 +9,8 @@ import { CheckCircle, Printer, Home, Loader2 } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { PaymentStatusBadge } from '@/components/shared/status-badge'
 import Image from 'next/image'
+import LanguageSelector from '@/components/shared/LanguageSelector'
+import { useT } from '@/contexts/LanguageContext'
 import type { Order } from '@/types'
 
 function ConfirmationContent() {
@@ -16,10 +18,11 @@ function ConfirmationContent() {
   const router = useRouter()
   const orderId = searchParams.get('order_id')
   const printRef = useRef<HTMLDivElement>(null)
+  const t = useT()
 
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
-  const [confirmationMsg, setConfirmationMsg] = useState('Thank you for your order! We will process it shortly.')
+  const [confirmationMsg, setConfirmationMsg] = useState('')
 
   useEffect(() => {
     if (!orderId) { router.push('/order'); return }
@@ -51,6 +54,8 @@ function ConfirmationContent() {
     return () => clearInterval(interval)
   }, [order])
 
+  const defaultMsg = t('confirmation', 'defaultConfirmMsg')
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F4F0]">
@@ -64,8 +69,8 @@ function ConfirmationContent() {
       <div className="min-h-screen bg-[#F5F4F0] flex items-center justify-center px-4">
         <Card className="max-w-sm w-full">
           <CardContent className="p-6 text-center">
-            <h2 className="font-semibold mb-3">Order not found</h2>
-            <Button onClick={() => router.push('/order')} variant="outline">Place New Order</Button>
+            <h2 className="font-semibold mb-3">{t('confirmation', 'orderNotFound')}</h2>
+            <Button onClick={() => router.push('/order')} variant="outline">{t('confirmation', 'placeNewOrder')}</Button>
           </CardContent>
         </Card>
       </div>
@@ -86,14 +91,17 @@ function ConfirmationContent() {
     <div className="min-h-screen bg-[#F5F4F0]">
       {/* Header */}
       <header className="border-b bg-white shadow-sm print:hidden">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-0.5 border border-gray-100">
-            <Image src="/logo.png" alt="Living in Harmony Foundation" width={36} height={36} className="object-contain" />
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-0.5 border border-gray-100">
+              <Image src="/logo.png" alt="Living in Harmony Foundation" width={36} height={36} className="object-contain" />
+            </div>
+            <div>
+              <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
+              <p className="text-gray-400 text-xs mt-0.5">{t('common', 'appName')}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
-            <p className="text-gray-400 text-xs mt-0.5">Shirt Order Manager</p>
-          </div>
+          <LanguageSelector />
         </div>
       </header>
 
@@ -104,15 +112,17 @@ function ConfirmationContent() {
             <CheckCircle className="w-10 h-10" style={{ color: '#00352F' }} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {order.payment_status === 'paid' || order.payment_status === 'manual' ? 'Order Confirmed!' : 'Order Received!'}
+            {order.payment_status === 'paid' || order.payment_status === 'manual'
+              ? t('confirmation', 'orderConfirmed')
+              : t('confirmation', 'orderReceived')}
           </h1>
-          <p className="text-gray-500 mt-2 text-sm max-w-sm mx-auto">{confirmationMsg}</p>
+          <p className="text-gray-500 mt-2 text-sm max-w-sm mx-auto">{confirmationMsg || defaultMsg}</p>
         </div>
 
         {/* Print-only header */}
         <div className="hidden print:block mb-6 border-b pb-4">
           <h1 className="text-2xl font-bold">Living in Harmony Foundation</h1>
-          <p className="text-gray-500">Shirt Order Receipt</p>
+          <p className="text-gray-500">{t('confirmation', 'receiptTitle')}</p>
         </div>
 
         {/* Receipt card */}
@@ -120,7 +130,7 @@ function ConfirmationContent() {
           <Card className="border-[#CEDC00]/30 shadow-sm">
             <CardHeader className="bg-[#E5F2F0] rounded-t-xl border-b border-[#CEDC00]/20">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base text-[#00352F]">Order Receipt</CardTitle>
+                <CardTitle className="text-base text-[#00352F]">{t('confirmation', 'orderReceipt')}</CardTitle>
                 <PaymentStatusBadge status={order.payment_status} />
               </div>
               <p className="text-xs text-gray-500 font-mono mt-1">{order.order_number}</p>
@@ -129,25 +139,25 @@ function ConfirmationContent() {
               {/* Customer & institution */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Name</p>
+                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'name')}</p>
                   <p className="font-medium text-gray-900 mt-0.5">{order.full_name}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Email</p>
+                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'email')}</p>
                   <p className="font-medium text-gray-900 mt-0.5 text-xs break-all">{order.email}</p>
                 </div>
                 {order.phone && (
                   <div>
-                    <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Phone</p>
+                    <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'phone')}</p>
                     <p className="font-medium text-gray-900 mt-0.5">{order.phone}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Institution</p>
+                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'institution')}</p>
                   <p className="font-medium text-gray-900 capitalize mt-0.5">{order.institution_type}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Details</p>
+                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'details')}</p>
                   <p className="font-medium text-gray-900 mt-0.5">{institutionDisplay}</p>
                 </div>
               </div>
@@ -162,7 +172,7 @@ function ConfirmationContent() {
                       <div>
                         <p className="font-medium text-gray-900">{item.catalog_item_name}</p>
                         <p className="text-xs text-gray-500">
-                          Size <span className="font-semibold text-gray-700">{item.shirt_size}</span>
+                          {t('cart', 'size')} <span className="font-semibold text-gray-700">{item.shirt_size}</span>
                           {' · '}{item.quantity} × {formatCurrency(item.unit_price)}
                         </p>
                       </div>
@@ -172,22 +182,22 @@ function ConfirmationContent() {
                 ) : (
                   <>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Shirt Size</span>
+                      <span className="text-gray-500">{t('checkout', 'shirtSize')}</span>
                       <span className="font-semibold text-gray-900">{order.shirt_size}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Quantity</span>
+                      <span className="text-gray-500">{t('checkout', 'quantity')}</span>
                       <span className="font-semibold text-gray-900">{order.quantity} shirts</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Unit Price</span>
+                      <span className="text-gray-500">{t('checkout', 'unitPrice')}</span>
                       <span className="font-semibold text-gray-900">{formatCurrency(order.unit_price)}</span>
                     </div>
                   </>
                 )}
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-900">Total</span>
+                  <span className="font-bold text-gray-900">{t('confirmation', 'total')}</span>
                   <span className="font-bold text-xl" style={{ color: '#00352F' }}>{formatCurrency(order.total_amount)}</span>
                 </div>
               </div>
@@ -197,7 +207,7 @@ function ConfirmationContent() {
               {/* Payment method */}
               {order.payment_method && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Payment Via</span>
+                  <span className="text-gray-500">{t('confirmation', 'paymentVia')}</span>
                   <span className="font-medium text-gray-900 capitalize">{order.payment_method}</span>
                 </div>
               )}
@@ -205,12 +215,12 @@ function ConfirmationContent() {
               {/* Dates */}
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <p className="text-gray-500">Date Submitted</p>
+                  <p className="text-gray-500">{t('confirmation', 'dateSubmitted')}</p>
                   <p className="font-medium text-gray-900 mt-0.5">{formatDateTime(order.date_submitted)}</p>
                 </div>
                 {order.date_paid && (
                   <div>
-                    <p className="text-gray-500">Date Paid</p>
+                    <p className="text-gray-500">{t('confirmation', 'datePaid')}</p>
                     <p className="font-medium text-gray-900 mt-0.5">{formatDateTime(order.date_paid)}</p>
                   </div>
                 )}
@@ -219,7 +229,7 @@ function ConfirmationContent() {
               {order.payment_status === 'pending' && (
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800">
-                    Payment is pending. If you completed the payment, it will update shortly.
+                    {t('confirmation', 'paymentPending')}
                   </p>
                 </div>
               )}
@@ -230,15 +240,15 @@ function ConfirmationContent() {
         {/* Actions */}
         <div className="flex gap-3 mt-4 print:hidden">
           <Button onClick={() => window.print()} variant="outline" className="flex-1">
-            <Printer className="w-4 h-4 mr-2" /> Print Receipt
+            <Printer className="w-4 h-4 mr-2" /> {t('confirmation', 'printReceipt')}
           </Button>
           <Button onClick={() => router.push('/')} variant="outline" className="flex-1">
-            <Home className="w-4 h-4 mr-2" /> Back to Home
+            <Home className="w-4 h-4 mr-2" /> {t('common', 'backToHome')}
           </Button>
         </div>
 
         <p className="text-xs text-center text-gray-400 mt-4 print:hidden">
-          Save your order number <strong className="text-gray-600">{order.order_number}</strong> for your records.
+          {t('confirmation', 'saveOrderNumber')} <strong className="text-gray-600">{order.order_number}</strong> {t('confirmation', 'forYourRecords')}
         </p>
 
         {/* Mission badge */}
@@ -247,7 +257,7 @@ function ConfirmationContent() {
             <Image src="/badge.jpeg" alt="Que Nadie en PR Envejezca Solo" fill className="object-contain rounded-full" />
           </div>
           <p className="text-xs text-gray-400 italic text-center max-w-xs">
-            Thank you for supporting our mission — <span className="text-[#00352F] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
+            {t('confirmation', 'missionThanks')} <span className="text-[#00352F] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
           </p>
         </div>
       </main>

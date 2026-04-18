@@ -17,7 +17,9 @@ import Image from 'next/image'
 import ShirtViewer from '@/components/shared/ShirtViewer'
 import CartIcon from '@/components/shared/CartIcon'
 import CartDrawer from '@/components/shared/CartDrawer'
+import LanguageSelector from '@/components/shared/LanguageSelector'
 import { useCart } from '@/contexts/CartContext'
+import { useT } from '@/contexts/LanguageContext'
 import type { AppSettings, ShirtCatalogItem } from '@/types'
 
 const schema = z.object({
@@ -42,6 +44,7 @@ interface CompanyInfo {
 
 export default function CompanyOrderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
+  const t = useT()
 
   const { addItem, openCart, items: cartItems, totalItems } = useCart()
   const [company, setCompany] = useState<CompanyInfo | null>(null)
@@ -88,7 +91,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
         if (catalogData.items.length === 1) setSelectedCatalogItem(catalogData.items[0])
       }
     }).catch(() => {
-      setLoadError('Failed to load order form. Please try again.')
+      setLoadError(t('errors', 'failedToLoad'))
     }).finally(() => setLoading(false))
   }, [slug])
 
@@ -158,10 +161,13 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           </div>
           <div>
             <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
-            <p className="text-gray-400 text-xs mt-0.5">Shirt Order Manager</p>
+            <p className="text-gray-400 text-xs mt-0.5">{t('common', 'appName')}</p>
           </div>
         </div>
-        <CartIcon />
+        <div className="flex items-center gap-2">
+          <LanguageSelector />
+          <CartIcon />
+        </div>
       </div>
     </header>
   )
@@ -182,8 +188,8 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-7 h-7 text-red-500" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Link Unavailable</h1>
-          <p className="text-gray-500">{loadError || 'This company order link could not be found.'}</p>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">{t('errors', 'linkUnavailable')}</h1>
+          <p className="text-gray-500">{loadError || t('errors', 'companyLinkNotFound')}</p>
         </main>
         <CartDrawer checkoutPayload={null} />
       </div>
@@ -201,15 +207,15 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
             <Briefcase className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[#CEDC00] text-xs font-semibold uppercase tracking-wide">Company Order Form</p>
+            <p className="text-[#CEDC00] text-xs font-semibold uppercase tracking-wide">{t('order', 'companyOrderTitle')}</p>
             <p className="font-bold text-lg leading-tight">{company.name}</p>
           </div>
         </div>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Place Your Order</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('order', 'title')}</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Fill out the form to order shirts for <strong>{company.name}</strong>.
+            {t('order', 'companyOrderSub')} <strong>{company.name}</strong>.
           </p>
         </div>
 
@@ -218,7 +224,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           {showCatalogPicker && (
             <Card className={cn('border-2 transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50' : 'border-[#CEDC00]/40')}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Choose Your Shirt *</CardTitle>
+                <CardTitle className="text-base">{t('order', 'chooseShirt')} *</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -256,7 +262,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                   })}
                 </div>
                 {!selectedCatalogItem && (
-                  <p className="text-amber-600 text-xs mt-3 font-medium">Please select a shirt style to continue</p>
+                  <p className="text-amber-600 text-xs mt-3 font-medium">{t('order', 'selectShirtToContinue')}</p>
                 )}
               </CardContent>
             </Card>
@@ -265,22 +271,22 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           {/* Personal Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Personal Information</CardTitle>
+              <CardTitle className="text-base">{t('order', 'personalInfo')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="full_name">Full Name *</Label>
-                <Input id="full_name" {...register('full_name')} placeholder="Juan dela Cruz" className="mt-1" />
+                <Label htmlFor="full_name">{t('order', 'fullName')} *</Label>
+                <Input id="full_name" {...register('full_name')} placeholder={t('order', 'fullNamePlaceholder')} className="mt-1" />
                 {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input id="email" type="email" {...register('email')} placeholder="juan@example.com" className="mt-1" />
+                  <Label htmlFor="email">{t('order', 'emailAddress')} *</Label>
+                  <Input id="email" type="email" {...register('email')} placeholder={t('order', 'emailPlaceholder')} className="mt-1" />
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone <span className="text-gray-400">(optional)</span></Label>
+                  <Label htmlFor="phone">{t('order', 'phone')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -300,20 +306,20 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           {/* Company Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Company Information</CardTitle>
+              <CardTitle className="text-base">{t('order', 'companyInfo')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Company Name</Label>
+                <Label>{t('order', 'companyName')}</Label>
                 <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-[#E5F2F0] border border-[#CEDC00]/30 rounded-lg">
                   <Briefcase className="w-4 h-4 text-[#00352F] flex-shrink-0" />
                   <span className="text-sm text-[#00352F] font-semibold">{company.name}</span>
-                  <span className="ml-auto text-xs text-[#00352F]/50 bg-[#CEDC00]/20 px-2 py-0.5 rounded">Pre-filled</span>
+                  <span className="ml-auto text-xs text-[#00352F]/50 bg-[#CEDC00]/20 px-2 py-0.5 rounded">{t('order', 'preFilledLabel')}</span>
                 </div>
               </div>
               <div>
-                <Label htmlFor="company_department">Department <span className="text-gray-400">(optional)</span></Label>
-                <Input id="company_department" {...register('company_department')} placeholder="e.g. Marketing, HR, Engineering" className="mt-1" />
+                <Label htmlFor="company_department">{t('order', 'companyDept')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
+                <Input id="company_department" {...register('company_department')} placeholder={t('order', 'companyDeptPlaceholder')} className="mt-1" />
               </div>
             </CardContent>
           </Card>
@@ -321,7 +327,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           {/* Shirt Details */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Shirt Details</CardTitle>
+              <CardTitle className="text-base">{t('order', 'shirtDetails')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {catalog.length === 1 && selectedCatalogItem && (
@@ -336,13 +342,13 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                     </div>
                   )}
                   <div>
-                    <p className="text-xs text-gray-500">Selected shirt</p>
+                    <p className="text-xs text-gray-500">{t('order', 'selectedShirt')}</p>
                     <p className="font-semibold text-[#00352F] text-sm">{selectedCatalogItem.name}</p>
                   </div>
                 </div>
               )}
               <div>
-                <Label>Shirt Size *</Label>
+                <Label>{t('order', 'shirtSize')} *</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {sizes.map(size => (
                     <button
@@ -363,7 +369,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                 {errors.shirt_size && <p className="text-red-500 text-xs mt-1">{errors.shirt_size.message}</p>}
               </div>
               <div>
-                <Label htmlFor="quantity">Quantity *</Label>
+                <Label htmlFor="quantity">{t('order', 'quantity')} *</Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -375,8 +381,8 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                 {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity.message}</p>}
               </div>
               <div>
-                <Label htmlFor="notes">Notes <span className="text-gray-400">(optional)</span></Label>
-                <Textarea id="notes" {...register('notes')} placeholder="Any special requests..." className="mt-1" rows={3} />
+                <Label htmlFor="notes">{t('order', 'notes')}</Label>
+                <Textarea id="notes" {...register('notes')} placeholder={t('order', 'notesPlaceholder')} className="mt-1" rows={3} />
               </div>
             </CardContent>
           </Card>
@@ -389,7 +395,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                 <div className="space-y-1 text-sm">
                   {selectedCatalogItem && (
                     <div className="flex justify-between text-gray-600">
-                      <span>Style</span>
+                      <span>{t('order', 'style')}</span>
                       <span className="font-medium text-gray-800">{selectedCatalogItem.name}</span>
                     </div>
                   )}
@@ -399,7 +405,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold text-gray-900">
-                    <span>Subtotal</span>
+                    <span>{t('order', 'subtotal')}</span>
                     <span className="text-[#00352F]">{formatCurrency(unitPrice * (watchedQty || 0))}</span>
                   </div>
                 </div>
@@ -417,9 +423,9 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
             >
               <div className="flex items-center gap-2" style={{ color: '#00352F' }}>
                 <ShoppingCart className="w-4 h-4" />
-                <span>{totalItems} item{totalItems !== 1 ? 's' : ''} in cart</span>
+                <span>{totalItems} {totalItems !== 1 ? t('cart', 'items') : t('cart', 'item')} {t('cart', 'inCart')}</span>
               </div>
-              <span style={{ color: '#00352F' }}>View Cart →</span>
+              <span style={{ color: '#00352F' }}>{t('cart', 'viewCart')}</span>
             </button>
           )}
 
@@ -430,9 +436,9 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
             style={{ backgroundColor: '#00352F' }}
           >
             {isAdding ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</>
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('order', 'adding')}</>
             ) : (
-              <><ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart</>
+              <><ShoppingCart className="w-4 h-4 mr-2" /> {t('order', 'addToCart')}</>
             )}
           </Button>
         </form>

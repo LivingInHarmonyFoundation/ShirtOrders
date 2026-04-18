@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Loader2, Minus, Plus, Trash2, X, ShoppingBag } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
+import { useT } from '@/contexts/LanguageContext'
 import { formatCurrency } from '@/lib/utils'
 import type { CartItem } from '@/types'
 
@@ -34,6 +35,7 @@ interface CartDrawerProps {
 
 function CartItemRow({ item }: { item: CartItem }) {
   const { updateQuantity, removeItem } = useCart()
+  const t = useT()
 
   return (
     <div className="flex gap-3 py-3 border-b border-gray-100 last:border-0">
@@ -61,7 +63,7 @@ function CartItemRow({ item }: { item: CartItem }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900 truncate">{item.catalog_item_name}</p>
-        <p className="text-xs text-gray-500 mt-0.5">Size: <span className="font-medium text-gray-700">{item.shirt_size}</span></p>
+        <p className="text-xs text-gray-500 mt-0.5">{t('cart', 'size')}: <span className="font-medium text-gray-700">{item.shirt_size}</span></p>
         <p className="text-xs text-gray-500">
           {formatCurrency(item.unit_price)} × {item.quantity} ={' '}
           <span className="font-semibold text-gray-800">{formatCurrency(item.unit_price * item.quantity)}</span>
@@ -102,6 +104,7 @@ function CartItemRow({ item }: { item: CartItem }) {
 export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: CartDrawerProps) {
   const { items, totalItems, totalAmount, isOpen, closeCart, clearCart } = useCart()
   const router = useRouter()
+  const t = useT()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const drawerRef = useRef<HTMLDivElement>(null)
 
@@ -131,14 +134,14 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
     if (onCheckoutValidate) {
       const valid = await onCheckoutValidate()
       if (!valid) {
-        toast.error('Please fill in your personal information before checking out.')
+        toast.error(t('cart', 'fillInfoBeforeCheckout'))
         closeCart()
         return
       }
     }
 
     if (!checkoutPayload) {
-      toast.error('Please fill in your information in the order form first.')
+      toast.error(t('cart', 'fillInfoFirst2'))
       closeCart()
       return
     }
@@ -164,7 +167,7 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
       const json = await res.json()
 
       if (!res.ok) {
-        toast.error(json.error || 'Failed to place order')
+        toast.error(json.error || t('cart', 'failedToPlace'))
         return
       }
 
@@ -172,7 +175,7 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
       closeCart()
       router.push(`/order/checkout?order_id=${json.order.id}`)
     } catch {
-      toast.error('Something went wrong. Please try again.')
+      toast.error(t('errors', 'somethingWentWrong'))
     } finally {
       setIsCheckingOut(false)
     }
@@ -218,11 +221,11 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
               <path d="M10.5 12L13 15L15.5 12" stroke="#CEDC00" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div>
-              <h2 className="font-heading font-bold text-white text-base leading-none">Your Cart</h2>
+              <h2 className="font-heading font-bold text-white text-base leading-none">{t('cart', 'title')}</h2>
               <p className="text-white/60 text-xs mt-0.5">
                 {totalItems === 0
-                  ? 'No items yet'
-                  : `${totalItems} item${totalItems !== 1 ? 's' : ''}`}
+                  ? t('cart', 'noItems')
+                  : `${totalItems} ${totalItems !== 1 ? t('cart', 'items') : t('cart', 'item')}`}
               </p>
             </div>
           </div>
@@ -250,9 +253,9 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
                   <path d="M10.5 12L13 15L15.5 12" stroke="#00352F" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <p className="font-heading font-semibold text-gray-700 text-base">Cart is empty</p>
+              <p className="font-heading font-semibold text-gray-700 text-base">{t('cart', 'empty')}</p>
               <p className="text-sm text-gray-400 mt-1.5 max-w-[200px] leading-relaxed">
-                Select your shirt style and size, then click &ldquo;Add to Cart&rdquo;
+                {t('cart', 'emptySub')}
               </p>
             </div>
           ) : (
@@ -272,7 +275,7 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
           >
             {/* Total */}
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-gray-700 text-sm">Total</span>
+              <span className="font-semibold text-gray-700 text-sm">{t('cart', 'total')}</span>
               <span className="font-bold text-xl" style={{ color: '#00352F' }}>
                 {formatCurrency(totalAmount)}
               </span>
@@ -281,7 +284,7 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
             {/* Info when no payload yet */}
             {!checkoutPayload && (
               <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
-                Fill in your name and email in the order form, then click &ldquo;Checkout&rdquo; to continue.
+                {t('cart', 'fillInfoFirst')}
               </p>
             )}
 
@@ -292,7 +295,7 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
                 className="py-2.5 px-4 rounded-xl border-2 text-sm font-semibold transition-all hover:bg-gray-50"
                 style={{ borderColor: '#00352F', color: '#00352F' }}
               >
-                Keep Shopping
+                {t('cart', 'keepShopping')}
               </button>
               <button
                 onClick={handleCheckout}
@@ -301,9 +304,9 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
                 style={{ backgroundColor: '#00352F' }}
               >
                 {isCheckingOut ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {t('cart', 'processing')}</>
                 ) : (
-                  <>Checkout &rarr;</>
+                  <>{t('cart', 'checkout')}</>
                 )}
               </button>
             </div>
