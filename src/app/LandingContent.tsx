@@ -51,7 +51,6 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
                 <span className="hidden sm:inline">{t('common', 'orgName')}</span>
                 <span className="sm:hidden">LIH Foundation</span>
               </p>
-              <p className="text-gray-400 mt-0.5" style={{ fontSize: '11px' }}>{t('common', 'appName')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

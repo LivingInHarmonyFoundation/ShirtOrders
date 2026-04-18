@@ -257,7 +257,6 @@ export default function OrderPage() {
                   <span className="hidden sm:inline">Living in Harmony Foundation</span>
                   <span className="sm:hidden">LIH Foundation</span>
                 </p>
-                <p className="text-gray-400 mt-0.5" style={{ fontSize: '11px' }}>{t('common', 'appName')}</p>
               </div>
             </div>
             <LanguageSelector />
@@ -308,7 +307,6 @@ export default function OrderPage() {
                 <span className="hidden sm:inline">Living in Harmony Foundation</span>
                 <span className="sm:hidden">LIH Foundation</span>
               </p>
-              <p className="text-gray-400 mt-0.5" style={{ fontSize: '11px' }}>{t('common', 'appName')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

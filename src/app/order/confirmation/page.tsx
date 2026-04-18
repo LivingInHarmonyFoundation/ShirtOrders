@@ -98,7 +98,6 @@ function ConfirmationContent() {
             </div>
             <div>
               <p className="font-bold text-[#00352F] text-sm leading-none">Living in Harmony Foundation</p>
-              <p className="text-gray-400 text-xs mt-0.5">{t('common', 'appName')}</p>
             </div>
           </div>
           <LanguageSelector />
