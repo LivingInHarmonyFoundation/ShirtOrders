@@ -2,9 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import QRCode from 'qrcode'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { QrCode, Download, RefreshCw, Link2, Type, ArrowDownToLine } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { QrCode, Download, RefreshCw, Link2, Type } from 'lucide-react'
 import { useRole } from '@/components/admin/role-provider'
 import { toast } from 'sonner'
 
@@ -24,9 +28,9 @@ const URL_OPTIONS = [
 ]
 
 const SIZE_PRESETS = [
-  { label: 'Instagram Square', resolution: '1080 × 1080 px', platform: 'Social Media', w: 1080, h: 1080 },
-  { label: 'Instagram Story',  resolution: '1080 × 1920 px', platform: 'Social Media', w: 1080, h: 1920 },
-  { label: 'Print / Large',    resolution: '2400 × 2400 px', platform: 'Print',        w: 2400, h: 2400 },
+  { label: 'Instagram Square (1080 × 1080)', w: 1080, h: 1080 },
+  { label: 'Instagram Story (1080 × 1920)',  w: 1080, h: 1920 },
+  { label: 'Print / Large (2400 × 2400)',    w: 2400, h: 2400 },
 ] as const
 
 // Polyfill roundRect for older Safari
@@ -67,6 +71,7 @@ async function drawBrandedQR(
   ctaText: string,
   variant: 'light' | 'dark'
 ): Promise<string> {
+  // 1. Generate QR matrix (error correction H — survives 30% data loss, needed for logo overlay)
   const qr     = QRCode.create(url, { errorCorrectionLevel: 'H' })
   const matrix = qr.modules.data
   const size   = qr.modules.size
@@ -78,6 +83,7 @@ async function drawBrandedQR(
 
   const isPortrait = canvasH > canvasW * 1.4
 
+  // 2. Compute layout
   const pad         = canvasW * 0.055
   const accentH     = Math.round(canvasW * 0.012)
   const topTextH    = canvasW * (isPortrait ? 0.18 : 0.115)
@@ -97,9 +103,11 @@ async function drawBrandedQR(
 
   const cellSize = qrAreaSize / size
 
+  // 3. Background
   ctx.fillStyle = variant === 'light' ? BRAND.white : BRAND.green
   ctx.fillRect(0, 0, canvasW, canvasH)
 
+  // Portrait: decorative large lime circle in upper third
   if (isPortrait) {
     ctx.globalAlpha = 0.05
     ctx.fillStyle   = BRAND.lime
@@ -109,9 +117,11 @@ async function drawBrandedQR(
     ctx.globalAlpha = 1
   }
 
+  // Lime accent strip — top
   ctx.fillStyle = BRAND.lime
   ctx.fillRect(0, 0, canvasW, accentH)
 
+  // 4. Top text
   const topCenterY = isPortrait ? canvasH * 0.12 : pad + topTextH * 0.4
 
   const orgFontSize = Math.round(canvasW * (isPortrait ? 0.042 : 0.046))
@@ -126,11 +136,13 @@ async function drawBrandedQR(
   ctx.fillStyle = variant === 'light' ? 'rgba(0,53,47,0.45)' : 'rgba(206,220,0,0.55)'
   ctx.fillText('livinginharmonypr.org', canvasW / 2, topCenterY + orgFontSize * 1.5)
 
+  // 5. QR module background (quiet zone)
   ctx.fillStyle = BRAND.white
   ctx.beginPath()
   ctx.roundRect(qrX - 2, qrY - 2, qrAreaSize + 4, qrAreaSize + 4, cellSize * 0.5)
   ctx.fill()
 
+  // Draw QR modules with rounded corners
   ctx.fillStyle = BRAND.green
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
@@ -144,6 +156,7 @@ async function drawBrandedQR(
     }
   }
 
+  // 6. Logo overlay — centered, 20% of QR area
   const logoZoneSize = qrAreaSize * 0.20
   const logoX = qrX + (qrAreaSize - logoZoneSize) / 2
   const logoY = qrY + (qrAreaSize - logoZoneSize) / 2
@@ -165,9 +178,10 @@ async function drawBrandedQR(
     const logo = await loadImage('/logo.png')
     ctx.drawImage(logo, logoX, logoY, logoZoneSize, logoZoneSize)
   } catch {
-    // no-op
+    // If logo fails, QR still works — just no logo overlay
   }
 
+  // 7. Bottom CTA
   const ctaTopY = isPortrait
     ? qrY + qrAreaSize + canvasH * 0.055
     : qrY + qrAreaSize + (canvasH - qrY - qrAreaSize) * 0.22
@@ -179,6 +193,7 @@ async function drawBrandedQR(
   ctx.fillStyle    = variant === 'light' ? BRAND.green : BRAND.white
   ctx.fillText(ctaText, canvasW / 2, ctaTopY)
 
+  // Lime accent dots flanking the CTA
   const dotR  = canvasW * 0.007
   const textW = ctx.measureText(ctaText).width
   const dotY  = ctaTopY + ctaFontSize / 2
@@ -186,12 +201,14 @@ async function drawBrandedQR(
   ctx.beginPath(); ctx.arc(canvasW / 2 - textW / 2 - dotR * 2.5, dotY, dotR, 0, Math.PI * 2); ctx.fill()
   ctx.beginPath(); ctx.arc(canvasW / 2 + textW / 2 + dotR * 2.5, dotY, dotR, 0, Math.PI * 2); ctx.fill()
 
+  // URL hint below CTA
   const urlFontSize = Math.round(canvasW * 0.022)
   ctx.font      = `400 ${urlFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
   ctx.fillStyle = variant === 'light' ? 'rgba(0,53,47,0.38)' : 'rgba(229,242,240,0.40)'
   const displayUrl = url.replace(/^https?:\/\//, '')
   ctx.fillText(displayUrl, canvasW / 2, ctaTopY + ctaFontSize * 1.5)
 
+  // Lime accent strip — bottom
   ctx.fillStyle = BRAND.lime
   ctx.fillRect(0, canvasH - accentH, canvasW, accentH)
 
@@ -260,155 +277,84 @@ export default function QRCodePage() {
   if (!permissions.canManageSettings) {
     return (
       <div className="max-w-lg">
-        <div
-          className="rounded-2xl overflow-hidden border border-gray-100"
-          style={{ backgroundColor: '#FAFAF9' }}
-        >
-          <div
-            className="h-1 w-full"
-            style={{ backgroundColor: BRAND.lime }}
-          />
-          <div className="py-16 text-center px-8">
-            <div
-              className="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center"
-              style={{ backgroundColor: BRAND.lightTeal }}
-            >
-              <QrCode className="w-6 h-6" style={{ color: BRAND.green }} />
-            </div>
-            <p className="font-semibold text-gray-800 tracking-tight">Access Restricted</p>
-            <p className="text-sm text-gray-400 mt-1.5">Only admins and owners can generate QR codes.</p>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="py-16 text-center">
+            <QrCode className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+            <p className="font-semibold text-gray-700">Access Restricted</p>
+            <p className="text-sm text-gray-400 mt-1">Only admins and owners can generate QR codes.</p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="max-w-6xl">
+    <div className="space-y-6 max-w-5xl">
       {/* Page header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2.5 mb-1">
-          <span
-            className="text-[10px] font-mono font-semibold tracking-widest uppercase px-2 py-0.5 rounded"
-            style={{ backgroundColor: BRAND.lightTeal, color: BRAND.green }}
-          >
-            Export Studio
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">QR Code Generator</h1>
-        <p className="text-gray-400 mt-1 text-sm">
-          Branded assets for social media, TV displays, and printed flyers.
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">QR Code Generator</h1>
+        <p className="text-gray-500 mt-1 text-sm">
+          Create a branded QR code for social media, TV displays, and printed flyers.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-0 rounded-2xl overflow-hidden shadow-xl border border-gray-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
 
-        {/* LEFT — Immersive Preview Stage */}
-        <div
-          className="relative flex flex-col items-center justify-center p-10 min-h-[480px]"
-          style={{
-            background: `radial-gradient(ellipse at 50% 30%, #004d43 0%, ${BRAND.green} 65%)`,
-          }}
-        >
-          {/* Dot pattern overlay */}
-          <div
-            className="absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage: 'radial-gradient(circle, #CEDC00 1px, transparent 1px)',
-              backgroundSize: '24px 24px',
-            }}
-          />
-
-          {/* Lime top accent bar */}
-          <div
-            className="absolute top-0 left-0 right-0 h-0.5"
-            style={{ backgroundColor: BRAND.lime }}
-          />
-
-          {/* Stage label */}
-          <div className="absolute top-5 left-6 flex items-center gap-2">
-            <div
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ backgroundColor: BRAND.lime }}
-            />
-            <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: 'rgba(206,220,0,0.7)' }}>
-              Live Preview
-            </span>
-          </div>
-
-          {/* Canvas stage */}
-          <div className="relative z-10 flex items-center justify-center" style={{ width: '100%', maxWidth: 420 }}>
-            <div
-              className="relative rounded-2xl overflow-hidden w-full"
-              style={{ aspectRatio: '1 / 1' }}
-            >
+        {/* LEFT — Live Preview */}
+        <Card className="md:sticky md:top-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <QrCode className="w-4 h-4" /> Live Preview
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Updates as you change options below
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {noAppUrl && (
+              <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
+                <strong>NEXT_PUBLIC_APP_URL</strong> is not set. Add it to your environment variables, or use a Custom URL.
+              </div>
+            )}
+            <div className="relative rounded-xl overflow-hidden border bg-gray-50 flex items-center justify-center" style={{ aspectRatio: '1 / 1' }}>
               <canvas
                 ref={previewCanvasRef}
                 style={{ display: 'block', imageRendering: 'crisp-edges', maxWidth: '100%' }}
               />
-
               {generating && (
-                <div
-                  className="absolute inset-0 flex items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: 'rgba(0,53,47,0.75)' }}
-                >
-                  <div className="flex flex-col items-center gap-3">
-                    <RefreshCw className="w-6 h-6 animate-spin" style={{ color: BRAND.lime }} />
-                    <span className="text-[11px] font-mono tracking-wider" style={{ color: 'rgba(229,242,240,0.7)' }}>
-                      RENDERING
-                    </span>
-                  </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-xl">
+                  <RefreshCw className="w-6 h-6 animate-spin" style={{ color: BRAND.green }} />
                 </div>
               )}
-
               {!targetUrl && !generating && (
-                <div
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl"
-                  style={{ backgroundColor: 'rgba(0,53,47,0.9)' }}
-                >
-                  <QrCode className="w-10 h-10 opacity-20" style={{ color: BRAND.lime }} />
-                  <p className="text-xs font-mono tracking-wider" style={{ color: 'rgba(229,242,240,0.4)' }}>
-                    ENTER A URL TO PREVIEW
-                  </p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-400">
+                  <QrCode className="w-10 h-10 opacity-30" />
+                  <p className="text-xs">Enter a URL to preview</p>
                 </div>
               )}
             </div>
-          </div>
+            <p className="text-[11px] text-gray-400 text-center mt-2">
+              Preview at screen resolution — downloads are full resolution
+            </p>
+          </CardContent>
+        </Card>
 
-          {/* Stage footer */}
-          <div className="absolute bottom-5 left-0 right-0 flex justify-center">
-            <span className="text-[10px] font-mono" style={{ color: 'rgba(229,242,240,0.3)' }}>
-              Screen resolution preview — exports are full-resolution
-            </span>
-          </div>
-        </div>
+        {/* RIGHT — Controls */}
+        <div className="space-y-4">
 
-        {/* RIGHT — Controls Panel */}
-        <div
-          className="flex flex-col border-l border-gray-100"
-          style={{ backgroundColor: '#FAFAF9' }}
-        >
-          {noAppUrl && (
-            <div className="px-6 pt-6">
-              <div className="rounded-xl px-4 py-3 border border-yellow-200 bg-yellow-50 text-yellow-800 text-xs">
-                <span className="font-semibold font-mono">NEXT_PUBLIC_APP_URL</span> is not set.
-                Use a Custom URL below, or add it to your environment variables.
-              </div>
-            </div>
-          )}
-
-          {/* Section: Destination */}
-          <div className="px-6 pt-7 pb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Link2 className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400">
-                Destination
-              </span>
-            </div>
-
-            <div className="space-y-3">
+          {/* Destination URL */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Link2 className="w-4 h-4" /> Destination URL
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Where the QR code will take people when scanned
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <Select value={urlOption} onValueChange={(v) => v && setUrlOption(v)}>
-                <SelectTrigger className="w-full text-sm h-9 bg-white">
+                <SelectTrigger className="text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -419,227 +365,101 @@ export default function QRCodePage() {
                   ))}
                 </SelectContent>
               </Select>
-
               {urlOption === 'custom' && (
                 <Input
                   placeholder="https://your-url.com"
                   value={customUrl}
                   onChange={e => setCustomUrl(e.target.value)}
-                  className="text-sm font-mono h-9 bg-white"
+                  className="text-sm font-mono"
                 />
               )}
-
               {targetUrl && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-100 bg-white">
-                  <div
-                    className="w-1 h-1 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: BRAND.lime }}
-                  />
-                  <p className="text-[11px] font-mono text-gray-400 truncate">{targetUrl}</p>
+                <div className="px-2.5 py-1.5 bg-gray-50 rounded-lg border">
+                  <p className="text-[11px] text-gray-500 font-mono truncate">{targetUrl}</p>
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Divider */}
-          <div className="mx-6 h-px bg-gray-100" />
-
-          {/* Section: Text */}
-          <div className="px-6 py-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Type className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400">
-                Call to Action
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <Input
-                value={ctaText}
-                onChange={e => setCtaText(e.target.value)}
-                placeholder="Scan to Order Your Shirt"
-                maxLength={48}
-                className="text-sm h-9 bg-white"
-              />
-              <div className="flex justify-end">
-                <span className="text-[10px] font-mono text-gray-300">
-                  {ctaText.length}/48
-                </span>
+          {/* Text & Style */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Type className="w-4 h-4" /> Text & Style
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Call to Action</Label>
+                <Input
+                  value={ctaText}
+                  onChange={e => setCtaText(e.target.value)}
+                  placeholder="Scan to Order Your Shirt"
+                  maxLength={48}
+                  className="text-sm"
+                />
+                <p className="text-[11px] text-gray-400">{ctaText.length}/48 characters</p>
               </div>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="mx-6 h-px bg-gray-100" />
-
-          {/* Section: Color Variant */}
-          <div className="px-6 py-6">
-            <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 block mb-4">
-              Color Variant
-            </span>
-
-            <div className="grid grid-cols-2 gap-3">
-              {/* Light swatch */}
-              <button
-                onClick={() => setVariant('light')}
-                className="group relative rounded-xl overflow-hidden border-2 transition-all duration-150"
-                style={{
-                  borderColor: variant === 'light' ? BRAND.green : 'transparent',
-                  outline: variant === 'light' ? 'none' : undefined,
-                }}
-              >
-                <div
-                  className="aspect-square flex flex-col items-center justify-center gap-1.5"
-                  style={{ backgroundColor: BRAND.white }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-lg"
-                    style={{ backgroundColor: BRAND.green }}
-                  />
-                  <div
-                    className="w-5 h-1 rounded-full"
-                    style={{ backgroundColor: BRAND.lime }}
-                  />
-                </div>
-                <div
-                  className="px-2 py-1.5 text-center border-t"
-                  style={{
-                    backgroundColor: variant === 'light' ? BRAND.lightTeal : '#F5F5F4',
-                    borderColor: variant === 'light' ? BRAND.green : '#E5E7EB',
-                  }}
-                >
-                  <span
-                    className="text-[11px] font-semibold tracking-wide"
-                    style={{ color: variant === 'light' ? BRAND.green : '#9CA3AF' }}
+              <Separator />
+              <div className="space-y-1.5">
+                <Label className="text-xs">Color Variant</Label>
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={() => setVariant('light')}
+                    className="flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all"
+                    style={variant === 'light'
+                      ? { borderColor: BRAND.green, backgroundColor: BRAND.lightTeal, color: BRAND.green }
+                      : { borderColor: '#e5e7eb', color: '#9ca3af' }}
                   >
                     Light
-                  </span>
-                </div>
-                {variant === 'light' && (
-                  <div
-                    className="absolute top-2 right-2 w-2 h-2 rounded-full"
-                    style={{ backgroundColor: BRAND.lime }}
-                  />
-                )}
-              </button>
-
-              {/* Dark swatch */}
-              <button
-                onClick={() => setVariant('dark')}
-                className="group relative rounded-xl overflow-hidden border-2 transition-all duration-150"
-                style={{
-                  borderColor: variant === 'dark' ? BRAND.green : 'transparent',
-                }}
-              >
-                <div
-                  className="aspect-square flex flex-col items-center justify-center gap-1.5"
-                  style={{ backgroundColor: BRAND.green }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-lg"
-                    style={{ backgroundColor: BRAND.white }}
-                  />
-                  <div
-                    className="w-5 h-1 rounded-full"
-                    style={{ backgroundColor: BRAND.lime }}
-                  />
-                </div>
-                <div
-                  className="px-2 py-1.5 text-center border-t"
-                  style={{
-                    backgroundColor: variant === 'dark' ? BRAND.green : '#F5F5F4',
-                    borderColor: variant === 'dark' ? BRAND.green : '#E5E7EB',
-                  }}
-                >
-                  <span
-                    className="text-[11px] font-semibold tracking-wide"
-                    style={{ color: variant === 'dark' ? BRAND.lime : '#9CA3AF' }}
+                  </button>
+                  <button
+                    onClick={() => setVariant('dark')}
+                    className="flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all"
+                    style={variant === 'dark'
+                      ? { borderColor: BRAND.green, backgroundColor: BRAND.green, color: BRAND.lime }
+                      : { borderColor: '#e5e7eb', color: '#9ca3af' }}
                   >
                     Dark
-                  </span>
-                </div>
-                {variant === 'dark' && (
-                  <div
-                    className="absolute top-2 right-2 w-2 h-2 rounded-full"
-                    style={{ backgroundColor: BRAND.lime }}
-                  />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="mx-6 h-px bg-gray-100" />
-
-          {/* Section: Export */}
-          <div className="px-6 py-6 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Download className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400">
-                Export
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-300 mb-4 font-mono">PNG · generated locally</p>
-
-            <div className="space-y-1.5">
-              {SIZE_PRESETS.map(preset => {
-                const isThisDownloading = downloading === preset.label
-                const disabled = !canGenerate || !!downloading
-
-                return (
-                  <button
-                    key={preset.label}
-                    onClick={() => handleDownload(preset)}
-                    disabled={disabled}
-                    className="group w-full flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{
-                      backgroundColor: isThisDownloading ? BRAND.lightTeal : 'white',
-                      border: `1px solid ${isThisDownloading ? BRAND.green : '#E5E7EB'}`,
-                    }}
-                    onMouseEnter={e => {
-                      if (!disabled) {
-                        const el = e.currentTarget
-                        el.style.backgroundColor = BRAND.lightTeal
-                        el.style.borderColor = BRAND.green
-                      }
-                    }}
-                    onMouseLeave={e => {
-                      if (!isThisDownloading) {
-                        const el = e.currentTarget
-                        el.style.backgroundColor = 'white'
-                        el.style.borderColor = '#E5E7EB'
-                      }
-                    }}
-                  >
-                    <div className="text-left min-w-0">
-                      <p className="text-sm font-medium text-gray-700 leading-none mb-1">
-                        {preset.label}
-                      </p>
-                      <p className="text-[11px] font-mono text-gray-400 leading-none">
-                        {preset.resolution}
-                        <span
-                          className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide"
-                          style={{ backgroundColor: BRAND.lightTeal, color: BRAND.green }}
-                        >
-                          {preset.platform}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0 ml-3">
-                      {isThisDownloading
-                        ? <RefreshCw className="w-4 h-4 animate-spin" style={{ color: BRAND.green }} />
-                        : <ArrowDownToLine
-                            className="w-4 h-4 text-gray-300 transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:text-gray-500"
-                          />
-                      }
-                    </div>
                   </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
+          {/* Download */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Download className="w-4 h-4" /> Download
+              </CardTitle>
+              <CardDescription className="text-xs">
+                High-resolution PNG — ready for print and social media
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {SIZE_PRESETS.map(preset => (
+                <Button
+                  key={preset.label}
+                  variant="outline"
+                  className="w-full justify-between text-sm font-normal h-10"
+                  onClick={() => handleDownload(preset)}
+                  disabled={!canGenerate || !!downloading}
+                >
+                  <span>{preset.label}</span>
+                  {downloading === preset.label
+                    ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                    : <Download className="w-3.5 h-3.5 text-gray-400" />
+                  }
+                </Button>
+              ))}
+              <p className="text-[11px] text-gray-400 pt-1">
+                All sizes generated locally — no data is sent to any server.
+              </p>
+            </CardContent>
+          </Card>
+
+        </div>
       </div>
     </div>
   )
