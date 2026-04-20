@@ -464,14 +464,15 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
 
         <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Image
-              src="/ellipsis-logo.png"
-              alt="Ellipsis Technology Consultants"
-              width={96}
-              height={34}
-              className="object-contain"
-              style={{ filter: 'brightness(0) invert(1) opacity(0.85)' }}
-            />
+            <div className="px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.92)' }}>
+              <Image
+                src="/ellipsis-logo.png"
+                alt="Ellipsis Technology Consultants"
+                width={96}
+                height={34}
+                className="object-contain"
+              />
+            </div>
           </div>
           <div className="flex flex-col items-center sm:items-end gap-0.5">
             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
