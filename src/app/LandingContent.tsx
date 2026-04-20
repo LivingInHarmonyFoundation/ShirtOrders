@@ -454,27 +454,13 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
       <footer
         className="relative py-7 px-4 sm:px-6 overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #060d1a 0%, #0d1f2d 40%, #071218 70%, #0a1520 100%)',
+          backgroundImage: 'url(/ellipsis-bg.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
-        {/* Subtle teal grid overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(28,200,212,0.04) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(28,200,212,0.04) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px',
-          }}
-        />
-        {/* Teal glow accents */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-8 left-1/4 w-64 h-64 rounded-full opacity-[0.06]"
-            style={{ background: 'radial-gradient(circle, #1cc8d4, transparent 70%)' }} />
-          <div className="absolute -bottom-8 right-1/4 w-48 h-48 rounded-full opacity-[0.05]"
-            style={{ background: 'radial-gradient(circle, #1cc8d4, transparent 70%)' }} />
-        </div>
+        {/* Dark overlay so text stays readable */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: 'rgba(4,12,20,0.62)' }} />
 
         <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
