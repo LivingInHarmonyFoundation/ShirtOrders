@@ -4,7 +4,7 @@ export default function PoweredByFooter() {
   return (
     <div className="flex items-center justify-center gap-2 py-3 print:hidden">
       <Image
-        src="/ellipsis-clear.png"
+        src="/ellipsis-cl.png"
         alt="Ellipsis Technology Consultants"
         width={80}
         height={34}

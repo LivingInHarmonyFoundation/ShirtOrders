@@ -465,7 +465,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
         <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <Image
-              src="/ellipsis-clear.png"
+              src="/ellipsis-cl.png"
               alt="Ellipsis Technology Consultants"
               width={140}
               height={60}

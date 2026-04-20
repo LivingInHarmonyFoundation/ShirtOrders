@@ -316,7 +316,7 @@ async function drawBrandedQR(
 
   // Powered-by Ellipsis strip at very bottom
   try {
-    const ellipsisLogo = await loadImage('/ellipsis-clear.png')
+    const ellipsisLogo = await loadImage('/ellipsis-cl.png')
     const elH = canvasH * 0.018
     const elW = elH * (ellipsisLogo.width / ellipsisLogo.height)
     const powFontSize = Math.round(canvasW * 0.014)
