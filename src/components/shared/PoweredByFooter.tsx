@@ -4,10 +4,10 @@ export default function PoweredByFooter() {
   return (
     <div className="flex items-center justify-center gap-2 py-3 print:hidden">
       <Image
-        src="/ellipsis-logo.png"
+        src="/ellipsis-clear.png"
         alt="Ellipsis Technology Consultants"
-        width={56}
-        height={20}
+        width={80}
+        height={34}
         className="object-contain opacity-60"
       />
       <span className="text-gray-400" style={{ fontSize: '10px' }}>

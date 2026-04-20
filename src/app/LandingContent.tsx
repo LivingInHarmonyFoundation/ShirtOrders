@@ -463,46 +463,15 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: 'rgba(4,12,20,0.62)' }} />
 
         <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            {/* Wordmark: "ellipsis" flows as one word; three teal dots float above the "i" */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', lineHeight: 1 }}>
-              <span style={{
-                color: 'white', fontSize: '27px', fontWeight: 700,
-                fontFamily: "Futura, 'Century Gothic', 'Trebuchet MS', sans-serif",
-                letterSpacing: '-0.01em'
-              }}>ell</span>
-              <span style={{ position: 'relative' }}>
-                <span style={{
-                  position: 'absolute',
-                  bottom: '100%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  display: 'flex',
-                  gap: '2.5px',
-                  paddingBottom: '3px',
-                  whiteSpace: 'nowrap',
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#1cc8d4', display: 'block', flexShrink: 0 }} />
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#1cc8d4', display: 'block', flexShrink: 0 }} />
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#1cc8d4', display: 'block', flexShrink: 0 }} />
-                </span>
-                <span style={{
-                  color: 'white', fontSize: '27px', fontWeight: 700,
-                  fontFamily: "Futura, 'Century Gothic', 'Trebuchet MS', sans-serif",
-                  letterSpacing: '-0.01em'
-                }}>i</span>
-              </span>
-              <span style={{
-                color: 'white', fontSize: '27px', fontWeight: 700,
-                fontFamily: "Futura, 'Century Gothic', 'Trebuchet MS', sans-serif",
-                letterSpacing: '-0.01em'
-              }}>psis</span>
-            </div>
-            <span style={{
-              color: 'rgba(255,255,255,0.45)', fontSize: '9px',
-              letterSpacing: '0.20em', textTransform: 'uppercase',
-              fontFamily: "Futura, 'Century Gothic', sans-serif", fontWeight: 400
-            }}>Technology Consultants</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <Image
+              src="/ellipsis-clear.png"
+              alt="Ellipsis Technology Consultants"
+              width={140}
+              height={60}
+              className="object-contain"
+              style={{ maxHeight: 44, width: 'auto' }}
+            />
           </div>
           <div className="flex flex-col items-center sm:items-end gap-0.5">
             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
