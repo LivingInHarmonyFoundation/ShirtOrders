@@ -2,13 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import QRCode from 'qrcode'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { QrCode, Download, RefreshCw, Link2, Type } from 'lucide-react'
+import { QrCode, Download, RefreshCw } from 'lucide-react'
 import { useRole } from '@/components/admin/role-provider'
 import { toast } from 'sonner'
 
@@ -28,9 +25,9 @@ const URL_OPTIONS = [
 ]
 
 const SIZE_PRESETS = [
-  { label: 'Instagram Square (1080 × 1080)', w: 1080, h: 1080 },
-  { label: 'Instagram Story (1080 × 1920)',  w: 1080, h: 1920 },
-  { label: 'Print / Large (2400 × 2400)',    w: 2400, h: 2400 },
+  { label: 'Instagram Square', slug: 'square',  w: 1080, h: 1080, res: '1080 × 1080' },
+  { label: 'Instagram Story',  slug: 'story',   w: 1080, h: 1920, res: '1080 × 1920' },
+  { label: 'Print / Large',    slug: 'print',   w: 2400, h: 2400, res: '2400 × 2400' },
 ] as const
 
 // Polyfill roundRect for older Safari
@@ -63,6 +60,12 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
+// Helper: draw a rounded rectangle path
+function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.roundRect(x, y, w, h, r)
+}
+
 async function drawBrandedQR(
   canvas: HTMLCanvasElement,
   canvasW: number,
@@ -71,7 +74,7 @@ async function drawBrandedQR(
   ctaText: string,
   variant: 'light' | 'dark'
 ): Promise<string> {
-  // 1. Generate QR matrix (error correction H — survives 30% data loss, needed for logo overlay)
+  // ── 1. Generate QR matrix ───────────────────────────────────────────────
   const qr     = QRCode.create(url, { errorCorrectionLevel: 'H' })
   const matrix = qr.modules.data
   const size   = qr.modules.size
@@ -83,136 +86,368 @@ async function drawBrandedQR(
 
   const isPortrait = canvasH > canvasW * 1.4
 
-  // 2. Compute layout
-  const pad         = canvasW * 0.055
-  const accentH     = Math.round(canvasW * 0.012)
-  const topTextH    = canvasW * (isPortrait ? 0.18 : 0.115)
-  const bottomTextH = canvasW * (isPortrait ? 0.18 : 0.135)
+  // ── 2. Theme colours ────────────────────────────────────────────────────
+  const bg          = variant === 'light' ? '#FAFAF8' : '#00352F'
+  const cardBg      = '#FFFFFF'
+  const qrModuleClr = '#00352F'
+  const outerFrame  = '#CEDC00'
+  const textPrimary = variant === 'light' ? '#00352F' : '#FFFFFF'
+  const textAccent  = variant === 'light' ? '#00352F' : '#CEDC00'
+  const arcColor    = variant === 'light' ? '#00352F' : '#CEDC00'
+  const arcAlpha    = variant === 'light' ? 0.07 : 0.10
+  const urlColor    = variant === 'light' ? 'rgba(0,53,47,0.38)' : 'rgba(206,220,0,0.45)'
 
-  let qrAreaSize: number, qrX: number, qrY: number
-
-  if (isPortrait) {
-    qrAreaSize = canvasW * 0.82
-    qrX        = (canvasW - qrAreaSize) / 2
-    qrY        = (canvasH - qrAreaSize) / 2 - canvasH * 0.03
-  } else {
-    qrAreaSize = Math.min(canvasW - pad * 2, canvasH - topTextH - bottomTextH - pad * 2)
-    qrX        = (canvasW - qrAreaSize) / 2
-    qrY        = pad + topTextH
-  }
-
-  const cellSize = qrAreaSize / size
-
-  // 3. Background
-  ctx.fillStyle = variant === 'light' ? BRAND.white : BRAND.green
+  // ── 3. Background fill ──────────────────────────────────────────────────
+  ctx.fillStyle = bg
   ctx.fillRect(0, 0, canvasW, canvasH)
 
-  // Portrait: decorative large lime circle in upper third
-  if (isPortrait) {
-    ctx.globalAlpha = 0.05
-    ctx.fillStyle   = BRAND.lime
+  // ── 4. Decorative sweeping arc lines ────────────────────────────────────
+  // Five quadratic curves sweeping top-left → bottom-right
+  ctx.save()
+  ctx.globalAlpha = arcAlpha
+  ctx.strokeStyle = arcColor
+  ctx.lineWidth   = canvasW * 0.003
+
+  const arcCount = 5
+  for (let i = 0; i < arcCount; i++) {
+    const t      = i / (arcCount - 1)           // 0 → 1
+    const startX = canvasW * (0.05 + t * 0.85)  // spread across top edge
+    const startY = 0
+    const endX   = 0
+    const endY   = canvasH * (0.15 + t * 0.75)  // spread across left edge
+    const cpX    = canvasW * (0.1 + t * 0.6)
+    const cpY    = canvasH * (0.15 + t * 0.55)
+
     ctx.beginPath()
-    ctx.arc(canvasW / 2, canvasH * 0.22, canvasW * 0.6, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.globalAlpha = 1
+    ctx.moveTo(startX, startY)
+    ctx.quadraticCurveTo(cpX, cpY, endX, endY)
+    ctx.stroke()
   }
 
-  // Lime accent strip — top
-  ctx.fillStyle = BRAND.lime
-  ctx.fillRect(0, 0, canvasW, accentH)
+  // Second set of arcs from right/bottom for fullness
+  for (let i = 0; i < arcCount; i++) {
+    const t      = i / (arcCount - 1)
+    const startX = canvasW
+    const startY = canvasH * (0.05 + t * 0.85)
+    const endX   = canvasW * (0.15 + t * 0.75)
+    const endY   = canvasH
+    const cpX    = canvasW * (0.9 - t * 0.5)
+    const cpY    = canvasH * (0.5 + t * 0.35)
 
-  // 4. Top text
-  const topCenterY = isPortrait ? canvasH * 0.12 : pad + topTextH * 0.4
+    ctx.beginPath()
+    ctx.moveTo(startX, startY)
+    ctx.quadraticCurveTo(cpX, cpY, endX, endY)
+    ctx.stroke()
+  }
 
-  const orgFontSize = Math.round(canvasW * (isPortrait ? 0.042 : 0.046))
-  ctx.font         = `700 ${orgFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
+  ctx.restore()
+
+  // ── 5. Compute layout zones ─────────────────────────────────────────────
+  const topH    = canvasH * (isPortrait ? 0.18 : 0.22)
+  const bottomH = canvasH * (isPortrait ? 0.20 : 0.22)
+
+  // QR card is a square that fills the middle zone
+  const maxCardW = canvasW * 0.78
+  const midZoneH = canvasH - topH - bottomH
+  const qrCardW  = Math.min(maxCardW, midZoneH * 0.96)
+  const qrCardH  = qrCardW
+  const qrCardX  = (canvasW - qrCardW) / 2
+  const qrCardY  = topH + (midZoneH - qrCardH) / 2
+
+  // ── 6. Top section ──────────────────────────────────────────────────────
+  const logoSize    = canvasW * 0.13
+  const logoX       = (canvasW - logoSize) / 2
+  const topMidY     = topH * 0.5
+  const logoY       = topMidY - logoSize * 0.55
+
+  // Org label — small caps feel, letter-spaced
+  const labelFontSize = Math.round(canvasW * 0.022)
+  ctx.save()
+  ctx.font         = `600 ${labelFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
   ctx.textAlign    = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillStyle    = variant === 'light' ? BRAND.green : BRAND.lime
-  ctx.fillText('Living in Harmony Foundation', canvasW / 2, topCenterY)
+  ctx.fillStyle    = textAccent
+  ctx.globalAlpha  = 0.65
+  ctx.fillText('LIVING IN HARMONY FOUNDATION', canvasW / 2, logoY - labelFontSize * 1.2)
+  ctx.restore()
 
-  const subFontSize = Math.round(canvasW * 0.026)
-  ctx.font      = `400 ${subFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
-  ctx.fillStyle = variant === 'light' ? 'rgba(0,53,47,0.45)' : 'rgba(206,220,0,0.55)'
-  ctx.fillText('livinginharmonypr.org', canvasW / 2, topCenterY + orgFontSize * 1.5)
+  // Logo image
+  try {
+    const logo = await loadImage('/logo.png')
+    ctx.drawImage(logo, logoX, logoY, logoSize, logoSize)
+  } catch {
+    // Graceful fallback — draw a placeholder circle
+    ctx.save()
+    ctx.fillStyle   = textAccent
+    ctx.globalAlpha = 0.3
+    ctx.beginPath()
+    ctx.arc(canvasW / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
 
-  // 5. QR module background (quiet zone)
-  ctx.fillStyle = BRAND.white
-  ctx.beginPath()
-  ctx.roundRect(qrX - 2, qrY - 2, qrAreaSize + 4, qrAreaSize + 4, cellSize * 0.5)
+  // Org name below logo
+  const orgFontSize = Math.round(canvasW * 0.036)
+  ctx.font         = `700 ${orgFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
+  ctx.textAlign    = 'center'
+  ctx.textBaseline = 'top'
+  ctx.fillStyle    = textPrimary
+  ctx.fillText('Living in Harmony Foundation', canvasW / 2, logoY + logoSize + orgFontSize * 0.25)
+
+  // ── 7. QR card ──────────────────────────────────────────────────────────
+  const cardRadius  = qrCardW * 0.08
+  const framePad    = qrCardW * 0.045  // lime outer frame expands beyond white card
+  const frameRadius = cardRadius + framePad * 0.5
+
+  // 7a. Lime outer frame (slightly larger than white card)
+  ctx.save()
+  ctx.strokeStyle = outerFrame
+  ctx.lineWidth   = canvasW * 0.006
+  rrect(ctx,
+    qrCardX - framePad,
+    qrCardY - framePad,
+    qrCardW + framePad * 2,
+    qrCardH + framePad * 2,
+    frameRadius
+  )
+  ctx.stroke()
+  ctx.restore()
+
+  // 7b. White card with drop shadow
+  ctx.save()
+  ctx.shadowColor   = 'rgba(0,0,0,0.18)'
+  ctx.shadowBlur    = canvasW * 0.025
+  ctx.shadowOffsetY = canvasW * 0.008
+  ctx.fillStyle     = cardBg
+  rrect(ctx, qrCardX, qrCardY, qrCardW, qrCardH, cardRadius)
   ctx.fill()
+  ctx.restore()
 
-  // Draw QR modules with rounded corners
-  ctx.fillStyle = BRAND.green
+  // 7c. Lime corner accent squares (4 corners of outer lime frame)
+  const accentSize = qrCardW * 0.04
+  const fx         = qrCardX - framePad
+  const fy         = qrCardY - framePad
+  const fw         = qrCardW + framePad * 2
+  const fh         = qrCardH + framePad * 2
+
+  ctx.fillStyle = outerFrame
+  // Top-left
+  ctx.fillRect(fx - accentSize * 0.5, fy - accentSize * 0.5, accentSize, accentSize)
+  // Top-right
+  ctx.fillRect(fx + fw - accentSize * 0.5, fy - accentSize * 0.5, accentSize, accentSize)
+  // Bottom-left
+  ctx.fillRect(fx - accentSize * 0.5, fy + fh - accentSize * 0.5, accentSize, accentSize)
+  // Bottom-right
+  ctx.fillRect(fx + fw - accentSize * 0.5, fy + fh - accentSize * 0.5, accentSize, accentSize)
+
+  // 7d. QR modules inside white card
+  const quietPad = qrCardW * 0.07
+  const qrSize   = qrCardW - quietPad * 2
+  const cellSize = qrSize / size
+  const qrOriginX = qrCardX + quietPad
+  const qrOriginY = qrCardY + quietPad
+
+  ctx.fillStyle = qrModuleClr
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
       if (!matrix[row * size + col]) continue
-      const mx = qrX + col * cellSize
-      const my = qrY + row * cellSize
-      const ms = cellSize - 0.5
+      const mx = qrOriginX + col * cellSize
+      const my = qrOriginY + row * cellSize
+      const ms = cellSize - 0.6
       ctx.beginPath()
-      ctx.roundRect(mx, my, ms, ms, ms * 0.35)
+      ctx.roundRect(mx, my, ms, ms, ms * 0.28)
       ctx.fill()
     }
   }
 
-  // 6. Logo overlay — centered, 20% of QR area
-  const logoZoneSize = qrAreaSize * 0.20
-  const logoX = qrX + (qrAreaSize - logoZoneSize) / 2
-  const logoY = qrY + (qrAreaSize - logoZoneSize) / 2
-  const logoPad    = logoZoneSize * 0.18
-  const backingSize = logoZoneSize + logoPad * 2
+  // 7e. Logo overlay centered in QR quiet zone
+  const logoOverlaySize = qrSize * 0.21
+  const logoOverX = qrCardX + (qrCardW - logoOverlaySize) / 2
+  const logoOverY = qrCardY + (qrCardH - logoOverlaySize) / 2
+  const logoPad   = logoOverlaySize * 0.18
+  const backingW  = logoOverlaySize + logoPad * 2
 
-  ctx.shadowColor   = 'rgba(0,0,0,0.2)'
+  // White backing square for logo
+  ctx.save()
+  ctx.shadowColor   = 'rgba(0,0,0,0.15)'
   ctx.shadowBlur    = canvasW * 0.012
-  ctx.shadowOffsetY = canvasW * 0.004
-  ctx.fillStyle     = BRAND.white
-  ctx.beginPath()
-  ctx.roundRect(logoX - logoPad, logoY - logoPad, backingSize, backingSize, backingSize * 0.2)
+  ctx.fillStyle     = cardBg
+  rrect(ctx,
+    logoOverX - logoPad,
+    logoOverY - logoPad,
+    backingW,
+    backingW,
+    backingW * 0.18
+  )
   ctx.fill()
-  ctx.shadowColor = 'transparent'
-  ctx.shadowBlur  = 0
-  ctx.shadowOffsetY = 0
+  ctx.restore()
 
   try {
     const logo = await loadImage('/logo.png')
-    ctx.drawImage(logo, logoX, logoY, logoZoneSize, logoZoneSize)
+    ctx.drawImage(logo, logoOverX, logoOverY, logoOverlaySize, logoOverlaySize)
   } catch {
-    // If logo fails, QR still works — just no logo overlay
+    // QR still scannable without logo
   }
 
-  // 7. Bottom CTA
-  const ctaTopY = isPortrait
-    ? qrY + qrAreaSize + canvasH * 0.055
-    : qrY + qrAreaSize + (canvasH - qrY - qrAreaSize) * 0.22
+  // ── 8. Bottom section ───────────────────────────────────────────────────
+  const bottomZoneTop    = qrCardY + qrCardH + framePad
+  const bottomZoneHeight = canvasH - bottomZoneTop
+  const ctaFontSize      = Math.round(canvasW * (isPortrait ? 0.046 : 0.050))
 
-  const ctaFontSize = Math.round(canvasW * (isPortrait ? 0.048 : 0.052))
+  // CTA text — bold uppercase
+  const ctaText_upper = ctaText.toUpperCase()
+  const ctaY = bottomZoneTop + bottomZoneHeight * 0.22
+
   ctx.font         = `800 ${ctaFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
   ctx.textAlign    = 'center'
   ctx.textBaseline = 'top'
-  ctx.fillStyle    = variant === 'light' ? BRAND.green : BRAND.white
-  ctx.fillText(ctaText, canvasW / 2, ctaTopY)
+  ctx.fillStyle    = textPrimary
+  ctx.fillText(ctaText_upper, canvasW / 2, ctaY)
 
-  // Lime accent dots flanking the CTA
-  const dotR  = canvasW * 0.007
-  const textW = ctx.measureText(ctaText).width
-  const dotY  = ctaTopY + ctaFontSize / 2
-  ctx.fillStyle = BRAND.lime
-  ctx.beginPath(); ctx.arc(canvasW / 2 - textW / 2 - dotR * 2.5, dotY, dotR, 0, Math.PI * 2); ctx.fill()
-  ctx.beginPath(); ctx.arc(canvasW / 2 + textW / 2 + dotR * 2.5, dotY, dotR, 0, Math.PI * 2); ctx.fill()
+  // Thin lime horizontal rule
+  const ruleY = ctaY + ctaFontSize * 1.55
+  const ruleW = canvasW * 0.52
+  const ruleX = (canvasW - ruleW) / 2
+  ctx.save()
+  ctx.strokeStyle = outerFrame
+  ctx.lineWidth   = canvasW * 0.0025
+  ctx.globalAlpha = 0.85
+  ctx.beginPath()
+  ctx.moveTo(ruleX, ruleY)
+  ctx.lineTo(ruleX + ruleW, ruleY)
+  ctx.stroke()
+  ctx.restore()
 
-  // URL hint below CTA
-  const urlFontSize = Math.round(canvasW * 0.022)
-  ctx.font      = `400 ${urlFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
-  ctx.fillStyle = variant === 'light' ? 'rgba(0,53,47,0.38)' : 'rgba(229,242,240,0.40)'
+  // URL in small monospace below rule
+  const urlFontSize = Math.round(canvasW * 0.020)
+  ctx.font         = `400 ${urlFontSize}px "Courier New", Courier, monospace`
+  ctx.textAlign    = 'center'
+  ctx.textBaseline = 'top'
+  ctx.fillStyle    = urlColor
   const displayUrl = url.replace(/^https?:\/\//, '')
-  ctx.fillText(displayUrl, canvasW / 2, ctaTopY + ctaFontSize * 1.5)
+  ctx.fillText(displayUrl, canvasW / 2, ruleY + canvasH * 0.018)
 
-  // Lime accent strip — bottom
-  ctx.fillStyle = BRAND.lime
-  ctx.fillRect(0, canvasH - accentH, canvasW, accentH)
+  // Tagline — italic, very small, bottom
+  const tagFontSize = Math.round(canvasW * 0.018)
+  ctx.font         = `italic 400 ${tagFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
+  ctx.textAlign    = 'center'
+  ctx.textBaseline = 'bottom'
+  ctx.fillStyle    = variant === 'light' ? 'rgba(0,53,47,0.35)' : 'rgba(206,220,0,0.38)'
+  ctx.fillText('Únete a la lucha contra la soledad', canvasW / 2, canvasH - canvasH * 0.025)
 
   return canvas.toDataURL('image/png')
+}
+
+// ── Mini variant thumbnail for the toggle UI ─────────────────────────────
+function VariantThumb({ v, selected, onClick }: {
+  v: 'light' | 'dark'
+  selected: boolean
+  onClick: () => void
+}) {
+  const isLight = v === 'light'
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        outline: 'none',
+        cursor: 'pointer',
+        border: selected ? `2.5px solid ${BRAND.lime}` : '2.5px solid transparent',
+        borderRadius: '10px',
+        padding: '2px',
+        background: 'transparent',
+        transition: 'border-color 0.15s',
+      }}
+      aria-label={isLight ? 'Light variant' : 'Dark variant'}
+    >
+      {/* Mini poster thumbnail */}
+      <div
+        style={{
+          width: 68,
+          height: 84,
+          borderRadius: 8,
+          background: isLight ? '#FAFAF8' : BRAND.green,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 4,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Decorative arc hint */}
+        <svg style={{ position: 'absolute', inset: 0 }} width="68" height="84">
+          <path
+            d="M 60 0 Q 30 40 0 70"
+            fill="none"
+            stroke={isLight ? BRAND.green : BRAND.lime}
+            strokeWidth="1"
+            opacity="0.15"
+          />
+          <path
+            d="M 68 10 Q 40 50 8 84"
+            fill="none"
+            stroke={isLight ? BRAND.green : BRAND.lime}
+            strokeWidth="1"
+            opacity="0.10"
+          />
+        </svg>
+
+        {/* Logo placeholder circle */}
+        <div style={{
+          width: 14,
+          height: 14,
+          borderRadius: '50%',
+          background: isLight ? BRAND.green : BRAND.lime,
+          opacity: 0.5,
+        }} />
+
+        {/* QR card mock */}
+        <div style={{
+          width: 36,
+          height: 36,
+          borderRadius: 5,
+          background: '#FFFFFF',
+          border: `1.5px solid ${BRAND.lime}`,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 1.5,
+          padding: 4,
+        }}>
+          {Array.from({ length: 16 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                borderRadius: 1,
+                background: [0,1,4,5,2,7,8,11,14,15].includes(i) ? BRAND.green : 'transparent',
+              }}
+            />
+          ))}
+        </div>
+
+        {/* CTA bar */}
+        <div style={{
+          width: 44,
+          height: 4,
+          borderRadius: 2,
+          background: isLight ? BRAND.green : BRAND.lime,
+          opacity: 0.6,
+        }} />
+
+        {/* Variant label */}
+        <span style={{
+          fontSize: 8,
+          fontWeight: 600,
+          color: isLight ? BRAND.green : BRAND.lime,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          opacity: 0.85,
+        }}>
+          {isLight ? 'Light' : 'Dark'}
+        </span>
+      </div>
+    </button>
+  )
 }
 
 export default function QRCodePage() {
@@ -255,7 +490,7 @@ export default function QRCodePage() {
 
   const handleDownload = async (preset: typeof SIZE_PRESETS[number]) => {
     if (!targetUrl) { toast.error('No URL configured'); return }
-    setDownloading(preset.label)
+    setDownloading(preset.slug)
     try {
       const offscreen = document.createElement('canvas')
       const dataUrl   = await drawBrandedQR(offscreen, preset.w, preset.h, targetUrl, ctaText, variant)
@@ -271,90 +506,107 @@ export default function QRCodePage() {
     }
   }
 
-  const noAppUrl = !APP_URL && urlOption !== 'custom'
+  const noAppUrl    = !APP_URL && urlOption !== 'custom'
   const canGenerate = !!targetUrl && !noAppUrl
 
   if (!permissions.canManageSettings) {
     return (
       <div className="max-w-lg">
-        <Card>
-          <CardContent className="py-16 text-center">
-            <QrCode className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-            <p className="font-semibold text-gray-700">Access Restricted</p>
-            <p className="text-sm text-gray-400 mt-1">Only admins and owners can generate QR codes.</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border bg-white p-16 text-center shadow-sm">
+          <QrCode className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+          <p className="font-semibold text-gray-700">Access Restricted</p>
+          <p className="text-sm text-gray-400 mt-1">Only admins and owners can generate QR codes.</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="max-w-6xl">
+
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">QR Code Generator</h1>
-        <p className="text-gray-500 mt-1 text-sm">
-          Create a branded QR code for social media, TV displays, and printed flyers.
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: BRAND.green }}>QR Code Generator</h1>
+        <p className="text-sm text-gray-400 mt-1.5">
+          Export a complete branded poster — ready for print, social media, or TV display.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
 
-        {/* LEFT — Live Preview */}
-        <Card className="md:sticky md:top-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <QrCode className="w-4 h-4" /> Live Preview
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Updates as you change options below
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* ── LEFT: Preview Stage ─────────────────────────────────────── */}
+        <div className="lg:sticky lg:top-6">
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{ background: '#F3F4F2', padding: '32px' }}
+          >
             {noAppUrl && (
-              <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
-                <strong>NEXT_PUBLIC_APP_URL</strong> is not set. Add it to your environment variables, or use a Custom URL.
+              <div className="mb-4 px-4 py-3 rounded-xl text-xs"
+                style={{ background: '#FEF9EC', border: '1px solid #F0D66C', color: '#92660A' }}>
+                <strong>NEXT_PUBLIC_APP_URL</strong> is not set — add it to your environment, or choose Custom URL.
               </div>
             )}
-            <div className="relative rounded-xl overflow-hidden border bg-gray-50 flex items-center justify-center" style={{ aspectRatio: '1 / 1' }}>
-              <canvas
-                ref={previewCanvasRef}
-                style={{ display: 'block', imageRendering: 'crisp-edges', maxWidth: '100%' }}
-              />
-              {generating && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-xl">
-                  <RefreshCw className="w-6 h-6 animate-spin" style={{ color: BRAND.green }} />
-                </div>
-              )}
-              {!targetUrl && !generating && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-400">
-                  <QrCode className="w-10 h-10 opacity-30" />
-                  <p className="text-xs">Enter a URL to preview</p>
-                </div>
-              )}
+
+            {/* Canvas centered with shadow */}
+            <div className="flex items-center justify-center">
+              <div
+                className="relative"
+                style={{
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  boxShadow: '0 20px 60px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12)',
+                  aspectRatio: '1 / 1',
+                  width: '100%',
+                  maxWidth: 480,
+                }}
+              >
+                <canvas
+                  ref={previewCanvasRef}
+                  style={{
+                    display: 'block',
+                    imageRendering: 'crisp-edges',
+                    width: '100%',
+                    height: '100%',
+                  }}
+                />
+
+                {generating && (
+                  <div className="absolute inset-0 flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,0.72)' }}>
+                    <RefreshCw className="w-7 h-7 animate-spin" style={{ color: BRAND.green }} />
+                  </div>
+                )}
+
+                {!targetUrl && !generating && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3"
+                    style={{ background: '#FAFAF8' }}>
+                    <QrCode className="w-12 h-12" style={{ color: BRAND.green, opacity: 0.18 }} />
+                    <p className="text-xs font-medium text-gray-400">Enter a URL to preview</p>
+                  </div>
+                )}
+              </div>
             </div>
-            <p className="text-[11px] text-gray-400 text-center mt-2">
-              Preview at screen resolution — downloads are full resolution
+
+            <p className="text-center mt-4 text-[11px] font-medium tracking-wide"
+              style={{ color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Preview — updates live
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* RIGHT — Controls */}
-        <div className="space-y-4">
+        {/* ── RIGHT: Controls ─────────────────────────────────────────── */}
+        <div className="space-y-0 rounded-2xl border bg-white overflow-hidden shadow-sm">
 
-          {/* Destination URL */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Link2 className="w-4 h-4" /> Destination URL
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Where the QR code will take people when scanned
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          {/* Section: Destination */}
+          <div className="px-6 pt-6 pb-5">
+            <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
+              style={{ color: '#9CA3AF' }}>
+              Destination
+            </p>
+
+            <div className="space-y-3">
               <Select value={urlOption} onValueChange={(v) => v && setUrlOption(v)}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger className="text-sm h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -365,99 +617,122 @@ export default function QRCodePage() {
                   ))}
                 </SelectContent>
               </Select>
+
               {urlOption === 'custom' && (
                 <Input
                   placeholder="https://your-url.com"
                   value={customUrl}
                   onChange={e => setCustomUrl(e.target.value)}
-                  className="text-sm font-mono"
+                  className="text-sm font-mono h-10"
                 />
               )}
+
               {targetUrl && (
-                <div className="px-2.5 py-1.5 bg-gray-50 rounded-lg border">
-                  <p className="text-[11px] text-gray-500 font-mono truncate">{targetUrl}</p>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                  style={{ background: '#F5F5F4' }}>
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ background: BRAND.lime }} />
+                  <p className="text-[11px] font-mono truncate text-gray-500">{targetUrl}</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Text & Style */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Type className="w-4 h-4" /> Text & Style
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Call to Action</Label>
-                <Input
-                  value={ctaText}
-                  onChange={e => setCtaText(e.target.value)}
-                  placeholder="Scan to Order Your Shirt"
-                  maxLength={48}
-                  className="text-sm"
-                />
-                <p className="text-[11px] text-gray-400">{ctaText.length}/48 characters</p>
-              </div>
-              <Separator />
-              <div className="space-y-1.5">
-                <Label className="text-xs">Color Variant</Label>
-                <div className="flex gap-2 mt-1">
+          <div className="h-px mx-6" style={{ background: '#F0F0EF' }} />
+
+          {/* Section: Call to Action */}
+          <div className="px-6 py-5">
+            <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
+              style={{ color: '#9CA3AF' }}>
+              Call to Action
+            </p>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-500">Poster headline text</Label>
+              <Input
+                value={ctaText}
+                onChange={e => setCtaText(e.target.value)}
+                placeholder="Scan to Order Your Shirt"
+                maxLength={48}
+                className="text-sm h-10"
+              />
+              <p className="text-[11px] text-gray-400 text-right">{ctaText.length} / 48</p>
+            </div>
+          </div>
+
+          <div className="h-px mx-6" style={{ background: '#F0F0EF' }} />
+
+          {/* Section: Color Variant */}
+          <div className="px-6 py-5">
+            <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
+              style={{ color: '#9CA3AF' }}>
+              Color Variant
+            </p>
+
+            <div className="flex gap-4 justify-center">
+              <VariantThumb v="light" selected={variant === 'light'} onClick={() => setVariant('light')} />
+              <VariantThumb v="dark"  selected={variant === 'dark'}  onClick={() => setVariant('dark')}  />
+            </div>
+          </div>
+
+          <div className="h-px" style={{ background: '#F0F0EF' }} />
+
+          {/* Section: Export */}
+          <div className="px-6 pt-5 pb-6">
+            <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
+              style={{ color: '#9CA3AF' }}>
+              Export
+            </p>
+
+            <div className="rounded-xl overflow-hidden"
+              style={{ border: '1px solid #EBEBEA' }}>
+              {SIZE_PRESETS.map((preset, idx) => (
+                <div key={preset.slug}>
+                  {idx > 0 && <div className="h-px" style={{ background: '#EBEBEA' }} />}
                   <button
-                    onClick={() => setVariant('light')}
-                    className="flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all"
-                    style={variant === 'light'
-                      ? { borderColor: BRAND.green, backgroundColor: BRAND.lightTeal, color: BRAND.green }
-                      : { borderColor: '#e5e7eb', color: '#9ca3af' }}
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors"
+                    style={{
+                      background: 'transparent',
+                      cursor: canGenerate && !downloading ? 'pointer' : 'not-allowed',
+                      opacity: canGenerate && !downloading ? 1 : 0.45,
+                    }}
+                    onClick={() => canGenerate && !downloading && handleDownload(preset)}
+                    disabled={!canGenerate || !!downloading}
+                    onMouseEnter={e => {
+                      if (canGenerate && !downloading)
+                        (e.currentTarget as HTMLButtonElement).style.background = '#FAFAF8'
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                    }}
                   >
-                    Light
-                  </button>
-                  <button
-                    onClick={() => setVariant('dark')}
-                    className="flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all"
-                    style={variant === 'dark'
-                      ? { borderColor: BRAND.green, backgroundColor: BRAND.green, color: BRAND.lime }
-                      : { borderColor: '#e5e7eb', color: '#9ca3af' }}
-                  >
-                    Dark
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{preset.label}</p>
+                      <p className="text-[11px] font-mono text-gray-400 mt-0.5">{preset.res} px</p>
+                    </div>
+
+                    <div className="flex-shrink-0 ml-3">
+                      {downloading === preset.slug
+                        ? <RefreshCw className="w-4 h-4 animate-spin" style={{ color: BRAND.green }} />
+                        : (
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                            style={{ background: '#F0F0EF' }}
+                          >
+                            <Download className="w-3.5 h-3.5 text-gray-500" />
+                          </div>
+                        )
+                      }
+                    </div>
                   </button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Download */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Download className="w-4 h-4" /> Download
-              </CardTitle>
-              <CardDescription className="text-xs">
-                High-resolution PNG — ready for print and social media
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {SIZE_PRESETS.map(preset => (
-                <Button
-                  key={preset.label}
-                  variant="outline"
-                  className="w-full justify-between text-sm font-normal h-10"
-                  onClick={() => handleDownload(preset)}
-                  disabled={!canGenerate || !!downloading}
-                >
-                  <span>{preset.label}</span>
-                  {downloading === preset.label
-                    ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                    : <Download className="w-3.5 h-3.5 text-gray-400" />
-                  }
-                </Button>
               ))}
-              <p className="text-[11px] text-gray-400 pt-1">
-                All sizes generated locally — no data is sent to any server.
-              </p>
-            </CardContent>
-          </Card>
+            </div>
+
+            <p className="text-[10px] text-gray-400 mt-3 text-center tracking-wide">
+              Generated locally — no data sent to any server.
+            </p>
+          </div>
 
         </div>
       </div>
