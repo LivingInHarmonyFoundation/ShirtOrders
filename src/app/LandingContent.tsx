@@ -470,7 +470,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
               width={140}
               height={60}
               className="object-contain"
-              style={{ maxHeight: 44, width: 'auto' }}
+              style={{ maxHeight: 44, width: 'auto', filter: 'invert(1) hue-rotate(170deg)', mixBlendMode: 'screen' }}
             />
           </div>
           <div className="flex flex-col items-center sm:items-end gap-0.5">
