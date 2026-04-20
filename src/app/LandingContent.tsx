@@ -10,7 +10,6 @@ import {
 import type { ShirtCatalogItem } from '@/types'
 import ShirtViewer from '@/components/shared/ShirtViewer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
-import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import { useT } from '@/contexts/LanguageContext'
 
 interface LandingContentProps {
@@ -458,23 +457,22 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
       >
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div
-              className="relative w-9 h-9 flex-shrink-0 rounded-full overflow-hidden border"
-              style={{ borderColor: 'rgba(0,53,47,0.15)' }}
-            >
-              <Image src={badgeSrc} alt="LIH" fill className="object-contain" />
-            </div>
-            <div>
-              <p className="font-semibold" style={{ color: '#00352F', fontSize: '13px' }}>{t('common', 'orgName')}</p>
-              <p className="text-gray-400 italic" style={{ fontSize: '11px' }}>Únete a la lucha contra la soledad NO Deseada</p>
-            </div>
+            <Image
+              src="/ellipsis-logo.png"
+              alt="Ellipsis Technology Consultants"
+              width={88}
+              height={32}
+              className="object-contain opacity-80"
+            />
           </div>
-          <p className="text-gray-400" style={{ fontSize: '11px' }}>
-            &copy; {new Date().getFullYear()} {t('common', 'orgName')}. All rights reserved.
-          </p>
-        </div>
-        <div className="w-full border-t pt-3 mt-1" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
-          <PoweredByFooter />
+          <div className="flex flex-col items-center sm:items-end gap-0.5">
+            <p className="text-gray-400" style={{ fontSize: '11px' }}>
+              &copy; 2025 Copyright Ellipsis. All Rights Reserved.
+            </p>
+            <p className="text-gray-400 italic" style={{ fontSize: '10px' }}>
+              Driven by innovation. Defined by trust. Delivered with precision.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
