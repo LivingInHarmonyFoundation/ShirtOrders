@@ -312,7 +312,30 @@ async function drawBrandedQR(
   ctx.textAlign    = 'center'
   ctx.textBaseline = 'bottom'
   ctx.fillStyle    = variant === 'light' ? 'rgba(0,53,47,0.35)' : 'rgba(206,220,0,0.38)'
-  ctx.fillText('Únete a la lucha contra la soledad', canvasW / 2, canvasH - canvasH * 0.025)
+  ctx.fillText('Únete a la lucha contra la soledad', canvasW / 2, canvasH - canvasH * 0.045)
+
+  // Powered-by Ellipsis strip at very bottom
+  try {
+    const ellipsisLogo = await loadImage('/ellipsis-logo.png')
+    const elH = canvasH * 0.018
+    const elW = elH * (ellipsisLogo.width / ellipsisLogo.height)
+    const powFontSize = Math.round(canvasW * 0.014)
+    ctx.font = `400 ${powFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    const labelText = 'Powered by ellipsispr.com'
+    const textW = ctx.measureText(labelText).width
+    const totalW = elW + canvasW * 0.008 + textW
+    const startX = (canvasW - totalW) / 2
+    const elY = canvasH - canvasH * 0.022
+    ctx.globalAlpha = 0.50
+    ctx.drawImage(ellipsisLogo, startX, elY, elW, elH)
+    ctx.globalAlpha = 1
+    ctx.fillStyle = variant === 'light' ? 'rgba(0,53,47,0.32)' : 'rgba(255,255,255,0.28)'
+    ctx.fillText(labelText, startX + elW + canvasW * 0.008, elY + elH / 2)
+  } catch {
+    // no-op — skip if logo unavailable
+  }
 
   return canvas.toDataURL('image/png')
 }

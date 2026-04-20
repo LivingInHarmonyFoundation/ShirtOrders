@@ -10,6 +10,7 @@ import {
 import type { ShirtCatalogItem } from '@/types'
 import ShirtViewer from '@/components/shared/ShirtViewer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
+import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import { useT } from '@/contexts/LanguageContext'
 
 interface LandingContentProps {
@@ -471,6 +472,9 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
           <p className="text-gray-400" style={{ fontSize: '11px' }}>
             &copy; {new Date().getFullYear()} {t('common', 'orgName')}. All rights reserved.
           </p>
+        </div>
+        <div className="w-full border-t pt-3 mt-1" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+          <PoweredByFooter />
         </div>
       </footer>
     </div>

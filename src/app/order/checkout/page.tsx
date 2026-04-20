@@ -12,6 +12,7 @@ import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote } from 'lucide-re
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
+import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import { useT } from '@/contexts/LanguageContext'
 import type { Order, AppSettings } from '@/types'
 
@@ -357,6 +358,7 @@ function CheckoutContent() {
           <p className="text-xs text-center text-gray-400">
             {t('checkout', 'paypalSecure')}
           </p>
+          <PoweredByFooter />
         </div>
       </main>
     </div>

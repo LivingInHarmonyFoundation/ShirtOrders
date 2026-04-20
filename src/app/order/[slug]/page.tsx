@@ -17,6 +17,7 @@ import Image from 'next/image'
 import ShirtViewer from '@/components/shared/ShirtViewer'
 import CartIcon from '@/components/shared/CartIcon'
 import CartDrawer from '@/components/shared/CartDrawer'
+import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
@@ -468,6 +469,10 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
           </Button>
         </form>
       </main>
+
+      <footer className="pb-4">
+        <PoweredByFooter />
+      </footer>
 
       {/* Cart Drawer */}
       <CartDrawer

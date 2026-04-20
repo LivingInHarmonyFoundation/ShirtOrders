@@ -10,6 +10,7 @@ import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { PaymentStatusBadge } from '@/components/shared/status-badge'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
+import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import { useT } from '@/contexts/LanguageContext'
 import type { Order } from '@/types'
 
@@ -252,6 +253,7 @@ function ConfirmationContent() {
 
         {/* Mission badge */}
         <div className="flex flex-col items-center gap-3 mt-10 mb-2 print:hidden">
+
           <div className="relative w-24 h-24" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,53,47,0.2))' }}>
             <Image src="/badge.jpeg" alt="Que Nadie en PR Envejezca Solo" fill className="object-contain rounded-full" />
           </div>
@@ -259,6 +261,7 @@ function ConfirmationContent() {
             {t('confirmation', 'missionThanks')} <span className="text-[#00352F] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
           </p>
         </div>
+        <PoweredByFooter />
       </main>
     </div>
   )
