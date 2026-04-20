@@ -7,6 +7,7 @@ const PUBLIC_FIELDS = [
   'school_orders_enabled', 'government_orders_enabled',
   'personal_orders_enabled', 'private_company_orders_enabled',
   'manual_payment_enabled', 'cash_enabled', 'personal_allowed_payment_methods', 'confirmation_message',
+  'qr_tagline',
 ]
 
 export async function GET() {
@@ -51,7 +52,7 @@ export async function PATCH(request: NextRequest) {
     'school_orders_enabled', 'government_orders_enabled',
     'personal_orders_enabled', 'private_company_orders_enabled',
     'manual_payment_enabled', 'cash_enabled', 'personal_allowed_payment_methods', 'confirmation_message',
-    'admin_phone', 'sms_notifications_enabled',
+    'admin_phone', 'sms_notifications_enabled', 'qr_tagline',
   ]
 
   const updateData: Record<string, unknown> = {}

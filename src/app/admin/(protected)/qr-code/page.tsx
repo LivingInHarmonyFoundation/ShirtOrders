@@ -72,7 +72,8 @@ async function drawBrandedQR(
   canvasH: number,
   url: string,
   ctaText: string,
-  variant: 'light' | 'dark'
+  variant: 'light' | 'dark',
+  tagline: string = 'Únete a la lucha contra la soledad'
 ): Promise<string> {
   // ── 1. Generate QR matrix ───────────────────────────────────────────────
   const qr     = QRCode.create(url, { errorCorrectionLevel: 'H' })
@@ -312,27 +313,27 @@ async function drawBrandedQR(
   ctx.textAlign    = 'center'
   ctx.textBaseline = 'bottom'
   ctx.fillStyle    = variant === 'light' ? 'rgba(0,53,47,0.35)' : 'rgba(206,220,0,0.38)'
-  ctx.fillText('Únete a la lucha contra la soledad', canvasW / 2, canvasH - canvasH * 0.045)
+  ctx.fillText(tagline, canvasW / 2, canvasH - canvasH * 0.045)
 
   // Powered-by Ellipsis strip at very bottom
   try {
     const ellipsisLogo = await loadImage('/ellipsis-cl.png')
-    const elH = canvasH * 0.018
+    const elH = canvasH * 0.030
     const elW = elH * (ellipsisLogo.width / ellipsisLogo.height)
-    const powFontSize = Math.round(canvasW * 0.014)
+    const powFontSize = Math.round(canvasW * 0.016)
     ctx.font = `400 ${powFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
     ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
     const labelText = 'Powered by ellipsispr.com'
     const textW = ctx.measureText(labelText).width
-    const totalW = elW + canvasW * 0.008 + textW
+    const totalW = elW + canvasW * 0.010 + textW
     const startX = (canvasW - totalW) / 2
-    const elY = canvasH - canvasH * 0.022
-    ctx.globalAlpha = 0.50
+    const elY = canvasH - canvasH * 0.030
+    ctx.globalAlpha = 0.85
     ctx.drawImage(ellipsisLogo, startX, elY, elW, elH)
     ctx.globalAlpha = 1
-    ctx.fillStyle = variant === 'light' ? 'rgba(0,53,47,0.32)' : 'rgba(255,255,255,0.28)'
-    ctx.fillText(labelText, startX + elW + canvasW * 0.008, elY + elH / 2)
+    ctx.fillStyle = variant === 'light' ? 'rgba(0,53,47,0.55)' : 'rgba(255,255,255,0.55)'
+    ctx.fillText(labelText, startX + elW + canvasW * 0.010, elY + elH / 2)
   } catch {
     // no-op — skip if logo unavailable
   }
@@ -458,9 +459,20 @@ export default function QRCodePage() {
   const [urlOption,   setUrlOption]   = useState(URL_OPTIONS[0].value)
   const [customUrl,   setCustomUrl]   = useState('')
   const [ctaText,     setCtaText]     = useState('Scan to Order Your Shirt')
+  const [tagline,     setTagline]     = useState('Únete a la lucha contra la soledad')
   const [variant,     setVariant]     = useState<'light' | 'dark'>('light')
   const [generating,  setGenerating]  = useState(false)
   const [downloading, setDownloading] = useState<string | null>(null)
+
+  // Load saved tagline from settings
+  useEffect(() => {
+    fetch('/api/admin/settings')
+      .then(r => r.json())
+      .then(({ settings }) => {
+        if (settings?.qr_tagline) setTagline(settings.qr_tagline)
+      })
+      .catch(() => {})
+  }, [])
 
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -475,7 +487,7 @@ export default function QRCodePage() {
       const dpr     = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1
       const logical = 480
       const canvas  = previewCanvasRef.current
-      await drawBrandedQR(canvas, logical * dpr, logical * dpr, targetUrl, ctaText, variant)
+      await drawBrandedQR(canvas, logical * dpr, logical * dpr, targetUrl, ctaText, variant, tagline)
       canvas.style.width  = `${logical}px`
       canvas.style.height = `${logical}px`
     } catch (err) {
@@ -484,7 +496,7 @@ export default function QRCodePage() {
     } finally {
       setGenerating(false)
     }
-  }, [targetUrl, ctaText, variant])
+  }, [targetUrl, ctaText, variant, tagline])
 
   useEffect(() => {
     generatePreview()
@@ -495,7 +507,7 @@ export default function QRCodePage() {
     setDownloading(preset.slug)
     try {
       const offscreen = document.createElement('canvas')
-      const dataUrl   = await drawBrandedQR(offscreen, preset.w, preset.h, targetUrl, ctaText, variant)
+      const dataUrl   = await drawBrandedQR(offscreen, preset.w, preset.h, targetUrl, ctaText, variant, tagline)
       const a = document.createElement('a')
       a.href     = dataUrl
       a.download = `lih-qr-${preset.w}x${preset.h}.png`
@@ -659,6 +671,27 @@ export default function QRCodePage() {
                 className="text-sm h-10"
               />
               <p className="text-[11px] text-gray-400 text-right">{ctaText.length} / 48</p>
+            </div>
+          </div>
+
+          <div className="h-px mx-6" style={{ background: '#F0F0EF' }} />
+
+          {/* Section: Tagline */}
+          <div className="px-6 py-5">
+            <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
+              style={{ color: '#9CA3AF' }}>
+              Tagline
+            </p>
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-500">Italic text below the headline</Label>
+              <Input
+                value={tagline}
+                onChange={e => setTagline(e.target.value)}
+                placeholder="Únete a la lucha contra la soledad"
+                maxLength={72}
+                className="text-sm h-10"
+              />
+              <p className="text-[11px] text-gray-400 text-right">{tagline.length} / 72</p>
             </div>
           </div>
 

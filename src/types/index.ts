@@ -105,6 +105,7 @@ export interface AppSettings {
   cash_enabled: boolean
   personal_allowed_payment_methods: string[] | null
   confirmation_message: string
+  qr_tagline: string
   admin_phone: string | null
   sms_notifications_enabled: boolean
   created_at: string
