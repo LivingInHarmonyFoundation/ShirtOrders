@@ -155,28 +155,16 @@ async function drawBrandedQR(
   const qrCardY  = topH + (midZoneH - qrCardH) / 2
 
   // ── 6. Top section ──────────────────────────────────────────────────────
-  const logoSize    = canvasW * 0.13
-  const logoX       = (canvasW - logoSize) / 2
-  const topMidY     = topH * 0.5
-  const logoY       = topMidY - logoSize * 0.55
-
-  // Org label — small caps feel, letter-spaced
-  const labelFontSize = Math.round(canvasW * 0.022)
-  ctx.save()
-  ctx.font         = `600 ${labelFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
-  ctx.textAlign    = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillStyle    = textAccent
-  ctx.globalAlpha  = 0.65
-  ctx.fillText('LIVING IN HARMONY FOUNDATION', canvasW / 2, logoY - labelFontSize * 1.2)
-  ctx.restore()
+  const logoSize = canvasW * 0.14
+  const logoX    = (canvasW - logoSize) / 2
+  // Push logo down so there is comfortable breathing room from the top edge
+  const logoY    = topH * 0.18
 
   // Logo image
   try {
     const logo = await loadImage('/logo.png')
     ctx.drawImage(logo, logoX, logoY, logoSize, logoSize)
   } catch {
-    // Graceful fallback — draw a placeholder circle
     ctx.save()
     ctx.fillStyle   = textAccent
     ctx.globalAlpha = 0.3
@@ -186,13 +174,13 @@ async function drawBrandedQR(
     ctx.restore()
   }
 
-  // Org name below logo
+  // Org name — appears once, below the logo
   const orgFontSize = Math.round(canvasW * 0.036)
   ctx.font         = `700 ${orgFontSize}px -apple-system, "Helvetica Neue", Arial, sans-serif`
   ctx.textAlign    = 'center'
   ctx.textBaseline = 'top'
   ctx.fillStyle    = textPrimary
-  ctx.fillText('Living in Harmony Foundation', canvasW / 2, logoY + logoSize + orgFontSize * 0.25)
+  ctx.fillText('Living in Harmony Foundation', canvasW / 2, logoY + logoSize + orgFontSize * 0.3)
 
   // ── 7. QR card ──────────────────────────────────────────────────────────
   const cardRadius  = qrCardW * 0.08
@@ -317,15 +305,6 @@ async function drawBrandedQR(
   ctx.lineTo(ruleX + ruleW, ruleY)
   ctx.stroke()
   ctx.restore()
-
-  // URL in small monospace below rule
-  const urlFontSize = Math.round(canvasW * 0.020)
-  ctx.font         = `400 ${urlFontSize}px "Courier New", Courier, monospace`
-  ctx.textAlign    = 'center'
-  ctx.textBaseline = 'top'
-  ctx.fillStyle    = urlColor
-  const displayUrl = url.replace(/^https?:\/\//, '')
-  ctx.fillText(displayUrl, canvasW / 2, ruleY + canvasH * 0.018)
 
   // Tagline — italic, very small, bottom
   const tagFontSize = Math.round(canvasW * 0.018)
