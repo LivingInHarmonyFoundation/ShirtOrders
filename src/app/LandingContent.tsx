@@ -452,24 +452,46 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
 
       {/* ── Footer ──────────────────────────────────────────── */}
       <footer
-        className="bg-white py-7 px-4 sm:px-6"
-        style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}
+        className="relative py-7 px-4 sm:px-6 overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #060d1a 0%, #0d1f2d 40%, #071218 70%, #0a1520 100%)',
+        }}
       >
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Subtle teal grid overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(28,200,212,0.04) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(28,200,212,0.04) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px',
+          }}
+        />
+        {/* Teal glow accents */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-8 left-1/4 w-64 h-64 rounded-full opacity-[0.06]"
+            style={{ background: 'radial-gradient(circle, #1cc8d4, transparent 70%)' }} />
+          <div className="absolute -bottom-8 right-1/4 w-48 h-48 rounded-full opacity-[0.05]"
+            style={{ background: 'radial-gradient(circle, #1cc8d4, transparent 70%)' }} />
+        </div>
+
+        <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Image
               src="/ellipsis-logo.png"
               alt="Ellipsis Technology Consultants"
-              width={88}
-              height={32}
-              className="object-contain opacity-80"
+              width={96}
+              height={34}
+              className="object-contain"
+              style={{ filter: 'brightness(0) invert(1) opacity(0.85)' }}
             />
           </div>
           <div className="flex flex-col items-center sm:items-end gap-0.5">
-            <p className="text-gray-400" style={{ fontSize: '11px' }}>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
               &copy; 2025 Copyright Ellipsis. All Rights Reserved.
             </p>
-            <p className="text-gray-400 italic" style={{ fontSize: '10px' }}>
+            <p style={{ fontSize: '10px', color: 'rgba(28,200,212,0.65)', fontStyle: 'italic' }}>
               Driven by innovation. Defined by trust. Delivered with precision.
             </p>
           </div>
