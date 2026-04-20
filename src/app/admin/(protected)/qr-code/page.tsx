@@ -143,7 +143,7 @@ async function drawBrandedQR(
   ctx.restore()
 
   // ── 5. Compute layout zones ─────────────────────────────────────────────
-  const topH    = canvasH * (isPortrait ? 0.18 : 0.22)
+  const topH    = canvasH * (isPortrait ? 0.21 : 0.27)
   const bottomH = canvasH * (isPortrait ? 0.20 : 0.22)
 
   // QR card is a square that fills the middle zone
