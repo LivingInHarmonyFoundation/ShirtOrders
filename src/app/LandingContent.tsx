@@ -463,16 +463,18 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: 'rgba(4,12,20,0.62)' }} />
 
         <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.92)' }}>
-              <Image
-                src="/ellipsis-logo.png"
-                alt="Ellipsis Technology Consultants"
-                width={96}
-                height={34}
-                className="object-contain"
-              />
+          <div className="flex flex-col gap-0">
+            <div className="flex items-center gap-0.5" style={{ lineHeight: 1 }}>
+              <span style={{ color: 'white', fontSize: '22px', fontWeight: 300, letterSpacing: '-0.03em', fontFamily: 'Georgia, serif' }}>e</span>
+              <span style={{ color: 'white', fontSize: '22px', fontWeight: 300, letterSpacing: '-0.03em', fontFamily: 'Georgia, serif' }}>ll</span>
+              <span style={{ display: 'inline-flex', gap: '2px', alignItems: 'center', margin: '0 1px' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#1cc8d4', display: 'inline-block' }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#1cc8d4', display: 'inline-block' }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#1cc8d4', display: 'inline-block' }} />
+              </span>
+              <span style={{ color: 'white', fontSize: '22px', fontWeight: 300, letterSpacing: '-0.03em', fontFamily: 'Georgia, serif' }}>psis</span>
             </div>
+            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: '2px' }}>Technology Consultants</span>
           </div>
           <div className="flex flex-col items-center sm:items-end gap-0.5">
             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
