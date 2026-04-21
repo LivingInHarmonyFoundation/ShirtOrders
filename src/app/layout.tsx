@@ -20,7 +20,7 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Institution Shirt Order Manager',
+  title: 'Living in Harmony Foundation',
   description: 'Order shirts for your school or government institution',
 }
 

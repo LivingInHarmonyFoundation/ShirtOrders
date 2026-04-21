@@ -172,7 +172,7 @@ export default function ReportsPage() {
 
       {/* Print-only header */}
       <div className="hidden print:block mb-4 border-b pb-3">
-        <h1 className="text-xl font-bold">Institution Shirt Order Manager — Report</h1>
+        <h1 className="text-xl font-bold">Living in Harmony Foundation — Report</h1>
         <p className="text-sm text-gray-500">Generated {new Date().toLocaleDateString()}</p>
       </div>
 
