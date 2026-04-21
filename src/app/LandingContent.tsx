@@ -1,3 +1,12 @@
+/**
+ * @file LandingContent.tsx
+ * @description Client component for the public landing page. Renders the hero,
+ * trust strip, mission section, shirt catalog preview, "Who Can Order" grid,
+ * "How It Works" timeline, final CTA, and footer. Receives catalog items and
+ * optional image URLs as props from the server component in page.tsx.
+ * No authentication required — this is a fully public page.
+ */
+
 'use client'
 
 import Link from 'next/link'
@@ -18,6 +27,16 @@ interface LandingContentProps {
   badgeUrl: string | null
 }
 
+/**
+ * LandingContent — full public landing page body.
+ *
+ * @param catalog - Active shirt catalog items fetched server-side; drives the
+ *   catalog preview section (hidden when empty).
+ * @param missionBannerUrl - Optional custom mission banner image URL from
+ *   app_settings. When set, replaces the default text version entirely.
+ * @param badgeUrl - Optional custom badge image URL. Falls back to /badge.jpeg
+ *   when null.
+ */
 export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: LandingContentProps) {
   const t = useT()
   const badgeSrc = badgeUrl || '/badge.jpeg'

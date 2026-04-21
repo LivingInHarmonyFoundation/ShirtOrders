@@ -1,8 +1,28 @@
+/**
+ * @file route.ts
+ * @description Public order submission endpoint. No authentication required — any visitor
+ * can submit an order. Validates against the active campaign, app settings, and size
+ * availability before creating the order row and its line items.
+ *
+ * Key invariants:
+ * - Requires an active, non-expired campaign; rejects otherwise.
+ * - Duplicate-submission guard: blocks resubmission of the same email + first-item
+ *   size + qty within a 10-minute window.
+ * - Supports multi-item cart (`items` array) and legacy single-item fields for
+ *   backwards compatibility; `items` takes precedence when present.
+ * - `order_items` rows are bulk-inserted after the order row; insert failure is
+ *   non-fatal (logged, order still created).
+ * - Uses `createAdminClient()` (bypasses RLS) because this is an unauthenticated
+ *   write path — no user session is available.
+ * - `admin_phone` in app_settings is an ntfy.sh topic name, not a phone number.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateOrderNumber } from '@/lib/utils'
 import { sendOrderNotifications } from '@/lib/notifications'
 import { z } from 'zod'
+
+// ─── Validation Schemas ───────────────────────────────────────
 
 const cartItemSchema = z.object({
   catalog_item_id: z.string().uuid().nullable().optional(),
@@ -36,6 +56,13 @@ const orderSchema = z.object({
   catalog_item_name: z.string().optional(),
 })
 
+// ─── POST /api/orders ─────────────────────────────────────────
+
+/**
+ * POST /api/orders — public order submission. No auth required.
+ * Validates campaign, settings, sizes, and duplicate guard before inserting.
+ * Returns { order } with status 201 on success.
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -110,7 +137,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Duplicate-submission guard (based on first item for legacy compat)
+    // Duplicate-submission guard: rejects if the same email + first-item size + qty
+    // was submitted within the last 10 minutes to prevent accidental double-orders.
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
     const firstItem = cartItems[0]
     const { data: existing } = await supabase

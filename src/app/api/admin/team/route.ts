@@ -1,28 +1,36 @@
+/**
+ * @file route.ts
+ * @description Admin team management — list members and invite new ones. Auth-gated:
+ * requires an authenticated session AND owner role (or bootstrap owner path where
+ * no team_members record exists). Uses `createAdminClient()` (bypasses RLS) for all
+ * team_members reads and Supabase Auth admin calls.
+ *
+ * Key invariants:
+ * - null from getCallerRole = bootstrap owner (no team_members record); all ops allowed.
+ * - Inactive users are hard-blocked by getCallerRole (returns 403 NextResponse).
+ * - New users are created with `must_change_password: true` in user_metadata — the
+ *   set-password route clears this flag on first login.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { getCallerRole } from '@/lib/supabase/require-role'
 import type { UserRole } from '@/types'
 
-// Local variant: null means no record OR inactive — both treated as non-member.
-// Bootstrap owner has no record, so null passes the `role !== null` owner check below.
-async function getCallerRole(userId: string): Promise<UserRole | null> {
-  const admin = await createAdminClient()
-  const { data } = await admin
-    .from('team_members')
-    .select('role, is_active')
-    .eq('user_id', userId)
-    .maybeSingle()
-  if (!data || !data.is_active) return null
-  return data.role as UserRole
-}
+// ─── GET /api/admin/team ──────────────────────────────────────
 
+/**
+ * GET /api/admin/team — list all team members ordered by creation date.
+ * Requires owner role (or bootstrap owner). Returns { members: TeamMember[] }.
+ */
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const role = await getCallerRole(user.id)
-  // null = no record = bootstrap owner; any other non-owner role is forbidden
-  if (role !== null && role !== 'owner') {
+  // ─── Auth & Permission Checks ────────────────────────────────
+  const callerRole = await getCallerRole(user.id)
+  if (callerRole instanceof NextResponse) return callerRole   // inactive user blocked
+  if (callerRole !== null && callerRole !== 'owner') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -36,13 +44,23 @@ export async function GET() {
   return NextResponse.json({ members: members || [] })
 }
 
+// ─── POST /api/admin/team ─────────────────────────────────────
+
+/**
+ * POST /api/admin/team — invite a new team member by creating a Supabase Auth user
+ * and a corresponding team_members row. Requires owner role.
+ * Body: { email, role, full_name?, password }
+ * Password must be at least 8 characters; user is flagged must_change_password on creation.
+ */
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const role = await getCallerRole(user.id)
-  if (role !== null && role !== 'owner') {
+  // ─── Auth & Permission Checks ────────────────────────────────
+  const callerRole = await getCallerRole(user.id)
+  if (callerRole instanceof NextResponse) return callerRole   // inactive user blocked
+  if (callerRole !== null && callerRole !== 'owner') {
     return NextResponse.json({ error: 'Only owners can invite team members' }, { status: 403 })
   }
 

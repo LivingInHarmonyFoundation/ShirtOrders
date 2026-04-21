@@ -1,3 +1,18 @@
+/**
+ * @file page.tsx
+ * @description School-specific public order page, accessed via a unique slug
+ * generated when the school link is created. No authentication required.
+ * The UUID slug acts as a capability token — only people with the link can
+ * reach this page.
+ *
+ * Fetches the school record by slug on mount. If the slug is unknown or
+ * inactive the page shows an error state rather than the form. School name
+ * is pre-filled and read-only; the grade field renders as a dropdown when
+ * the school has a configured grades list, otherwise falls back to a text input.
+ *
+ * Shares the CartContext / CartDrawer checkout flow with the main order page.
+ */
+
 'use client'
 
 import { useState, useEffect, use } from 'react'
@@ -23,6 +38,9 @@ import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
 import type { AppSettings, ShirtCatalogItem } from '@/types'
 
+// ─── Zod Validation Schema ────────────────────────────────────
+// School slug page has a narrower schema than the main order page:
+// grade and classroom are always required (no superRefine needed).
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Valid email is required'),
@@ -45,6 +63,15 @@ interface SchoolInfo {
   allowed_payment_methods: string[] | null
 }
 
+/**
+ * SchoolOrderPage — order form pre-filled for a specific school.
+ *
+ * Resolves the `params` Promise with `use()` (Next.js 16 async params API).
+ * Parallel-fetches school data, app settings, and the catalog on mount.
+ * Renders an error state if the school slug is not found or inactive.
+ * The school_link_id is attached to the checkout payload so orders are
+ * attributed to the correct school in the database.
+ */
 export default function SchoolOrderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const t = useT()
@@ -78,6 +105,9 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
   const watchedQty = watch('quantity')
   const unitPrice = settings?.shirt_price || 15
 
+  // ─── Data Fetching ───────────────────────────────────────────
+  // Resolves school, settings, and catalog in parallel. A single failure
+  // in the Promise.all sets loadError and short-circuits to the error UI.
   useEffect(() => {
     Promise.all([
       fetch(`/api/schools/${slug}`).then(r => r.json()),

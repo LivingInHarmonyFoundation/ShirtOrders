@@ -1,9 +1,31 @@
+/**
+ * @file route.ts
+ * @description Captures an approved PayPal checkout order and marks the app order as paid.
+ * Public endpoint — the customer calls this after approving payment in the PayPal JS SDK.
+ *
+ * Key invariants:
+ * - Detects the funding source (paypal | card | venmo) from the PayPal capture response
+ *   and stores it as payment_method on the order.
+ * - Writes an audit_log entry recording the payment_status transition.
+ * - Fires order notifications (ntfy.sh) after capture; failure is non-fatal.
+ * - `getPayPalToken` and `BASE_URL` come from `@/lib/paypal` which is server-only —
+ *   it contains the PayPal client secret and must never be imported client-side.
+ * - Uses `createAdminClient()` (bypasses RLS) because no user session is available.
+ * - `admin_phone` in app_settings is an ntfy.sh topic name, not a phone number.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getPayPalToken, BASE_URL } from '@/lib/paypal'
 import { sendOrderNotifications } from '@/lib/notifications'
 import type { PaymentMethod } from '@/types'
 
+// ─── POST /api/paypal/capture-order ──────────────────────────
+
+/**
+ * POST /api/paypal/capture-order — capture an approved PayPal order. Public endpoint.
+ * Body: { paypalOrderId: string, orderId: string }
+ * Returns { success: true, paymentMethod: PaymentMethod } on success.
+ */
 export async function POST(request: NextRequest) {
   try {
     const { paypalOrderId, orderId } = await request.json()

@@ -1,3 +1,15 @@
+/**
+ * @file page.tsx
+ * @description Public order form — the primary entry point for all order types.
+ * Accessible without authentication; the active campaign acts as the access gate
+ * (orders are blocked when no campaign is active or the active one has expired).
+ *
+ * Supports four institution types: school, government, personal, and
+ * private_company. Conditional fields are validated server-side via a Zod
+ * schema with `superRefine`. Items are added to a CartContext (sessionStorage),
+ * and the full checkout payload is forwarded to CartDrawer for final submission.
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -25,6 +37,10 @@ import { useT } from '@/contexts/LanguageContext'
 import { Briefcase, User } from 'lucide-react'
 import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
 
+// ─── Zod Validation Schema ────────────────────────────────────
+// Base fields are always required. Institution-specific fields are
+// optional at the type level and enforced conditionally via superRefine,
+// which mirrors the server-side validation model.
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Valid email is required'),
@@ -68,6 +84,19 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+/**
+ * OrderPage — main public order form.
+ *
+ * Lifecycle:
+ * 1. On mount, fetches settings, catalog, gov orgs, private companies, and the
+ *    active campaign in parallel.
+ * 2. Renders a campaign-closed screen if no active campaign exists or the
+ *    active campaign's end_date has passed.
+ * 3. Otherwise renders the stepped order form with conditional sections for
+ *    each institution type.
+ * 4. On submit, adds the item to CartContext and opens the CartDrawer.
+ *    The drawer holds the full checkout payload and handles final order creation.
+ */
 export default function OrderPage() {
   const t = useT()
   const { addItem, openCart, items: cartItems, totalItems } = useCart()
@@ -134,10 +163,17 @@ export default function OrderPage() {
       .catch(() => setActiveCampaign('none'))
   }, [])
 
+  // ─── Data Fetching ───────────────────────────────────────────
+  // Parallel fetches on mount: settings (price, sizes, toggles), catalog,
+  // gov orgs, private companies, and the active campaign. Campaign result
+  // is initialized to null (loading) and set to 'none' when absent.
+
   // Auto-select if only one shirt
   useEffect(() => {
     if (catalog.length === 1) setSelectedCatalogItem(catalog[0])
   }, [catalog])
+
+  // ─── Form Handlers ───────────────────────────────────────────
 
   const onSubmit = async (data: FormData) => {
     if (catalog.length > 1 && !selectedCatalogItem) {
@@ -188,6 +224,9 @@ export default function OrderPage() {
     }
   }
 
+  // handleCheckoutValidate — called by CartDrawer before navigating to checkout.
+  // Re-validates the contact and institution-type fields and snapshots the
+  // current form values into checkoutPayload so CartDrawer can send them.
   const handleCheckoutValidate = async () => {
     const result = await trigger(['full_name', 'email', 'institution_type'])
     if (!result) return false
@@ -215,6 +254,11 @@ export default function OrderPage() {
     return true
   }
 
+  // ─── Campaign Gate ────────────────────────────────────────────
+  // campaignClosed is true when: no campaign exists ('none'), the active
+  // campaign has an end_date in the past, or the campaign is otherwise null.
+  // The closed message prefers the campaign's own ended_message over the
+  // generic i18n fallback.
   const today = new Date().toISOString().split('T')[0]
   const campaignClosed =
     activeCampaign === 'none' ||

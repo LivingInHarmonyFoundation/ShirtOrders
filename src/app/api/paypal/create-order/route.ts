@@ -1,7 +1,27 @@
+/**
+ * @file route.ts
+ * @description Creates a PayPal checkout order for an existing app order. Public endpoint —
+ * no authentication required (the customer calls this when they choose PayPal at checkout).
+ *
+ * Key invariants:
+ * - Only creates a PayPal order for app orders that are still in 'pending' payment_status.
+ * - `getPayPalToken` and `BASE_URL` come from `@/lib/paypal` which is server-only —
+ *   it contains the PayPal client secret and must never be imported client-side.
+ * - Uses `createAdminClient()` (bypasses RLS) because no user session is available.
+ * - Returns a `paypalOrderId` that the client passes to the PayPal JS SDK to open the
+ *   checkout flow, then submits to /api/paypal/capture-order.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getPayPalToken, BASE_URL } from '@/lib/paypal'
 
+// ─── POST /api/paypal/create-order ───────────────────────────
+
+/**
+ * POST /api/paypal/create-order — create a PayPal checkout order. Public endpoint.
+ * Body: { orderId: string }  (our internal order UUID)
+ * Returns { paypalOrderId: string } — the PayPal order ID to pass to the JS SDK.
+ */
 export async function POST(request: NextRequest) {
   try {
     const { orderId } = await request.json()

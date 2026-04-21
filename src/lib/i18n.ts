@@ -1,5 +1,30 @@
+/**
+ * @file i18n.ts
+ * @description Bilingual (English / Spanish) translation dictionary for the
+ * entire public-facing app. ~420 lines covering 7 sections: common, landing,
+ * order, checkout, confirmation, cart, and errors.
+ *
+ * Usage: consumed exclusively through the `useT(section, key)` hook defined
+ * in LanguageContext.tsx. Do not read `translations` directly in components.
+ *
+ * Key invariant: `useT` falls back to English if a key is missing in the
+ * active language, then falls back to the raw key string if missing in both.
+ * New keys should always be added to both 'en' and 'es' blocks simultaneously.
+ */
+
+// ─── Types ────────────────────────────────────────────────────
+
+/**
+ * Lang — the two supported language codes.
+ */
 export type Lang = 'en' | 'es'
 
+// ─── Translation Dictionary ───────────────────────────────────
+
+/**
+ * translations — the full bilingual dictionary. Sections map to logical
+ * UI areas; keys are camelCase strings used as lookup identifiers.
+ */
 export const translations: Record<Lang, {
   common: Record<string, string>
   landing: Record<string, string>

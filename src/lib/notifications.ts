@@ -1,3 +1,21 @@
+/**
+ * @file notifications.ts
+ * @description Sends push notifications for new orders via ntfy.sh.
+ *
+ * Key invariant: The `admin_phone` field in AppSettings is NOT a phone number
+ * — it is the ntfy.sh topic name. The notification is delivered to whoever
+ * subscribes to https://ntfy.sh/<admin_phone>.
+ *
+ * Notification delivery failures are logged but never propagate as errors, so
+ * they never block order processing.
+ */
+
+// ─── Types ────────────────────────────────────────────────────
+
+/**
+ * OrderNotificationData — the subset of order fields needed to compose the
+ * push notification message body.
+ */
 interface OrderNotificationData {
   order_number: string
   full_name: string
@@ -10,6 +28,18 @@ interface OrderNotificationData {
   catalog_item_name?: string | null
 }
 
+// ─── Notification Sender ──────────────────────────────────────
+
+/**
+ * sendOrderNotifications — fires a high-priority ntfy.sh push notification
+ * summarising a new order. Silently no-ops when notifications are disabled
+ * or `admin_phone` (the ntfy topic) is not configured.
+ *
+ * Message format:
+ *   "<full_name> (<institution>)\n<size> × <qty>[| <catalog item>] — <total>"
+ *
+ * Errors during the fetch are caught and logged, never re-thrown.
+ */
 export async function sendOrderNotifications(
   order: OrderNotificationData,
   settings: {

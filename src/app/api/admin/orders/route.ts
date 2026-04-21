@@ -1,17 +1,44 @@
+/**
+ * @file route.ts
+ * @description Admin orders list — paginated GET with rich filtering, sorting, and summary
+ * aggregation; bulk PATCH for status updates. Both handlers require canManageOrders.
+ *
+ * Key invariants:
+ * - `order_items` rows joined from the DB are reshaped to `items` in every order object
+ *   returned by GET.
+ * - GET runs two parallel Supabase queries: one paginated for the current page, and one
+ *   unbounded summary query that aggregates shirts/revenue/by-size across the full filter
+ *   set (not just the current page).
+ * - Bulk PATCH (PATCH) is limited to BULK_ORDER_ALLOWED_FIELDS to prevent mass-assignment.
+ * - `createAdminClient()` bypasses RLS; auth check done separately via session client.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/supabase/require-role'
 
+// Fields allowed in bulk PATCH — prevents mass-assignment of sensitive columns.
 const BULK_ORDER_ALLOWED_FIELDS = [
   'payment_status', 'order_status', 'delivery_status',
   'admin_notes', 'date_paid', 'date_delivered',
 ]
 
+// ─── GET /api/admin/orders ────────────────────────────────────
+
+/**
+ * GET /api/admin/orders — paginated, filtered, sorted order list with summary aggregates.
+ * Requires canManageOrders permission.
+ * Query params: search, institution_type, payment_status, delivery_status, shirt_size,
+ *   date_from, date_to, grade, classroom, department, organization_name, school_name,
+ *   company_name, campaign_id, sort, page, limit (max 200).
+ * Response: { orders, total, page, limit, total_pages, summary }
+ * Note: order_items rows are surfaced under `items` on each order object.
+ */
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // ─── Auth & Permission Checks ────────────────────────────────
   const auth = await requirePermission(user.id, 'canManageOrders')
   if (auth instanceof NextResponse) return auth
 
@@ -177,11 +204,20 @@ export async function GET(request: NextRequest) {
   })
 }
 
+// ─── PATCH /api/admin/orders ──────────────────────────────────
+
+/**
+ * PATCH /api/admin/orders — bulk update status fields on multiple orders.
+ * Requires canManageOrders permission.
+ * Body: { ids: string[], updates: Partial<Record<BULK_ORDER_ALLOWED_FIELDS, unknown>> }
+ * Only fields in BULK_ORDER_ALLOWED_FIELDS are applied; others are silently ignored.
+ */
 export async function PATCH(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // ─── Auth & Permission Checks ────────────────────────────────
   const auth = await requirePermission(user.id, 'canManageOrders')
   if (auth instanceof NextResponse) return auth
 

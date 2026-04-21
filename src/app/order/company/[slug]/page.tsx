@@ -1,3 +1,16 @@
+/**
+ * @file page.tsx
+ * @description Private-company-specific public order page, accessed via a
+ * unique slug generated when the company link is created. No authentication
+ * required; the slug is the capability token.
+ *
+ * Structurally mirrors the school slug page: company name is pre-filled and
+ * read-only; optional department field is free-text. company_link_id is
+ * attached to the checkout payload for attribution.
+ *
+ * Shares the CartContext / CartDrawer checkout flow with the main order page.
+ */
+
 'use client'
 
 import { useState, useEffect, use } from 'react'
@@ -43,6 +56,13 @@ interface CompanyInfo {
   allowed_payment_methods: string[] | null
 }
 
+/**
+ * CompanyOrderPage — order form pre-filled for a specific private company.
+ *
+ * Resolves `params` with `use()` (Next.js 16 async params API). Parallel-
+ * fetches company data, app settings, and catalog. Renders an error state
+ * if the company slug is unknown or inactive.
+ */
 export default function CompanyOrderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const t = useT()
@@ -75,6 +95,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
   const watchedQty = watch('quantity')
   const unitPrice = settings?.shirt_price || 15
 
+  // ─── Data Fetching ───────────────────────────────────────────
   useEffect(() => {
     Promise.all([
       fetch(`/api/companies/${slug}`).then(r => r.json()),

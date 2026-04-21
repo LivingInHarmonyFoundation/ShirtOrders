@@ -1,3 +1,22 @@
+/**
+ * @file page.tsx
+ * @description Payment checkout page. Reached after cart items are saved and
+ * the order record has been created by CartDrawer. No authentication required;
+ * the order_id query parameter from the URL is the capability token — only
+ * someone who completed the order form has it.
+ *
+ * Fetches the order by ID and the app settings (for payment method config).
+ * Redirects to /order/confirmation if the order is already paid or manual.
+ *
+ * Payment method availability is driven by two layers:
+ *   1. order.order_allowed_payment_methods — per-order restrictions set at
+ *      institution/school/company level.
+ *   2. settings.cash_enabled — global cash toggle.
+ *
+ * The PayPal JS SDK is loaded client-side. `CheckoutContent` is wrapped in
+ * Suspense because useSearchParams() requires it in Next.js 16.
+ */
+
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'

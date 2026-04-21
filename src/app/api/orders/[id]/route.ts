@@ -1,6 +1,29 @@
+/**
+ * @file route.ts
+ * @description Public and auth-gated order endpoints by ID.
+ * - GET: public — any caller can read an order by ID (used by the confirmation page and
+ *   customer status page). Uses the session client so RLS filters what is visible.
+ * - PATCH: auth-gated — requires a valid session (admin); updates order fields and writes
+ *   an audit log entry for each changed field. Uses `createAdminClient()` for writes to
+ *   bypass RLS.
+ *
+ * Key invariants:
+ * - `order_items` rows from the DB are reshaped and surfaced as `items` in the response.
+ * - PATCH auto-sets date_paid when payment_status transitions to 'paid' or 'manual' (if
+ *   not already set), and date_delivered when delivery_status transitions to 'delivered'.
+ * - Only the fields listed in `allowedFields` can be written; all others are ignored.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 
+// ─── GET /api/orders/[id] ─────────────────────────────────────
+
+/**
+ * GET /api/orders/[id] — fetch a single order with its line items. Public endpoint.
+ * RLS on the orders table controls visibility (session client used).
+ * Response shape: { order: { ...orderRow, items: OrderItem[] } }
+ * Note: order_items rows are surfaced under the `items` key (not `order_items`).
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -24,6 +47,14 @@ export async function GET(
   return NextResponse.json({ order })
 }
 
+// ─── PATCH /api/orders/[id] ───────────────────────────────────
+
+/**
+ * PATCH /api/orders/[id] — update allowed order fields and write audit log entries.
+ * Requires authentication (session check only — no fine-grained permission check).
+ * Uses `createAdminClient()` for writes (bypasses RLS).
+ * Auto-sets date_paid and date_delivered on relevant status transitions.
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -31,6 +62,7 @@ export async function PATCH(
   const { id } = await params
   const supabase = await createClient()
 
+  // ─── Auth & Permission Checks ────────────────────────────────
   // Verify admin
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

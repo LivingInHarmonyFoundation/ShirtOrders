@@ -1,10 +1,34 @@
+/**
+ * @file CartContext.tsx
+ * @description React context that owns the customer's shopping cart for the
+ * order flow. Provides item state, CRUD mutators, drawer open/close, and
+ * derived totals to any descendant via useCart().
+ *
+ * Key invariants:
+ * - Cart is persisted to localStorage under the key `lih_cart`.
+ * - A `hydrated` guard prevents writing to localStorage before the stored
+ *   value has been read, eliminating SSR/client mismatch.
+ * - Item IDs are generated with crypto.randomUUID() when available, with a
+ *   Date.now + Math.random fallback for older browsers.
+ * - addItem merges duplicate entries (same catalog_item_id + shirt_size) by
+ *   incrementing quantity instead of pushing a new row.
+ */
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import type { CartItem } from '@/types'
 
+// ─── Storage Key ──────────────────────────────────────────────
+
+/** localStorage key used to persist the cart across page loads. */
 const STORAGE_KEY = 'lih_cart'
 
+// ─── Context Type ─────────────────────────────────────────────
+
+/**
+ * CartContextType — the full shape of the cart context value exposed to
+ * consumers via useCart().
+ */
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'id'>) => void
@@ -20,13 +44,19 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null)
 
+// ─── Provider ─────────────────────────────────────────────────
+
+/**
+ * CartProvider — mounts the cart context. Must wrap any subtree that calls
+ * useCart(). Handles localStorage hydration and persistence automatically.
+ */
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [hydrated, setHydrated] = useState(false)
 
+  // ─── LocalStorage Hydration ────────────────────────────────
   // Load from localStorage on mount
-  useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
@@ -39,8 +69,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true)
   }, [])
 
+  // ─── LocalStorage Persistence ──────────────────────────────
   // Persist to localStorage whenever items change (after hydration)
-  useEffect(() => {
     if (!hydrated) return
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
@@ -49,6 +79,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, hydrated])
 
+  // ─── Cart Mutators ─────────────────────────────────────────
+
+  /**
+   * addItem — adds a new item to the cart. If an item with the same
+   * catalog_item_id and shirt_size already exists, its quantity is
+   * incremented instead of inserting a duplicate row.
+   */
   const addItem = useCallback((item: Omit<CartItem, 'id'>) => {
     setItems(prev => {
       const existing = prev.find(
@@ -68,10 +105,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
+  /** removeItem — removes the cart item with the given id entirely. */
   const removeItem = useCallback((id: string) => {
     setItems(prev => prev.filter(i => i.id !== id))
   }, [])
 
+  /**
+   * updateQuantity — sets the quantity of the item with the given id.
+   * If quantity is 0 or below, the item is removed from the cart entirely.
+   */
   const updateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity <= 0) {
       setItems(prev => prev.filter(i => i.id !== id))
@@ -80,12 +122,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  /** clearCart — empties the entire cart. Called after a successful checkout. */
   const clearCart = useCallback(() => setItems([]), [])
 
+  // ─── Drawer State ──────────────────────────────────────────
+
+  /** openCart — opens the CartDrawer slide-over panel. */
   const openCart = useCallback(() => setIsOpen(true), [])
+  /** closeCart — closes the CartDrawer slide-over panel. */
   const closeCart = useCallback(() => setIsOpen(false), [])
 
+  // ─── Derived Totals ────────────────────────────────────────
+
+  /** totalItems — sum of quantities across all cart items. */
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
+  /** totalAmount — sum of (quantity × unit_price) across all cart items. */
   const totalAmount = items.reduce((sum, i) => sum + i.quantity * i.unit_price, 0)
 
   return (
@@ -106,6 +157,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ─── Consumer Hook ─────────────────────────────────────────────
+
+/**
+ * useCart — returns the cart state and all mutators from CartContext.
+ * Must be called within a CartProvider; throws if used outside one.
+ */
 export function useCart(): CartContextType {
   const ctx = useContext(CartContext)
   if (!ctx) throw new Error('useCart must be used within a CartProvider')
