@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2, CreditCard, Banknote, Plus, Percent } from 'lucide-react'
+import { Save, Loader2, DollarSign, School, Building2, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2, CreditCard, Banknote, Plus, Percent } from 'lucide-react'
 import Image from 'next/image'
 import type { AppSettings } from '@/types'
 import { useRole } from '@/components/admin/role-provider'
@@ -46,7 +46,6 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
 
   // Form fields
-  const [appName, setAppName] = useState('')
   const [shirtPrice, setShirtPrice] = useState('')
   const [availableSizes, setAvailableSizes] = useState<string[]>([])
   const [customSizeInput, setCustomSizeInput] = useState('')
@@ -84,7 +83,6 @@ export default function SettingsPage() {
       .then(({ settings }) => {
         if (settings) {
           setSettings(settings)
-          setAppName(settings.app_name || '')
           setShirtPrice(String(settings.shirt_price || '15.00'))
           setAvailableSizes(settings.available_sizes || PRESET_SIZES)
           setSchoolEnabled(settings.school_orders_enabled ?? true)
@@ -254,7 +252,6 @@ export default function SettingsPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          app_name: appName,
           shirt_price: price,
           available_sizes: availableSizes,
           school_orders_enabled: schoolEnabled,
@@ -300,28 +297,6 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Configure your order management system</p>
       </div>
-
-      {/* App Info */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Tag className="w-4 h-4" /> Application
-          </CardTitle>
-          <CardDescription className="text-xs">General app settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="app_name">App Name</Label>
-            <Input
-              id="app_name"
-              value={appName}
-              onChange={e => setAppName(e.target.value)}
-              placeholder="Institution Shirt Order Manager"
-              className="mt-1"
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* ── Mission Banner ──────────────────────────────────── */}
       {permissions.canManageSettings && (
