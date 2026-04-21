@@ -21,7 +21,7 @@ const PUBLIC_FIELDS = [
   'school_orders_enabled', 'government_orders_enabled',
   'personal_orders_enabled', 'private_company_orders_enabled',
   'manual_payment_enabled', 'cash_enabled', 'personal_allowed_payment_methods', 'confirmation_message',
-  'qr_tagline',
+  'qr_tagline', 'order_fees',
 ]
 
 // ─── GET /api/admin/settings ──────────────────────────────────
@@ -80,7 +80,7 @@ export async function PATCH(request: NextRequest) {
     'school_orders_enabled', 'government_orders_enabled',
     'personal_orders_enabled', 'private_company_orders_enabled',
     'manual_payment_enabled', 'cash_enabled', 'personal_allowed_payment_methods', 'confirmation_message',
-    'admin_phone', 'sms_notifications_enabled', 'qr_tagline',
+    'admin_phone', 'sms_notifications_enabled', 'qr_tagline', 'order_fees',
   ]
 
   const updateData: Record<string, unknown> = {}

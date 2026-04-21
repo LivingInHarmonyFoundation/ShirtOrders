@@ -104,6 +104,7 @@ export interface Order {
   catalog_item_id: string | null
   catalog_item_name: string | null
   notes: string | null
+  applied_fees?: { name: string; type: 'percentage' | 'fixed'; value: number; amount: number }[] | null
   admin_notes: string | null
   created_at: string
   updated_at: string
@@ -130,6 +131,20 @@ export interface OrderFormData {
   shirt_size: ShirtSize
   quantity: number
   notes?: string
+}
+
+// ─── Fees ─────────────────────────────────────────────────
+
+/**
+ * OrderFee — a single named fee configured by an admin in app_settings.order_fees.
+ * Applied server-side at order creation; the computed per-order breakdown is stored
+ * in orders.applied_fees as AppliedFee[].
+ */
+export interface OrderFee {
+  id: string
+  name: string
+  type: 'percentage' | 'fixed'
+  value: number
 }
 
 // ─── Application Settings ─────────────────────────────────────
@@ -159,6 +174,7 @@ export interface AppSettings {
   personal_allowed_payment_methods: string[] | null
   confirmation_message: string
   qr_tagline: string
+  order_fees: OrderFee[]
   admin_phone: string | null
   sms_notifications_enabled: boolean
   created_at: string

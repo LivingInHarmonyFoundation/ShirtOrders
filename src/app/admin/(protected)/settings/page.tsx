@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2, CreditCard, Banknote } from 'lucide-react'
+import { Save, Loader2, DollarSign, School, Building2, Tag, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2, CreditCard, Banknote, Plus, Percent } from 'lucide-react'
 import Image from 'next/image'
 import type { AppSettings } from '@/types'
 import { useRole } from '@/components/admin/role-provider'
@@ -60,6 +60,12 @@ export default function SettingsPage() {
   const [adminPhone, setAdminPhone] = useState('')
   const [smsNotifications, setSmsNotifications] = useState(false)
 
+  // Order fees
+  const [orderFees, setOrderFees] = useState<import('@/types').OrderFee[]>([])
+  const [newFeeName, setNewFeeName] = useState('')
+  const [newFeeType, setNewFeeType] = useState<'percentage' | 'fixed'>('percentage')
+  const [newFeeValue, setNewFeeValue] = useState('')
+
   // Image uploads
   const [missionBannerUrl, setMissionBannerUrl] = useState<string | null>(null)
   const [uploadingBanner, setUploadingBanner] = useState(false)
@@ -91,6 +97,7 @@ export default function SettingsPage() {
           setSmsNotifications(settings.sms_notifications_enabled ?? false)
           setMissionBannerUrl(settings.mission_banner_url || null)
           setBadgeUrl(settings.badge_url || null)
+          setOrderFees(settings.order_fees || [])
         }
       })
       .catch(() => toast.error('Failed to load settings'))
@@ -202,6 +209,20 @@ export default function SettingsPage() {
     setCustomSizeInput('')
   }
 
+  const addFee = () => {
+    const val = parseFloat(newFeeValue)
+    if (!newFeeName.trim() || isNaN(val) || val <= 0) return
+    if (newFeeType === 'percentage' && val > 100) return
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`
+    setOrderFees(prev => [...prev, { id, name: newFeeName.trim(), type: newFeeType, value: val }])
+    setNewFeeName('')
+    setNewFeeValue('')
+  }
+
+  const removeFee = (id: string) => {
+    setOrderFees(prev => prev.filter(f => f.id !== id))
+  }
+
   const handleSave = async () => {
     const price = parseFloat(shirtPrice)
     if (isNaN(price) || price <= 0) {
@@ -231,6 +252,7 @@ export default function SettingsPage() {
           confirmation_message: confirmationMessage,
           admin_phone: adminPhone || null,
           sms_notifications_enabled: smsNotifications,
+          order_fees: orderFees,
         }),
       })
       if (res.ok) {
@@ -553,6 +575,128 @@ export default function SettingsPage() {
                 Add
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Order Fees & Taxes */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Percent className="w-4 h-4" /> Order Fees &amp; Taxes
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Additional charges applied to every order at checkout. Each fee shows in the order breakdown seen by the customer.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Existing fees list */}
+          {orderFees.length > 0 ? (
+            <div className="space-y-2">
+              {orderFees.map(fee => (
+                <div key={fee.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide ${
+                      fee.type === 'percentage'
+                        ? 'bg-[#CEDC00]/20 text-[#00352F]'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {fee.type === 'percentage' ? '%' : '$'}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{fee.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {fee.type === 'percentage' ? `${fee.value}% of subtotal` : `$${fee.value.toFixed(2)} flat`}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFee(fee.id)}
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 italic">No fees configured — customers pay the base shirt price only.</p>
+          )}
+
+          <Separator />
+
+          {/* Add fee form */}
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Add a fee</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Fee name (e.g. Sales Tax)"
+                value={newFeeName}
+                onChange={e => setNewFeeName(e.target.value)}
+                className="flex-1 h-9 text-sm"
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFee() } }}
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              {/* Type toggle */}
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                <button
+                  type="button"
+                  onClick={() => setNewFeeType('percentage')}
+                  className={`px-3 py-2 font-medium transition-colors ${
+                    newFeeType === 'percentage'
+                      ? 'bg-[#00352F] text-white'
+                      : 'bg-white dark:bg-gray-900 text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  % Percentage
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewFeeType('fixed')}
+                  className={`px-3 py-2 font-medium transition-colors ${
+                    newFeeType === 'fixed'
+                      ? 'bg-[#00352F] text-white'
+                      : 'bg-white dark:bg-gray-900 text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  $ Fixed
+                </button>
+              </div>
+              {/* Value input */}
+              <div className="relative max-w-[120px]">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                  {newFeeType === 'percentage' ? '%' : '$'}
+                </span>
+                <Input
+                  type="number"
+                  min="0.01"
+                  max={newFeeType === 'percentage' ? '100' : undefined}
+                  step="0.01"
+                  value={newFeeValue}
+                  onChange={e => setNewFeeValue(e.target.value)}
+                  className="pl-7 h-9 text-sm"
+                  placeholder="0.00"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFee() } }}
+                />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={addFee}
+                disabled={!newFeeName.trim() || !newFeeValue}
+                className="h-9 text-white"
+                style={{ backgroundColor: '#00352F' }}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" /> Add
+              </Button>
+            </div>
+            <p className="text-[11px] text-gray-400">
+              Fees are saved when you click &ldquo;Save Settings&rdquo; below.
+            </p>
           </div>
         </CardContent>
       </Card>

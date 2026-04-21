@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     const { data: settings } = await supabase
       .from('app_settings')
-      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled, personal_allowed_payment_methods, cash_enabled')
+      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled, personal_allowed_payment_methods, cash_enabled, order_fees')
       .single()
 
     if (!settings) {
@@ -195,7 +195,20 @@ export async function POST(request: NextRequest) {
 
     // Compute totals from cart items
     const total_quantity = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-    const total_amount = cartItems.reduce((sum, item) => sum + item.quantity * unit_price, 0)
+    const subtotal = cartItems.reduce((sum, item) => sum + item.quantity * unit_price, 0)
+
+    // Apply each configured fee against the subtotal (not cumulative)
+    const fees = (settings.order_fees || []) as import('@/types').OrderFee[]
+    const appliedFees = fees.map(fee => ({
+      name: fee.name,
+      type: fee.type,
+      value: fee.value,
+      amount: fee.type === 'percentage'
+        ? Math.round(subtotal * (fee.value / 100) * 100) / 100
+        : fee.value,
+    }))
+    const feesTotal = appliedFees.reduce((sum, f) => sum + f.amount, 0)
+    const total_amount = Math.round((subtotal + feesTotal) * 100) / 100
 
     const order_number = generateOrderNumber()
 
@@ -223,6 +236,7 @@ export async function POST(request: NextRequest) {
         unit_price,
         total_amount,
         notes: data.notes || null,
+        applied_fees: appliedFees.length > 0 ? appliedFees : null,
         school_link_id: data.school_link_id || null,
         company_link_id: data.company_link_id || null,
         order_allowed_payment_methods: orderAllowedPaymentMethods,

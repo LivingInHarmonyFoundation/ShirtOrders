@@ -255,6 +255,28 @@ function ConfirmationContent() {
                   </>
                 )}
                 <Separator />
+                {order.applied_fees && order.applied_fees.length > 0 && (() => {
+                  const feesTotal = order.applied_fees.reduce((s, f) => s + f.amount, 0)
+                  const subtotal = order.total_amount - feesTotal
+                  return (
+                    <>
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>Subtotal</span>
+                        <span>{formatCurrency(subtotal)}</span>
+                      </div>
+                      {order.applied_fees.map((fee, i) => (
+                        <div key={i} className="flex justify-between text-sm text-gray-500">
+                          <span>
+                            {fee.name}
+                            {fee.type === 'percentage' && <span className="text-xs ml-1">({fee.value}%)</span>}
+                          </span>
+                          <span>{formatCurrency(fee.amount)}</span>
+                        </div>
+                      ))}
+                      <Separator />
+                    </>
+                  )
+                })()}
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-gray-900">{t('confirmation', 'total')}</span>
                   <span className="font-bold text-xl" style={{ color: '#00352F' }}>{formatCurrency(order.total_amount)}</span>
