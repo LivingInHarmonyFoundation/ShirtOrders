@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import LanguageSelector from '@/components/shared/LanguageSelector'
 
 function LoginForm() {
   const router = useRouter()
@@ -141,6 +142,10 @@ export default function AdminLoginPage() {
 
       {/* ── Right form panel ────────────────────────────────── */}
       <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F5F4F0' }}>
+        {/* Language toggle — top-right of form panel */}
+        <div className="flex justify-end px-5 pt-4">
+          <LanguageSelector />
+        </div>
 
         {/* Mobile-only: full-width branded green top section */}
         <div

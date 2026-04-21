@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useRole } from '@/components/admin/role-provider'
+import LanguageSelector from '@/components/shared/LanguageSelector'
 
 /**
  * AdminSidebar — responsive sidebar that renders a desktop aside and a mobile
@@ -119,9 +120,12 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
       </nav>
 
       {/* Footer */}
-      <div className="px-2 pb-4 border-t border-white/10 pt-4">
-        <div className="px-3 py-1.5 mb-2">
+      <div className="px-2 pb-4 border-t border-white/10 pt-4 space-y-2">
+        <div className="px-3 py-1.5">
           <p className="text-[11px] truncate" style={{ color: 'rgba(206,220,0,0.5)' }}>{userEmail}</p>
+        </div>
+        <div className="px-3">
+          <LanguageSelector variant="dark" />
         </div>
         <Button
           variant="ghost"
@@ -159,13 +163,16 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
             />
           </div>
         </div>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-1.5 rounded-xl transition-colors"
-          style={{ color: 'rgba(209,250,229,0.6)' }}
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageSelector variant="dark" />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-1.5 rounded-xl transition-colors"
+            style={{ color: 'rgba(209,250,229,0.6)' }}
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer */}
