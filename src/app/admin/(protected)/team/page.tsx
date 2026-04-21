@@ -1,3 +1,18 @@
+/**
+ * @file page.tsx
+ * @description Admin team member management. Owner-only page for creating accounts,
+ * changing roles, toggling active status, and removing members. New accounts are
+ * created with a temporary password set by the owner; there is no email invite flow.
+ * After creation, login details (URL + email + password) are displayed and can be
+ * copied to clipboard for sharing directly via text/WhatsApp/etc.
+ *
+ * The invited user will be redirected to /admin/set-password on first login because
+ * the account is created with must_change_password=true in auth user metadata.
+ *
+ * Safeguards: the last active owner cannot be deactivated or deleted.
+ *
+ * Auth: provided by the parent (protected) layout. Requires canManageTeam permission.
+ */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -22,6 +37,10 @@ const ROLE_ICONS: Record<UserRole, React.ElementType> = {
   staff: UserCheck,
 }
 
+/**
+ * InitialsAvatar — colored circle avatar that shows up to two initials derived from
+ * the member's full name, or the first letter of their email if no name is set.
+ */
 function InitialsAvatar({ name, email, role }: { name: string | null; email: string; role: UserRole }) {
   const initials = name
     ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -43,6 +62,11 @@ function InitialsAvatar({ name, email, role }: { name: string | null; email: str
   )
 }
 
+/**
+ * TeamPage — owner-only team management with inline role selector, active toggle,
+ * and delete. New members are provisioned directly (no email invite); the temporary
+ * password and login URL are surfaced after creation for manual sharing.
+ */
 export default function TeamPage() {
   // ── State ──
   const [members, setMembers] = useState<TeamMember[]>([])
@@ -63,7 +87,8 @@ export default function TeamPage() {
   const [lastCreatedMinimized, setLastCreatedMinimized] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  // Password strength — derived from invitePassword on every render
+  // Password strength — derived from invitePassword on every render (not memoized intentionally)
+  // pwScore 0→none, 1→weak, 2→almost, 3→strong; pwValid gates the submit button
   const pwRules = [
     { label: 'At least 8 characters', pass: invitePassword.length >= 8 },
     { label: 'One uppercase letter (A–Z)', pass: /[A-Z]/.test(invitePassword) },

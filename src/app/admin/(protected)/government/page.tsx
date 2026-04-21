@@ -1,3 +1,12 @@
+/**
+ * @file page.tsx
+ * @description Admin government organization management. Orgs appear in the
+ * "Government" institution dropdown on the public order form when is_active = true.
+ * Each org supports inline name editing, a department list (shown as a dropdown to
+ * the customer), and per-org allowed payment method overrides.
+ *
+ * Auth: provided by the parent (protected) layout. Requires canManageSettings permission.
+ */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -28,6 +37,11 @@ function isMethodEnabled(methods: string[] | null, method: PaymentMethod): boole
   return methods.includes(method)
 }
 
+/**
+ * GovernmentPage — CRUD for government organizations with inline name editing,
+ * department lists, and per-org payment method overrides. Departments and payment
+ * settings each have their own collapsible section per row.
+ */
 export default function GovernmentPage() {
   const [orgs, setOrgs] = useState<GovOrg[]>([])
   const [loading, setLoading] = useState(true)

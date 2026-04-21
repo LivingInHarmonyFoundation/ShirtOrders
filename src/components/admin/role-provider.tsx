@@ -1,3 +1,16 @@
+/**
+ * @file role-provider.tsx
+ * @description React context that distributes the current user's role and derived
+ * permissions to all admin UI children. The role is resolved server-side in layout.tsx
+ * and passed down as a prop to RoleProvider; no client-side fetching is needed.
+ *
+ * Usage:
+ * - RoleProvider: wraps the admin layout shell (rendered in layout.tsx).
+ * - useRole(): hook consumed by any client component that needs permission checks.
+ *
+ * Default context value ('staff') only applies if useRole() is called outside a
+ * RoleProvider — this should not happen in normal operation.
+ */
 'use client'
 
 import { createContext, useContext } from 'react'
@@ -14,10 +27,15 @@ const RoleContext = createContext<RoleContextValue>({
   permissions: getPermissions('staff'),
 })
 
+/** useRole — hook that returns { role, permissions } for the current admin user. */
 export function useRole(): RoleContextValue {
   return useContext(RoleContext)
 }
 
+/**
+ * RoleProvider — wraps children with a RoleContext that provides the resolved role
+ * and the permissions object derived from it. Rendered once in AdminLayout.
+ */
 export function RoleProvider({
   role,
   children,

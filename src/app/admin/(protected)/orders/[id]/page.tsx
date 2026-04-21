@@ -1,3 +1,13 @@
+/**
+ * @file page.tsx
+ * @description Admin order detail view for a single order identified by UUID route param.
+ * Displays customer info, institution fields, line-item breakdown, and payment details.
+ * Allows inline editing of payment_status, order_status, delivery_status, admin_notes,
+ * and quantity via a single PATCH to /api/orders/[id]. After save, the audit log is
+ * refreshed to reflect the new entry. Audit entries are shown chronologically.
+ *
+ * Auth: provided by the parent (protected) layout.
+ */
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -19,24 +29,33 @@ import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionB
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils'
 import type { Order, AuditLog, OrderItem } from '@/types'
 
+/**
+ * OrderDetailPage — single-order admin view with inline field editing and audit trail.
+ * The order UUID comes from the dynamic [id] route segment. After any save, fetchOrder
+ * is called again to pull the latest audit log entries.
+ */
 export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const orderId = params.id as string
 
+  // ─── State ────────────────────────────────────────────────────────────────
   const [order, setOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  // Editable fields
+  // Editable fields — initialized from the fetched order, kept in sync with form inputs
   const [paymentStatus, setPaymentStatus] = useState('')
   const [orderStatus, setOrderStatus] = useState('')
   const [deliveryStatus, setDeliveryStatus] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [quantity, setQuantity] = useState(0)
 
+  // ─── Data Fetching ────────────────────────────────────────────────────────
+
+  // Loads order + audit log; also re-initializes all editable state from fresh data
   const fetchOrder = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/orders/${orderId}`)
@@ -60,6 +79,9 @@ export default function OrderDetailPage() {
 
   useEffect(() => { fetchOrder() }, [fetchOrder])
 
+  // ─── Handlers ─────────────────────────────────────────────────────────────
+
+  // PATCHes editable fields; on success refreshes the full order + audit log
   const handleSave = async () => {
     if (!order) return
     setSaving(true)

@@ -1,3 +1,19 @@
+/**
+ * @file page.tsx
+ * @description Admin QR code poster generator. Uses HTML5 Canvas (via the `qrcode`
+ * library) to render a fully branded poster with logo, decorative arcs, QR code,
+ * CTA headline, and tagline — all client-side, no server involved.
+ *
+ * Key details:
+ * - drawBrandedQR is async because it awaits image loads (logo.png, ellipsis-cl.png).
+ * - The preview canvas uses devicePixelRatio for retina sharpness at a 480 px logical size.
+ * - Export renders a fresh offscreen canvas at the chosen SIZE_PRESET dimensions.
+ * - The tagline is loaded from /api/admin/settings (qr_tagline field) on mount.
+ * - ensureRoundRect polyfills ctx.roundRect for older Safari versions.
+ * - Restricted to canManageSettings users; staff see an access-denied message.
+ *
+ * Auth: provided by the parent (protected) layout.
+ */
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
@@ -453,6 +469,12 @@ function VariantThumb({ v, selected, onClick }: {
   )
 }
 
+/**
+ * QRCodePage — live-preview QR poster generator with configurable URL, CTA text,
+ * tagline, color variant (light/dark), and export to multiple size presets.
+ * Preview re-renders on every control change via a useCallback → useEffect chain.
+ * Downloads are rendered into a fresh offscreen canvas to avoid mutating the preview.
+ */
 export default function QRCodePage() {
   const { permissions } = useRole()
 

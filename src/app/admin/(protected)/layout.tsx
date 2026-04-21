@@ -1,9 +1,28 @@
+/**
+ * @file layout.tsx
+ * @description Server-side layout that protects every route under /admin/(protected).
+ * All child pages rely on this layout for authentication — no per-page auth is needed.
+ *
+ * Three bootstrap checks run in order:
+ *   1. Valid Supabase session — redirects to /admin/login if absent.
+ *   2. Team membership — looks up by user_id, then by pending email invite, then
+ *      bootstraps the first authenticated user as 'owner' if no record exists at all.
+ *   3. must_change_password metadata — redirects new members to /admin/set-password
+ *      so they set a permanent password before accessing any admin page.
+ *
+ * The resolved role is distributed to all children via RoleProvider / useRole().
+ */
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import AdminSidebar from '@/components/admin/sidebar'
 import { RoleProvider } from '@/components/admin/role-provider'
 import type { UserRole } from '@/types'
 
+/**
+ * AdminLayout — async Server Component that gates all protected admin pages.
+ * Handles session validation, team-member lookup, first-user bootstrap, and
+ * the must_change_password redirect before rendering any child content.
+ */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

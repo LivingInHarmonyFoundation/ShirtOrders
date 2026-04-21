@@ -1,3 +1,14 @@
+/**
+ * @file page.tsx
+ * @description Admin order management table. Supports 12+ independent filter states
+ * (search, institution type, payment/delivery/order status, shirt size, date range,
+ * grade, classroom, department, org/school/company name, campaign) that feed a single
+ * debounced useCallback fetch. Search input is debounced 400 ms; all other filters
+ * fire immediately. Bulk PATCH via checkbox selection updates status fields in one request.
+ *
+ * Auth: provided by the parent (protected) layout.
+ * Pagination: server-side, 20 orders per page.
+ */
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -34,6 +45,11 @@ interface PaginatedOrders {
 }
 import { toast } from 'sonner'
 
+/**
+ * AdminOrdersPage — paginated order table with 12+ filters, bulk status update,
+ * and per-page summary stats (total orders / shirts / revenue + breakdowns by size
+ * and catalog item). Requires canManageOrders permission (enforced server-side).
+ */
 export default function AdminOrdersPage() {
   // ── State ──
   const [data, setData] = useState<PaginatedOrders | null>(null)

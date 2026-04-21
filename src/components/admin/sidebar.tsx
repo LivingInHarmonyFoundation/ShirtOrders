@@ -1,3 +1,15 @@
+/**
+ * @file sidebar.tsx
+ * @description Admin navigation sidebar and mobile top bar. Nav items are filtered
+ * client-side by the current user's permissions (from RoleProvider/useRole). This
+ * filtering is UI-only — server API routes enforce permissions independently.
+ *
+ * On desktop: a fixed 56-wide left sidebar with brand logo, nav items, and sign-out.
+ * On mobile: a fixed top bar with hamburger; tapping opens a 56-wide drawer overlay.
+ *
+ * Active route detection uses pathname prefix matching so nested routes
+ * (e.g. /admin/orders/[id]) also highlight the Orders nav item.
+ */
 'use client'
 
 import Link from 'next/link'
@@ -13,6 +25,11 @@ import {
 import { useState } from 'react'
 import { useRole } from '@/components/admin/role-provider'
 
+/**
+ * AdminSidebar — responsive sidebar that renders a desktop aside and a mobile
+ * drawer. Nav items visible to the current user are filtered by useRole().permissions.
+ * Permission enforcement is always also done server-side in the API routes.
+ */
 export default function AdminSidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname()
   const router = useRouter()

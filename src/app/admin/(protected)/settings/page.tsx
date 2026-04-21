@@ -1,3 +1,18 @@
+/**
+ * @file page.tsx
+ * @description Admin application settings page. Controls app name, shirt pricing,
+ * available sizes, enabled institution types, payment methods, the post-order
+ * confirmation message, push-notification config, and brand image uploads.
+ *
+ * Key non-obvious details:
+ * - admin_phone is the ntfy.sh topic name, NOT a real phone number.
+ * - Mission banner and badge image uploads reuse the catalog upload endpoint.
+ * - Both image uploads enforce a 5 MB client-side size limit.
+ * - personalAllowedPaymentMethods === null means "all methods" (default).
+ * - Mission/badge image sections are gated behind canManageSettings permission.
+ *
+ * Auth: provided by the parent (protected) layout.
+ */
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
@@ -17,6 +32,11 @@ import { useRole } from '@/components/admin/role-provider'
 
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
+/**
+ * SettingsPage — admin settings form. All fields (except image uploads, which save
+ * immediately on pick) are committed together via a single PATCH on "Save Settings".
+ * Image uploads use a two-step flow: upload to storage, then PATCH the URL into settings.
+ */
 export default function SettingsPage() {
   const { permissions } = useRole()
 

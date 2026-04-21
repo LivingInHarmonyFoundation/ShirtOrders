@@ -1,9 +1,20 @@
+/**
+ * @file status-badge.tsx
+ * @description Colored badge components for all order status dimensions. Config objects
+ * for payment, order, and delivery statuses are defined in lib/utils.ts
+ * (paymentStatusConfig, orderStatusConfig, deliveryStatusConfig). Institution badges
+ * use a local config defined in this file.
+ *
+ * All four badge types are thin wrappers around the shared Badge UI component;
+ * styling is driven entirely by the config objects and Tailwind class names.
+ */
 'use client'
 
 import { Badge } from '@/components/ui/badge'
 import { cn, paymentStatusConfig, orderStatusConfig, deliveryStatusConfig } from '@/lib/utils'
 import type { PaymentStatus, OrderStatus, DeliveryStatus, InstitutionType } from '@/types'
 
+/** PaymentStatusBadge — colored badge for pending / paid / failed / refunded / manual. */
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   const config = paymentStatusConfig[status]
   return (
@@ -13,6 +24,7 @@ export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   )
 }
 
+/** OrderStatusBadge — colored badge for new / processing / ready / completed / cancelled. */
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   const config = orderStatusConfig[status]
   return (
@@ -22,6 +34,7 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   )
 }
 
+/** DeliveryStatusBadge — colored badge for not_delivered / partially_delivered / delivered. */
 export function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
   const config = deliveryStatusConfig[status]
   return (
@@ -31,6 +44,7 @@ export function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
   )
 }
 
+// Color config for institution type badges — defined locally (not in lib/utils)
 const institutionConfig: Record<InstitutionType, { label: string; className: string }> = {
   school:          { label: 'School',          className: 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40' },
   government:      { label: 'Government',      className: 'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
@@ -38,6 +52,7 @@ const institutionConfig: Record<InstitutionType, { label: string; className: str
   private_company: { label: 'Private Company', className: 'bg-orange-50 text-orange-700 border-orange-200' },
 }
 
+/** InstitutionBadge — colored badge for school / government / personal / private_company. */
 export function InstitutionBadge({ type }: { type: InstitutionType }) {
   const config = institutionConfig[type]
   return (

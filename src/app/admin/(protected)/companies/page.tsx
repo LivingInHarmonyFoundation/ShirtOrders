@@ -1,3 +1,12 @@
+/**
+ * @file page.tsx
+ * @description Admin private company link management. Each company gets a unique
+ * slug-based URL (/order/company/[slug]) that pre-fills the company name on the
+ * order form. Admins can copy and share these links with employees.
+ * Per-company payment method overrides are supported (null = all methods enabled).
+ *
+ * Auth: provided by the parent (protected) layout. Requires canManageSettings permission.
+ */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -28,6 +37,10 @@ function isMethodEnabled(methods: string[] | null, method: PaymentMethod): boole
   return methods.includes(method)
 }
 
+/**
+ * CompaniesPage — CRUD for private company order links with per-company payment
+ * method settings. Mirrors the Schools page structure but without grade management.
+ */
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<PrivateCompany[]>([])
   const [loading, setLoading] = useState(true)

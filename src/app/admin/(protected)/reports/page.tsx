@@ -1,3 +1,17 @@
+/**
+ * @file page.tsx
+ * @description Admin reports and CSV export page. Applies the same filter set as the
+ * Orders page (institution type, payment/delivery status, size, date range, grade,
+ * classroom, department, org/school/company, campaign) to fetch up to 500 orders
+ * at once and compute a summary. The catalog style breakdown is built client-side
+ * from the fetched result set, not from a separate API call.
+ *
+ * CSV export opens /api/admin/export in a new tab; the server applies formula-injection
+ * protection (values starting with =, +, -, @ are prefixed with a tab).
+ * Print mode hides filters and action buttons via CSS.
+ *
+ * Auth: provided by the parent (protected) layout. Requires canViewReports permission.
+ */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -19,6 +33,11 @@ import { toast } from 'sonner'
 // Color cycle for the catalog style cards
 const CATALOG_COLORS = ['#00352F', '#00594F', '#CEDC00', '#00594F', '#00352F']
 
+/**
+ * ReportsPage — filterable order report with CSV export and browser print support.
+ * Fetches up to 500 orders matching the active filters; summary stats and the
+ * catalog style breakdown are derived client-side from the response array.
+ */
 export default function ReportsPage() {
   // ── State ──
   const [orders, setOrders] = useState<Order[]>([])

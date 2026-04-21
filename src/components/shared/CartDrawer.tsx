@@ -1,3 +1,16 @@
+/**
+ * @file CartDrawer.tsx
+ * @description Slide-in cart drawer for the public order flow. Displays all CartContext
+ * items with quantity controls and a checkout button. On checkout, the component POST's
+ * a combined payload (checkoutPayload + cart items) to /api/orders, then redirects to
+ * the checkout page with the returned order_id.
+ *
+ * Requires checkoutPayload to be non-null before checkout is allowed — this is the
+ * customer's contact/institution fields filled in on the order form. An optional
+ * onCheckoutValidate callback can trigger form validation before proceeding.
+ *
+ * UX: Escape key closes the drawer; body scroll is locked while the drawer is open.
+ */
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
@@ -33,6 +46,10 @@ interface CartDrawerProps {
   onCheckoutValidate?: () => Promise<boolean>
 }
 
+/**
+ * CartItemRow — renders a single cart item with thumbnail, size/price info,
+ * and +/- quantity controls backed by CartContext.updateQuantity / removeItem.
+ */
 function CartItemRow({ item }: { item: CartItem }) {
   const { updateQuantity, removeItem } = useCart()
   const t = useT()
@@ -101,6 +118,12 @@ function CartItemRow({ item }: { item: CartItem }) {
   )
 }
 
+/**
+ * CartDrawer — animated slide-in panel showing current cart items and checkout CTA.
+ * checkoutPayload must be non-null (customer info complete) for checkout to proceed.
+ * onCheckoutValidate, if provided, is awaited before the POST; returning false
+ * closes the drawer and shows an error toast prompting the user to fill their info.
+ */
 export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: CartDrawerProps) {
   const { items, totalItems, totalAmount, isOpen, closeCart, clearCart } = useCart()
   const router = useRouter()

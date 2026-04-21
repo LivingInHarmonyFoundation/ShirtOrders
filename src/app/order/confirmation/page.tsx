@@ -1,3 +1,12 @@
+/**
+ * @file page.tsx
+ * @description Public order confirmation page shown after a customer submits an order.
+ * Fetches order details by UUID (order_id query param) and displays a receipt.
+ * The UUID acts as a capability token — no authentication required.
+ * Polls every 3 seconds when payment_status === 'pending' until the status resolves.
+ * Wrapped in Suspense because useSearchParams() requires it in Next.js 16.
+ */
+
 'use client'
 
 import { useState, useEffect, Suspense, useRef } from 'react'
@@ -14,6 +23,11 @@ import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import { useT } from '@/contexts/LanguageContext'
 import type { Order } from '@/types'
 
+/**
+ * ConfirmationContent — inner component that reads the order_id search param and
+ * renders the full receipt. Kept separate from the default export so the Suspense
+ * boundary can wrap useSearchParams() without affecting the outer shell.
+ */
 function ConfirmationContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -21,10 +35,14 @@ function ConfirmationContent() {
   const printRef = useRef<HTMLDivElement>(null)
   const t = useT()
 
+  // ─── State ────────────────────────────────────────────────────────────────
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [confirmationMsg, setConfirmationMsg] = useState('')
 
+  // ─── Data Fetching ────────────────────────────────────────────────────────
+
+  // Initial load: fetch order data and the admin-configured confirmation message
   useEffect(() => {
     if (!orderId) { router.push('/order'); return }
 
@@ -39,7 +57,7 @@ function ConfirmationContent() {
       .catch(() => {})
   }, [orderId, router])
 
-  // Poll for payment status if pending
+  // Polling: re-fetch every 3 s while payment_status is 'pending' (e.g. waiting for PayPal webhook)
   useEffect(() => {
     if (!order || order.payment_status !== 'pending') return
     const interval = setInterval(async () => {
@@ -55,6 +73,9 @@ function ConfirmationContent() {
     return () => clearInterval(interval)
   }, [order])
 
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  // Fallback message when admin has not configured a custom confirmation message
   const defaultMsg = t('confirmation', 'defaultConfirmMsg')
 
   if (loading) {
@@ -78,6 +99,7 @@ function ConfirmationContent() {
     )
   }
 
+  // Build a single human-readable institution string for display in the receipt
   const institutionDisplay = (() => {
     switch (order.institution_type) {
       case 'school': return [order.school_name, order.grade && `Grade ${order.grade}`, order.classroom].filter(Boolean).join(' — ')
@@ -267,6 +289,10 @@ function ConfirmationContent() {
   )
 }
 
+/**
+ * ConfirmationPage — public-facing route that wraps ConfirmationContent in a
+ * Suspense boundary, required because the inner component uses useSearchParams().
+ */
 export default function ConfirmationPage() {
   return (
     <Suspense fallback={

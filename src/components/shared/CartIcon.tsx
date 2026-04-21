@@ -1,8 +1,18 @@
+/**
+ * @file CartIcon.tsx
+ * @description Shirt-hanger SVG button that opens the cart drawer. Shows an item-count
+ * badge (capped at "99+") that briefly bounces (scale 1.4→1 over 400 ms) when a new
+ * item is added. Bounce is triggered by comparing current vs previous totalItems via a ref.
+ */
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from '@/contexts/CartContext'
 
+/**
+ * CartIcon — cart trigger button with animated item-count badge.
+ * Uses CartContext for item count and openCart callback.
+ */
 export default function CartIcon() {
   const { totalItems, openCart } = useCart()
   const prevCount = useRef(totalItems)

@@ -1,3 +1,12 @@
+/**
+ * @file page.tsx
+ * @description Admin dashboard home. Displays stat cards and Recharts visualizations
+ * filtered by campaign and/or date range. Widget visibility is persisted in
+ * localStorage (key: 'lih_hidden_widgets') so each user can hide cards they don't need.
+ *
+ * Auth: provided by the parent (protected) layout — no per-page auth check needed.
+ * Data: fetched from /api/admin/stats with campaign_id and date_from/date_to params.
+ */
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
@@ -23,6 +32,10 @@ const WIDGET_STORAGE_KEY = 'lih_hidden_widgets'
 
 type DatePreset = 'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
 
+/**
+ * getDateRange — converts a named date preset into an ISO date pair.
+ * Returns empty strings for 'all' and 'custom' (caller handles those cases).
+ */
 function getDateRange(preset: DatePreset): { from: string; to: string } {
   const now = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -44,6 +57,11 @@ function getDateRange(preset: DatePreset): { from: string; to: string } {
   return { from: '', to: '' }
 }
 
+/**
+ * DashboardPage — main admin overview with filterable stat cards and charts.
+ * Campaign filter and date preset are independent; both are sent to /api/admin/stats.
+ * Widget visibility is stored in localStorage so hidden state persists across sessions.
+ */
 export default function DashboardPage() {
   // ── State ──
   const [stats, setStats] = useState<DashboardStats | null>(null)

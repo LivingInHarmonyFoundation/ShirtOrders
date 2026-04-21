@@ -1,3 +1,13 @@
+/**
+ * @file page.tsx
+ * @description Admin shirt catalog management. Allows adding, toggling visibility,
+ * and deleting shirt catalog items, each of which can have a front and back image.
+ * Images are uploaded to /api/admin/catalog/upload (5 MB limit per file).
+ * Back images can be added inline after creation by hovering a card.
+ * The display_order field is set to items.length on creation (append-to-end).
+ *
+ * Auth: provided by the parent (protected) layout. Requires canManageSettings permission.
+ */
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
@@ -13,6 +23,10 @@ import { ImagePlus, Trash2, Plus, Upload, X, Eye, EyeOff, Shirt, RotateCcw } fro
 import Image from 'next/image'
 import type { ShirtCatalogItem } from '@/types'
 
+/**
+ * uploadImage — uploads a single image file via multipart/form-data and returns
+ * the resulting public URL. Throws on failure so callers can surface the error.
+ */
 async function uploadImage(file: File): Promise<string> {
   const fd = new FormData()
   fd.append('file', file)
@@ -22,6 +36,11 @@ async function uploadImage(file: File): Promise<string> {
   return json.url as string
 }
 
+/**
+ * CatalogPage — manages the shirt catalog displayed on the public home page.
+ * Each item has optional front and back images; both can be uploaded during creation
+ * or the back image can be added later via the hover overlay on an existing card.
+ */
 export default function CatalogPage() {
   const [items, setItems] = useState<ShirtCatalogItem[]>([])
   const [loading, setLoading] = useState(true)

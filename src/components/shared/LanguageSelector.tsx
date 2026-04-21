@@ -1,7 +1,17 @@
+/**
+ * @file LanguageSelector.tsx
+ * @description Pill-style EN / ES language toggle backed by LanguageContext.
+ * Active locale is highlighted with the brand dark-green background and lime text.
+ * Used in public-facing headers (order form, confirmation page).
+ */
 'use client'
 
 import { useLanguage } from '@/contexts/LanguageContext'
 
+/**
+ * LanguageSelector — two-button pill toggle that switches between 'en' and 'es'
+ * via LanguageContext.setLang. Renders flag emoji + locale code.
+ */
 export default function LanguageSelector() {
   const { lang, setLang } = useLanguage()
 

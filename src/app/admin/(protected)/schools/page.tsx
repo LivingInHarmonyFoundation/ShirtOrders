@@ -1,3 +1,16 @@
+/**
+ * @file page.tsx
+ * @description Admin school link management. Each school gets a unique slug-based URL
+ * (/order/[slug]) that pre-fills the institution type and school name on the order form.
+ * Admins can copy and share these links with teachers or parents.
+ *
+ * Per-school configuration:
+ * - Grades: array of grade labels shown as a dropdown on the order form; if empty,
+ *   the grade field becomes a free-text input.
+ * - Payment methods: per-school override of allowed methods (null = all enabled).
+ *
+ * Auth: provided by the parent (protected) layout. Requires canManageSchools permission.
+ */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -28,6 +41,11 @@ function isMethodEnabled(methods: string[] | null, method: PaymentMethod): boole
   return methods.includes(method)
 }
 
+/**
+ * SchoolsPage — CRUD for school links with per-school grade and payment-method settings.
+ * Grades and payment settings each have their own collapsible section per row;
+ * expanding one collapses the other to keep the UI manageable.
+ */
 export default function SchoolsPage() {
   const [schools, setSchools] = useState<SchoolLink[]>([])
   const [loading, setLoading] = useState(true)

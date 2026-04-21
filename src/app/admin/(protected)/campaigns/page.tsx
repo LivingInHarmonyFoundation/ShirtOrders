@@ -1,3 +1,15 @@
+/**
+ * @file page.tsx
+ * @description Admin campaign management. Campaigns gate order creation — only one
+ * campaign may be active at a time. When a campaign is activated, the server
+ * automatically deactivates all others. The UI reflects this by locally updating all
+ * sibling campaigns to is_active=false when an activation succeeds.
+ *
+ * Campaigns have optional start/end dates; the computed status badge (Draft / Scheduled /
+ * Active / Ended) is derived client-side for display purposes only.
+ *
+ * Auth: provided by the parent (protected) layout. Requires canManageSettings permission.
+ */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -16,6 +28,10 @@ import {
 } from 'lucide-react'
 import type { Campaign } from '@/types'
 
+/**
+ * getCampaignStatus — derives a display label and Tailwind color string for a campaign
+ * based on its is_active flag and start/end dates relative to today's date.
+ */
 function getCampaignStatus(c: Campaign): { label: string; color: string } {
   const today = new Date().toISOString().split('T')[0]
   if (!c.is_active) return { label: 'Draft', color: 'border-gray-300 text-gray-500' }
@@ -32,6 +48,11 @@ const EMPTY_FORM = {
   ended_message: 'This campaign has ended. Thank you for your participation.',
 }
 
+/**
+ * CampaignsPage — manages fundraising campaigns that gate order submission.
+ * Only one campaign may be active at a time; activating one deactivates the rest.
+ * The active campaign banner reflects whether the campaign is live, ended, or upcoming.
+ */
 export default function CampaignsPage() {
   // ── State ──
   const [campaigns, setCampaigns] = useState<Campaign[]>([])

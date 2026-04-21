@@ -1,3 +1,17 @@
+/**
+ * @file ShirtViewer.tsx
+ * @description Interactive shirt image viewer with RAF-based momentum flip animation.
+ * If a back image is provided, the card can be dragged or clicked to flip between
+ * front and back faces using CSS 3D transforms (rotateY). Drag velocity is tracked
+ * on each pointerMove so that releasing with momentum continues the flip naturally
+ * before snapping to the nearest face (0° = front, 180° = back).
+ *
+ * Variants:
+ * - 'square' (default): aspect-square — used in the public catalog grid.
+ * - 'compact': aspect-[4/3] — used in the order picker for a shorter card.
+ *
+ * If no back image is present, the viewer is static (no interaction, no label pill).
+ */
 'use client'
 
 import Image from 'next/image'
@@ -12,9 +26,16 @@ interface ShirtViewerProps {
   className?: string
 }
 
+/**
+ * ShirtViewer — 3D-flipping shirt image card with RAF momentum physics.
+ * Drag left/right to rotate (1 px = 0.5°); release to snap to nearest face.
+ * Click without dragging also toggles between front and back.
+ * Keyboard: Enter or Space also toggles when the element has focus.
+ */
 export default function ShirtViewer({ frontUrl, backUrl, name, variant = 'square', className = '' }: ShirtViewerProps) {
   const hasBack = Boolean(backUrl)
 
+  // ─── State & refs ──────────────────────────────────────────────────────────
   // rotation angle in degrees (0 = front, 180 = back)
   const [rotation, setRotation] = useState(0)
   // whether we're actively dragging
@@ -27,6 +48,8 @@ export default function ShirtViewer({ frontUrl, backUrl, name, variant = 'square
   const velocity = useRef(0)
   const rafId = useRef<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
 
   // Normalized rotation so it's always clamped to [0, 360)
   const normalizeAngle = (deg: number) => ((deg % 360) + 360) % 360
@@ -61,6 +84,9 @@ export default function ShirtViewer({ frontUrl, backUrl, name, variant = 'square
     rafId.current = requestAnimationFrame(animate)
   }, [])
 
+  // ─── Pointer handlers ──────────────────────────────────────────────────────
+
+  // Capture pointer so moves register even outside the element bounds
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (!hasBack) return
     dragging.current = true
@@ -110,8 +136,12 @@ export default function ShirtViewer({ frontUrl, backUrl, name, variant = 'square
     rafId.current = requestAnimationFrame(animate)
   }, [hasBack, rotation])
 
+  // Cleanup: cancel any pending animation frame on unmount
   useEffect(() => () => { if (rafId.current) cancelAnimationFrame(rafId.current) }, [])
 
+  // ─── Render ────────────────────────────────────────────────────────────────
+
+  // Determine which face is currently showing based on the normalized angle
   const norm = normalizeAngle(rotation)
   const showingBack = norm > 90 && norm <= 270
 
