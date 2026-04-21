@@ -57,6 +57,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // ─── LocalStorage Hydration ────────────────────────────────
   // Load from localStorage on mount
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
@@ -71,6 +72,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // ─── LocalStorage Persistence ──────────────────────────────
   // Persist to localStorage whenever items change (after hydration)
+  useEffect(() => {
     if (!hydrated) return
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
