@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
+import { useT } from '@/contexts/LanguageContext'
 
 function LoginForm() {
   const router = useRouter()
@@ -20,6 +21,7 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const t = useT()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,12 +41,12 @@ function LoginForm() {
     <form onSubmit={handleLogin} className="space-y-5">
       {inviteError && (
         <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          Your invite link has expired or is invalid. Please ask to be re-invited.
+          {t('admin', 'inviteExpired')}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</Label>
+        <Label htmlFor="email" className="text-sm font-medium text-gray-700">{t('admin', 'emailLabel')}</Label>
         <Input
           id="email"
           type="email"
@@ -58,7 +60,7 @@ function LoginForm() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+        <Label htmlFor="password" className="text-sm font-medium text-gray-700">{t('admin', 'passwordLabel')}</Label>
         <Input
           id="password"
           type="password"
@@ -78,14 +80,23 @@ function LoginForm() {
         style={{ backgroundColor: '#00352F' }}
       >
         {loading
-          ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</>
-          : 'Sign In'}
+          ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('admin', 'signingIn')}</>
+          : t('admin', 'signIn')}
       </Button>
     </form>
   )
 }
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLoginContent />
+    </Suspense>
+  )
+}
+
+function AdminLoginContent() {
+  const t = useT()
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
 
@@ -100,7 +111,7 @@ export default function AdminLoginPage() {
             className="inline-flex items-center gap-1.5 text-sm mb-14 transition-colors"
             style={{ color: 'rgba(206,220,0,0.6)' }}
           >
-            <ArrowLeft className="w-4 h-4" /> Back to home
+            <ArrowLeft className="w-4 h-4" /> {t('admin', 'backToHome')}
           </Link>
 
           <div className="flex items-center gap-3 mb-10">
@@ -183,7 +194,7 @@ export default function AdminLoginPage() {
                 href="/"
                 className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#00352F] transition-colors"
               >
-                <ArrowLeft className="w-4 h-4" /> Back to home
+                <ArrowLeft className="w-4 h-4" /> {t('admin', 'backToHome')}
               </Link>
             </div>
 
@@ -202,8 +213,8 @@ export default function AdminLoginPage() {
                 >
                   <Lock className="w-5 h-5" style={{ color: '#00352F' }} />
                 </div>
-                <h2 className="font-heading text-xl font-bold text-gray-900">Admin Login</h2>
-                <p className="text-gray-500 mt-1" style={{ fontSize: '13px' }}>Sign in to access the dashboard</p>
+                <h2 className="font-heading text-xl font-bold text-gray-900">{t('admin', 'loginTitle')}</h2>
+                <p className="text-gray-500 mt-1" style={{ fontSize: '13px' }}>{t('admin', 'loginDesc')}</p>
               </div>
 
               <Suspense
@@ -220,7 +231,7 @@ export default function AdminLoginPage() {
             </div>
 
             <p className="text-center mt-5" style={{ color: 'rgba(0,0,0,0.35)', fontSize: '11px' }}>
-              Admin access only. Unauthorized access is prohibited.
+              {t('admin', 'adminOnly')}
             </p>
           </div>
         </div>

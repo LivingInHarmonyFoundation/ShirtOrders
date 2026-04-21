@@ -33,6 +33,7 @@ export const translations: Record<Lang, {
   confirmation: Record<string, string>
   cart: Record<string, string>
   errors: Record<string, string>
+  admin: Record<string, string>
 }> = {
   en: {
     common: {
@@ -237,6 +238,32 @@ export const translations: Record<Lang, {
       failedToLoad: 'Failed to load order form. Please try again.',
       somethingWentWrong: 'Something went wrong. Please try again.',
     },
+    admin: {
+      // Login page
+      loginTitle: 'Admin Login',
+      loginDesc: 'Sign in to access the dashboard',
+      emailLabel: 'Email Address',
+      passwordLabel: 'Password',
+      signIn: 'Sign In',
+      signingIn: 'Signing in...',
+      backToHome: 'Back to home',
+      adminOnly: 'Admin access only. Unauthorized access is prohibited.',
+      inviteExpired: 'Your invite link has expired or is invalid. Please ask to be re-invited.',
+      // Sidebar nav
+      menu: 'Menu',
+      dashboard: 'Dashboard',
+      orders: 'Orders',
+      catalog: 'Catalog',
+      government: 'Government',
+      companies: 'Companies',
+      campaigns: 'Campaigns',
+      qrCode: 'QR Code',
+      schools: 'Schools',
+      reports: 'Reports',
+      settings: 'Settings',
+      team: 'Team',
+      signOut: 'Sign Out',
+    },
   },
   es: {
     common: {
@@ -440,6 +467,32 @@ export const translations: Record<Lang, {
       companyLinkNotFound: 'Este enlace de pedido empresarial no se pudo encontrar.',
       failedToLoad: 'Error al cargar el formulario. Por favor intenta de nuevo.',
       somethingWentWrong: 'Algo salió mal. Por favor intenta de nuevo.',
+    },
+    admin: {
+      // Login page
+      loginTitle: 'Acceso Administrador',
+      loginDesc: 'Inicia sesión para acceder al panel',
+      emailLabel: 'Correo Electrónico',
+      passwordLabel: 'Contraseña',
+      signIn: 'Iniciar Sesión',
+      signingIn: 'Iniciando sesión...',
+      backToHome: 'Volver al inicio',
+      adminOnly: 'Solo acceso administrativo. El acceso no autorizado está prohibido.',
+      inviteExpired: 'Tu enlace de invitación expiró o no es válido. Pide que te inviten de nuevo.',
+      // Sidebar nav
+      menu: 'Menú',
+      dashboard: 'Panel',
+      orders: 'Pedidos',
+      catalog: 'Catálogo',
+      government: 'Gobierno',
+      companies: 'Empresas',
+      campaigns: 'Campañas',
+      qrCode: 'Código QR',
+      schools: 'Escuelas',
+      reports: 'Reportes',
+      settings: 'Configuración',
+      team: 'Equipo',
+      signOut: 'Cerrar Sesión',
     },
   },
 }

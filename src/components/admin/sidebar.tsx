@@ -25,6 +25,7 @@ import {
 import { useState } from 'react'
 import { useRole } from '@/components/admin/role-provider'
 import LanguageSelector from '@/components/shared/LanguageSelector'
+import { useT } from '@/contexts/LanguageContext'
 
 /**
  * AdminSidebar — responsive sidebar that renders a desktop aside and a mobile
@@ -36,19 +37,20 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { permissions } = useRole()
+  const t = useT()
 
   const allNavItems = [
-    { href: '/admin/dashboard',  label: 'Dashboard', icon: LayoutDashboard, show: true },
-    { href: '/admin/orders',     label: 'Orders',    icon: List,            show: true },
-    { href: '/admin/catalog',    label: 'Catalog',   icon: Shirt,           show: permissions.canManageSettings },
-    { href: '/admin/government', label: 'Gobierno',  icon: Building2,       show: permissions.canManageSettings },
-    { href: '/admin/companies',  label: 'Companies', icon: Briefcase,       show: permissions.canManageSettings },
-    { href: '/admin/campaigns',  label: 'Campaigns', icon: Megaphone,       show: permissions.canManageSettings },
-    { href: '/admin/qr-code',   label: 'QR Code',   icon: QrCode,          show: permissions.canManageSettings },
-    { href: '/admin/schools',    label: 'Schools',   icon: GraduationCap,   show: permissions.canManageSchools },
-    { href: '/admin/reports',    label: 'Reports',   icon: BarChart2,       show: permissions.canViewReports },
-    { href: '/admin/settings',   label: 'Settings',  icon: Settings,        show: permissions.canManageSettings },
-    { href: '/admin/team',       label: 'Team',      icon: Users,           show: permissions.canManageTeam },
+    { href: '/admin/dashboard',  label: t('admin', 'dashboard'),  icon: LayoutDashboard, show: true },
+    { href: '/admin/orders',     label: t('admin', 'orders'),     icon: List,            show: true },
+    { href: '/admin/catalog',    label: t('admin', 'catalog'),    icon: Shirt,           show: permissions.canManageSettings },
+    { href: '/admin/government', label: t('admin', 'government'), icon: Building2,       show: permissions.canManageSettings },
+    { href: '/admin/companies',  label: t('admin', 'companies'),  icon: Briefcase,       show: permissions.canManageSettings },
+    { href: '/admin/campaigns',  label: t('admin', 'campaigns'),  icon: Megaphone,       show: permissions.canManageSettings },
+    { href: '/admin/qr-code',   label: t('admin', 'qrCode'),     icon: QrCode,          show: permissions.canManageSettings },
+    { href: '/admin/schools',    label: t('admin', 'schools'),    icon: GraduationCap,   show: permissions.canManageSchools },
+    { href: '/admin/reports',    label: t('admin', 'reports'),    icon: BarChart2,       show: permissions.canViewReports },
+    { href: '/admin/settings',   label: t('admin', 'settings'),   icon: Settings,        show: permissions.canManageSettings },
+    { href: '/admin/team',       label: t('admin', 'team'),       icon: Users,           show: permissions.canManageTeam },
   ]
 
   const navItems = allNavItems.filter(item => item.show)
@@ -62,7 +64,7 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
   const NavContent = () => (
     <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className="px-4 py-4 border-b border-white/10">
+      <div className="px-4 py-4 border-b border-white/10 space-y-3">
         <div className="bg-white rounded-xl p-3 flex items-center justify-center">
           <Image
             src="/logo.png"
@@ -73,12 +75,15 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
             priority
           />
         </div>
+        <div className="flex justify-center">
+          <LanguageSelector variant="dark" />
+        </div>
       </div>
 
       {/* Nav label */}
       <div className="px-4 pt-5 pb-2">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: 'rgba(206,220,0,0.45)' }}>
-          Menu
+          {t('admin', 'menu')}
         </p>
       </div>
 
@@ -120,12 +125,9 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
       </nav>
 
       {/* Footer */}
-      <div className="px-2 pb-4 border-t border-white/10 pt-4 space-y-2">
+      <div className="px-2 pb-4 border-t border-white/10 pt-4 space-y-1">
         <div className="px-3 py-1.5">
           <p className="text-[11px] truncate" style={{ color: 'rgba(206,220,0,0.5)' }}>{userEmail}</p>
-        </div>
-        <div className="px-3">
-          <LanguageSelector variant="dark" />
         </div>
         <Button
           variant="ghost"
@@ -134,7 +136,7 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
           className="w-full justify-start text-sm transition-colors duration-150"
           style={{ color: 'rgba(209,250,229,0.45)' }}
         >
-          <LogOut className="w-4 h-4 mr-2" /> Sign Out
+          <LogOut className="w-4 h-4 mr-2" /> {t('admin', 'signOut')}
         </Button>
       </div>
     </div>
