@@ -197,9 +197,14 @@ export async function POST(request: NextRequest) {
     const total_quantity = cartItems.reduce((sum, item) => sum + item.quantity, 0)
     const subtotal = cartItems.reduce((sum, item) => sum + item.quantity * unit_price, 0)
 
-    // Apply each configured fee against the subtotal (not cumulative)
+    // Apply each configured fee against the subtotal (not cumulative).
+    // A fee with applies_to null or [] applies to every institution type;
+    // otherwise it only applies when institution_type is in the list.
     const fees = (settings.order_fees || []) as import('@/types').OrderFee[]
-    const appliedFees = fees.map(fee => ({
+    const applicableFees = fees.filter(fee =>
+      !fee.applies_to || fee.applies_to.length === 0 || fee.applies_to.includes(data.institution_type)
+    )
+    const appliedFees = applicableFees.map(fee => ({
       name: fee.name,
       type: fee.type,
       value: fee.value,

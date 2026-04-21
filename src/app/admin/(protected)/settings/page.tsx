@@ -65,6 +65,7 @@ export default function SettingsPage() {
   const [newFeeName, setNewFeeName] = useState('')
   const [newFeeType, setNewFeeType] = useState<'percentage' | 'fixed'>('percentage')
   const [newFeeValue, setNewFeeValue] = useState('')
+  const [newFeeAppliesTo, setNewFeeAppliesTo] = useState<import('@/types').InstitutionType[]>([])
 
   // Image uploads
   const [missionBannerUrl, setMissionBannerUrl] = useState<string | null>(null)
@@ -214,9 +215,22 @@ export default function SettingsPage() {
     if (!newFeeName.trim() || isNaN(val) || val <= 0) return
     if (newFeeType === 'percentage' && val > 100) return
     const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`
-    setOrderFees(prev => [...prev, { id, name: newFeeName.trim(), type: newFeeType, value: val }])
+    setOrderFees(prev => [...prev, {
+      id,
+      name: newFeeName.trim(),
+      type: newFeeType,
+      value: val,
+      applies_to: newFeeAppliesTo.length > 0 ? newFeeAppliesTo : null,
+    }])
     setNewFeeName('')
     setNewFeeValue('')
+    setNewFeeAppliesTo([])
+  }
+
+  const toggleFeeTarget = (type: import('@/types').InstitutionType) => {
+    setNewFeeAppliesTo(prev =>
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    )
   }
 
   const removeFee = (id: string) => {
@@ -586,41 +600,51 @@ export default function SettingsPage() {
             <Percent className="w-4 h-4" /> Order Fees &amp; Taxes
           </CardTitle>
           <CardDescription className="text-xs">
-            Additional charges applied to every order at checkout. Each fee shows in the order breakdown seen by the customer.
+            Additional charges applied at checkout. You can target each fee to specific order types (e.g. shipping only for personal orders) or apply it to all orders.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Existing fees list */}
           {orderFees.length > 0 ? (
             <div className="space-y-2">
-              {orderFees.map(fee => (
-                <div key={fee.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide ${
-                      fee.type === 'percentage'
-                        ? 'bg-[#CEDC00]/20 text-[#00352F]'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {fee.type === 'percentage' ? '%' : '$'}
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{fee.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {fee.type === 'percentage' ? `${fee.value}% of subtotal` : `$${fee.value.toFixed(2)} flat`}
-                      </p>
+              {orderFees.map(fee => {
+                const targetLabels: Record<string, string> = {
+                  school: 'Schools', government: 'Government', personal: 'Personal', private_company: 'Companies',
+                }
+                const scopeText = !fee.applies_to || fee.applies_to.length === 0
+                  ? 'All orders'
+                  : fee.applies_to.map(t => targetLabels[t]).join(', ')
+                return (
+                  <div key={fee.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide ${
+                        fee.type === 'percentage'
+                          ? 'bg-[#CEDC00]/20 text-[#00352F]'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {fee.type === 'percentage' ? '%' : '$'}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{fee.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {fee.type === 'percentage' ? `${fee.value}% of subtotal` : `$${fee.value.toFixed(2)} flat`}
+                          {' · '}
+                          <span className="italic">{scopeText}</span>
+                        </p>
+                      </div>
                     </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFee(fee.id)}
+                      className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFee(fee.id)}
-                    className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <p className="text-sm text-gray-400 italic">No fees configured — customers pay the base shirt price only.</p>
@@ -631,16 +655,14 @@ export default function SettingsPage() {
           {/* Add fee form */}
           <div className="space-y-3">
             <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Add a fee</p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Fee name (e.g. Sales Tax)"
-                value={newFeeName}
-                onChange={e => setNewFeeName(e.target.value)}
-                className="flex-1 h-9 text-sm"
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFee() } }}
-              />
-            </div>
-            <div className="flex gap-2 items-center">
+            <Input
+              placeholder="Fee name (e.g. Shipping, Sales Tax)"
+              value={newFeeName}
+              onChange={e => setNewFeeName(e.target.value)}
+              className="h-9 text-sm"
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFee() } }}
+            />
+            <div className="flex gap-2 items-center flex-wrap">
               {/* Type toggle */}
               <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
                 <button
@@ -683,17 +705,45 @@ export default function SettingsPage() {
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFee() } }}
                 />
               </div>
-              <Button
-                type="button"
-                size="sm"
-                onClick={addFee}
-                disabled={!newFeeName.trim() || !newFeeValue}
-                className="h-9 text-white"
-                style={{ backgroundColor: '#00352F' }}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" /> Add
-              </Button>
             </div>
+            {/* Applies-to selector */}
+            <div className="space-y-1.5">
+              <p className="text-xs text-gray-500">Apply to <span className="font-medium">(leave all unchecked = applies to every order)</span></p>
+              <div className="flex gap-2 flex-wrap">
+                {([
+                  { key: 'school', label: 'Schools' },
+                  { key: 'government', label: 'Government' },
+                  { key: 'personal', label: 'Personal' },
+                  { key: 'private_company', label: 'Companies' },
+                ] as const).map(({ key, label }) => {
+                  const active = newFeeAppliesTo.includes(key)
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleFeeTarget(key)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        active
+                          ? 'bg-[#00352F] text-white border-[#00352F]'
+                          : 'bg-white dark:bg-gray-900 text-gray-500 border-gray-200 dark:border-gray-600 hover:border-gray-400'
+                      }`}
+                    >
+                      {active && <span className="mr-1">✓</span>}{label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={addFee}
+              disabled={!newFeeName.trim() || !newFeeValue}
+              className="h-9 text-white"
+              style={{ backgroundColor: '#00352F' }}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add Fee
+            </Button>
             <p className="text-[11px] text-gray-400">
               Fees are saved when you click &ldquo;Save Settings&rdquo; below.
             </p>

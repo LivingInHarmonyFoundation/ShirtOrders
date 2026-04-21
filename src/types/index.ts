@@ -145,6 +145,8 @@ export interface OrderFee {
   name: string
   type: 'percentage' | 'fixed'
   value: number
+  /** null or empty array means applies to all institution types */
+  applies_to: InstitutionType[] | null
 }
 
 // ─── Application Settings ─────────────────────────────────────
