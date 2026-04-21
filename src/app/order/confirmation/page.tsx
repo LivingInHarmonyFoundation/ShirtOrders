@@ -39,6 +39,7 @@ function ConfirmationContent() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [confirmationMsg, setConfirmationMsg] = useState('')
+  const [badgeUrl, setBadgeUrl] = useState<string | null>(null)
 
   // ─── Data Fetching ────────────────────────────────────────────────────────
 
@@ -53,7 +54,10 @@ function ConfirmationContent() {
 
     fetch('/api/admin/settings')
       .then(r => r.json())
-      .then(({ settings }) => { if (settings?.confirmation_message) setConfirmationMsg(settings.confirmation_message) })
+      .then(({ settings }) => {
+        if (settings?.confirmation_message) setConfirmationMsg(settings.confirmation_message)
+        if (settings?.badge_url) setBadgeUrl(settings.badge_url)
+      })
       .catch(() => {})
   }, [orderId, router])
 
@@ -141,10 +145,24 @@ function ConfirmationContent() {
           <p className="text-gray-500 mt-2 text-sm max-w-sm mx-auto">{confirmationMsg || defaultMsg}</p>
         </div>
 
-        {/* Print-only header */}
-        <div className="hidden print:block mb-6 border-b pb-4">
-          <h1 className="text-2xl font-bold">Living in Harmony Foundation</h1>
-          <p className="text-gray-500">{t('confirmation', 'receiptTitle')}</p>
+        {/* Print-only header — logo + org name + campaign badge */}
+        <div className="hidden print:flex items-center justify-between mb-6 pb-5 border-b-2" style={{ borderColor: '#CEDC00' }}>
+          <div className="flex items-center gap-3">
+            <Image src="/logo.png" alt="Living in Harmony Foundation" width={56} height={56} className="object-contain" />
+            <div>
+              <p className="text-xl font-bold" style={{ color: '#00352F' }}>Living in Harmony Foundation</p>
+              <p className="text-sm text-gray-500">{t('confirmation', 'receiptTitle')}</p>
+            </div>
+          </div>
+          {(badgeUrl || '/badge.jpeg') && (
+            <Image
+              src={badgeUrl || '/badge.jpeg'}
+              alt="Campaign Badge"
+              width={72}
+              height={72}
+              className="object-contain rounded-full"
+            />
+          )}
         </div>
 
         {/* Receipt card */}
