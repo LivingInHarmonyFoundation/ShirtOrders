@@ -170,3 +170,32 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.04);
   }
 }
+
+/* ── PR Map HUD animations ──────────────────────────────────────────────────── */
+
+@keyframes pr-pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.75; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+
+@keyframes pr-dot-breathe {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%       { transform: scale(1.15); opacity: 0.75; }
+}
+
+@keyframes pr-dash-flow {
+  from { stroke-dashoffset: 16; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes pr-blink {
+  0%, 80%, 100% { opacity: 1; }
+  88%            { opacity: 0.15; }
+}
+
+@keyframes pr-scan {
+  0%   { top: -2px;   opacity: 0; }
+  4%   { opacity: 1; }
+  96%  { opacity: 1; }
+  100% { top: 100%;   opacity: 0; }
+}
