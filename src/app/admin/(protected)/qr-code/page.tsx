@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { QrCode, Download, RefreshCw } from 'lucide-react'
 import { useRole } from '@/components/admin/role-provider'
 import { toast } from 'sonner'
+import { useT } from '@/contexts/LanguageContext'
 
 const BRAND = {
   green:     '#00352F',
@@ -358,10 +359,11 @@ async function drawBrandedQR(
 }
 
 // ── Mini variant thumbnail for the toggle UI ─────────────────────────────
-function VariantThumb({ v, selected, onClick }: {
+function VariantThumb({ v, selected, onClick, label }: {
   v: 'light' | 'dark'
   selected: boolean
   onClick: () => void
+  label: string
 }) {
   const isLight = v === 'light'
   return (
@@ -376,7 +378,7 @@ function VariantThumb({ v, selected, onClick }: {
         background: 'transparent',
         transition: 'border-color 0.15s',
       }}
-      aria-label={isLight ? 'Light variant' : 'Dark variant'}
+      aria-label={label}
     >
       {/* Mini poster thumbnail */}
       <div
@@ -462,7 +464,7 @@ function VariantThumb({ v, selected, onClick }: {
           textTransform: 'uppercase',
           opacity: 0.85,
         }}>
-          {isLight ? 'Light' : 'Dark'}
+          {label}
         </span>
       </div>
     </button>
@@ -476,6 +478,7 @@ function VariantThumb({ v, selected, onClick }: {
  * Downloads are rendered into a fresh offscreen canvas to avoid mutating the preview.
  */
 export default function QRCodePage() {
+  const t = useT()
   const { permissions } = useRole()
 
   const [urlOption,   setUrlOption]   = useState(URL_OPTIONS[0].value)
@@ -550,8 +553,8 @@ export default function QRCodePage() {
       <div className="max-w-lg">
         <div className="rounded-2xl border bg-white p-16 text-center shadow-sm">
           <QrCode className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-          <p className="font-semibold text-gray-700">Access Restricted</p>
-          <p className="text-sm text-gray-400 mt-1">Only admins and owners can generate QR codes.</p>
+          <p className="font-semibold text-gray-700">{t('admin', 'accessRestricted')}</p>
+          <p className="text-sm text-gray-400 mt-1">{t('admin', 'accessRestrictedDesc')}</p>
         </div>
       </div>
     )
@@ -562,9 +565,9 @@ export default function QRCodePage() {
 
       {/* Page header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight" style={{ color: BRAND.green }}>QR Code Generator</h1>
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: BRAND.green }}>{t('admin', 'qrCodeTitle')}</h1>
         <p className="text-sm text-gray-400 mt-1.5">
-          Export a complete branded poster — ready for print, social media, or TV display.
+          {t('admin', 'qrCodeSubtitle')}
         </p>
       </div>
 
@@ -617,7 +620,7 @@ export default function QRCodePage() {
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3"
                     style={{ background: '#FAFAF8' }}>
                     <QrCode className="w-12 h-12" style={{ color: BRAND.green, opacity: 0.18 }} />
-                    <p className="text-xs font-medium text-gray-400">Enter a URL to preview</p>
+                    <p className="text-xs font-medium text-gray-400">{t('admin', 'enterUrlToPreview')}</p>
                   </div>
                 )}
               </div>
@@ -625,7 +628,7 @@ export default function QRCodePage() {
 
             <p className="text-center mt-4 text-[11px] font-medium tracking-wide"
               style={{ color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Preview — updates live
+              {t('admin', 'previewLive')}
             </p>
           </div>
         </div>
@@ -637,7 +640,7 @@ export default function QRCodePage() {
           <div className="px-6 pt-6 pb-5">
             <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
               style={{ color: '#9CA3AF' }}>
-              Destination
+              {t('admin', 'destinationSection')}
             </p>
 
             <div className="space-y-3">
@@ -668,7 +671,7 @@ export default function QRCodePage() {
                   style={{ background: '#F5F5F4' }}>
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                     style={{ background: BRAND.lime }} />
-                  <p className="text-[11px] font-mono truncate text-gray-500">{targetUrl}</p>
+                  <p className="text-[11px] font-mono truncate text-gray-500" title={targetUrl}>{targetUrl}</p>
                 </div>
               )}
             </div>
@@ -680,11 +683,11 @@ export default function QRCodePage() {
           <div className="px-6 py-5">
             <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
               style={{ color: '#9CA3AF' }}>
-              Call to Action
+              {t('admin', 'callToActionSection')}
             </p>
 
             <div className="space-y-2">
-              <Label className="text-xs text-gray-500">Poster headline text</Label>
+              <Label className="text-xs text-gray-500">{t('admin', 'posterHeadlineLabel')}</Label>
               <Input
                 value={ctaText}
                 onChange={e => setCtaText(e.target.value)}
@@ -702,10 +705,10 @@ export default function QRCodePage() {
           <div className="px-6 py-5">
             <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
               style={{ color: '#9CA3AF' }}>
-              Tagline
+              {t('admin', 'taglineSection')}
             </p>
             <div className="space-y-2">
-              <Label className="text-xs text-gray-500">Italic text below the headline</Label>
+              <Label className="text-xs text-gray-500">{t('admin', 'taglineLabel')}</Label>
               <Input
                 value={tagline}
                 onChange={e => setTagline(e.target.value)}
@@ -723,12 +726,12 @@ export default function QRCodePage() {
           <div className="px-6 py-5">
             <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
               style={{ color: '#9CA3AF' }}>
-              Color Variant
+              {t('admin', 'colorVariantSection')}
             </p>
 
             <div className="flex gap-4 justify-center">
-              <VariantThumb v="light" selected={variant === 'light'} onClick={() => setVariant('light')} />
-              <VariantThumb v="dark"  selected={variant === 'dark'}  onClick={() => setVariant('dark')}  />
+              <VariantThumb v="light" selected={variant === 'light'} onClick={() => setVariant('light')} label={t('admin', 'lightVariant')} />
+              <VariantThumb v="dark"  selected={variant === 'dark'}  onClick={() => setVariant('dark')}  label={t('admin', 'darkVariant')} />
             </div>
           </div>
 
@@ -738,7 +741,7 @@ export default function QRCodePage() {
           <div className="px-6 pt-5 pb-6">
             <p className="text-[10px] font-semibold tracking-widest uppercase mb-4"
               style={{ color: '#9CA3AF' }}>
-              Export
+              {t('admin', 'exportSection')}
             </p>
 
             <div className="rounded-xl overflow-hidden"
@@ -787,7 +790,7 @@ export default function QRCodePage() {
             </div>
 
             <p className="text-[10px] text-gray-400 mt-3 text-center tracking-wide">
-              Generated locally — no data sent to any server.
+              {t('admin', 'generatedLocally')}
             </p>
           </div>
 

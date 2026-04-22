@@ -10,6 +10,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useT } from '@/contexts/LanguageContext'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +44,7 @@ function isMethodEnabled(methods: string[] | null, method: PaymentMethod): boole
  * settings each have their own collapsible section per row.
  */
 export default function GovernmentPage() {
+  const t = useT()
   const [orgs, setOrgs] = useState<GovOrg[]>([])
   const [loading, setLoading] = useState(true)
   const [newName, setNewName] = useState('')
@@ -264,9 +266,9 @@ export default function GovernmentPage() {
     <div className="space-y-6 max-w-2xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Government Organizations</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('admin', 'governmentTitle')}</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Manage the organizations available in the government order dropdown
+          {t('admin', 'governmentSubtitle')}
         </p>
       </div>
 
@@ -274,15 +276,15 @@ export default function GovernmentPage() {
       <div className="flex gap-3">
         <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
           <p className="text-2xl font-bold text-gray-900">{orgs.length}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total</p>
+          <p className="text-xs text-gray-500 mt-0.5">{t('admin', 'totalItems')}</p>
         </div>
         <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
           <p className="text-2xl font-bold text-[#00352F]">{activeCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Active</p>
+          <p className="text-xs text-gray-500 mt-0.5">{t('admin', 'activeStatus')}</p>
         </div>
         <div className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
           <p className="text-2xl font-bold text-gray-400">{orgs.length - activeCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Hidden</p>
+          <p className="text-xs text-gray-500 mt-0.5">{t('admin', 'hiddenItems')}</p>
         </div>
       </div>
 
@@ -290,14 +292,14 @@ export default function GovernmentPage() {
       <Card className="border-[#CEDC00]/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Plus className="w-4 h-4 text-[#00352F]" /> Add Organization
+            <Plus className="w-4 h-4 text-[#00352F]" /> {t('admin', 'addOrganization')}
           </CardTitle>
-          <CardDescription>Add a new government organization to the dropdown list</CardDescription>
+          <CardDescription>{t('admin', 'addOrganizationDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAdd} className="flex gap-2">
             <Input
-              placeholder="e.g. Department of Education"
+              placeholder={t('admin', 'orgNamePlaceholder')}
               value={newName}
               onChange={e => setNewName(e.target.value)}
               disabled={adding}
@@ -309,7 +311,7 @@ export default function GovernmentPage() {
               className="text-white"
               style={{ backgroundColor: '#00352F' }}
             >
-              {adding ? 'Adding...' : 'Add'}
+              {adding ? t('admin', 'addingOrg') : t('admin', 'addOrgButton')}
             </Button>
           </form>
         </CardContent>
@@ -326,8 +328,8 @@ export default function GovernmentPage() {
             <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Building2 className="w-7 h-7 text-gray-300" />
             </div>
-            <p className="font-semibold text-gray-900">No organizations yet</p>
-            <p className="text-gray-500 text-sm mt-1">Add your first organization above.</p>
+            <p className="font-semibold text-gray-900">{t('admin', 'noOrgsYet')}</p>
+            <p className="text-gray-500 text-sm mt-1">{t('admin', 'noOrgsDesc')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -356,7 +358,7 @@ export default function GovernmentPage() {
                     <span className="flex-1 text-sm font-medium text-gray-800">{org.name}</span>
                   )}
 
-                  {!org.is_active && <Badge variant="outline" className="text-xs text-gray-400">Hidden</Badge>}
+                  {!org.is_active && <Badge variant="outline" className="text-xs text-gray-400">{t('admin', 'hiddenBadgeOrg')}</Badge>}
 
                   {/* Expand buttons */}
                   {editingId !== org.id && (
@@ -364,19 +366,19 @@ export default function GovernmentPage() {
                       <button
                         onClick={() => toggleDeptsExpand(org.id)}
                         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${deptsOpen ? 'bg-[#E5F2F0] text-[#00352F]' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}`}
-                        title="Manage departments"
+                        title={t('admin', 'departmentsButton')}
                       >
                         <Tag className="w-3 h-3" />
-                        Departments
+                        {t('admin', 'departmentsButton')}
                         {deptsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </button>
                       <button
                         onClick={() => togglePaymentExpand(org.id)}
                         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${paymentOpen ? 'bg-[#E5F2F0] text-[#00352F]' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}`}
-                        title="Payment settings"
+                        title={t('admin', 'paymentSettingsButton')}
                       >
                         <Settings2 className="w-3 h-3" />
-                        Payment
+                        {t('admin', 'paymentSettingsButton')}
                         {paymentOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </button>
                     </div>
@@ -389,14 +391,14 @@ export default function GovernmentPage() {
                           onClick={() => handleSaveName(org)}
                           disabled={savingId === org.id}
                           className="p-1.5 rounded-lg text-[#00352F] hover:bg-[#E5F2F0] transition-colors"
-                          title="Save"
+                          title={t('admin', 'saveOrg')}
                         >
                           <Check className="w-4 h-4" />
                         </button>
                         <button
                           onClick={cancelEdit}
                           className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
-                          title="Cancel"
+                          title={t('admin', 'cancelOrg')}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -406,7 +408,7 @@ export default function GovernmentPage() {
                         <button
                           onClick={() => startEdit(org)}
                           className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                          title="Rename"
+                          title={t('admin', 'renameOrg')}
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -414,7 +416,7 @@ export default function GovernmentPage() {
                           onClick={() => handleToggle(org)}
                           disabled={togglingId === org.id}
                           className={`p-1.5 rounded-lg transition-colors ${org.is_active ? 'text-[#00352F] hover:bg-[#E5F2F0]' : 'text-gray-400 hover:bg-gray-100'}`}
-                          title={org.is_active ? 'Hide from order form' : 'Show in order form'}
+                          title={org.is_active ? t('admin', 'hideFromOrderForm') : t('admin', 'showInOrderForm')}
                         >
                           {org.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </button>
@@ -422,7 +424,7 @@ export default function GovernmentPage() {
                           onClick={() => handleDelete(org)}
                           disabled={deletingId === org.id}
                           className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
-                          title="Delete"
+                          title={t('admin', 'deleteOrg')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -435,10 +437,10 @@ export default function GovernmentPage() {
                 {deptsOpen && (
                   <div className="px-4 pb-3 border-t border-gray-50">
                     <div className="pt-3">
-                      <p className="text-xs font-medium text-gray-600 mb-2">Departments</p>
+                      <p className="text-xs font-medium text-gray-600 mb-2">{t('admin', 'departmentsLabel')}</p>
                       <div className="flex flex-wrap gap-1.5 mb-3">
                         {(org.departments || []).length === 0 ? (
-                          <p className="text-xs text-gray-400">No departments added yet</p>
+                          <p className="text-xs text-gray-400">{t('admin', 'noDepartmentsYet')}</p>
                         ) : (
                           (org.departments || []).map(dept => (
                             <span
@@ -460,7 +462,7 @@ export default function GovernmentPage() {
                       </div>
                       <div className="flex gap-2">
                         <Input
-                          placeholder="New department name..."
+                          placeholder={t('admin', 'newDepartmentPlaceholder')}
                           value={newDept[org.id] || ''}
                           onChange={e => setNewDept(prev => ({ ...prev, [org.id]: e.target.value }))}
                           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddDept(org) } }}
@@ -474,7 +476,7 @@ export default function GovernmentPage() {
                           className="text-white h-8"
                           style={{ backgroundColor: '#00352F' }}
                         >
-                          Add
+                          {t('admin', 'addDeptButton')}
                         </Button>
                       </div>
                     </div>
@@ -485,7 +487,7 @@ export default function GovernmentPage() {
                 {paymentOpen && (
                   <div className="px-4 pb-3 border-t border-gray-50">
                     <div className="pt-3">
-                      <p className="text-xs font-medium text-gray-600 mb-2">Allowed Payment Methods</p>
+                      <p className="text-xs font-medium text-gray-600 mb-2">{t('admin', 'allowedPaymentMethods')}</p>
                       <div className="flex gap-2 flex-wrap">
                         {PAYMENT_METHODS.map(method => {
                           const enabled = isMethodEnabled(org.allowed_payment_methods, method)
@@ -509,10 +511,10 @@ export default function GovernmentPage() {
                       </div>
                       <p className="text-[11px] text-gray-400 mt-2">
                         {org.allowed_payment_methods === null
-                          ? 'All methods enabled (default)'
+                          ? t('admin', 'allMethodsEnabled')
                           : org.allowed_payment_methods.length === 0
-                            ? 'No payment methods allowed'
-                            : `${org.allowed_payment_methods.length} method${org.allowed_payment_methods.length === 1 ? '' : 's'} enabled`}
+                            ? t('admin', 'noMethodsAllowed')
+                            : `${org.allowed_payment_methods.length} ${org.allowed_payment_methods.length === 1 ? t('admin', 'methodsEnabled') : t('admin', 'methodsEnabledPlural')} ${t('admin', 'enabledSuffix')}`}
                       </p>
                     </div>
                   </div>

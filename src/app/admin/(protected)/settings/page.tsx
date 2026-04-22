@@ -29,6 +29,7 @@ import { Save, Loader2, DollarSign, School, Building2, MessageSquare, User, Brie
 import Image from 'next/image'
 import type { AppSettings } from '@/types'
 import { useRole } from '@/components/admin/role-provider'
+import { useT } from '@/contexts/LanguageContext'
 
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
@@ -38,6 +39,7 @@ const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
  * Image uploads use a two-step flow: upload to storage, then PATCH the URL into settings.
  */
 export default function SettingsPage() {
+  const t = useT()
   const { permissions } = useRole()
 
   // ── State ──
@@ -294,8 +296,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Configure your order management system</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin', 'settingsTitle')}</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{t('admin', 'settingsSubtitle')}</p>
       </div>
 
       {/* ── Mission Banner ──────────────────────────────────── */}
@@ -303,11 +305,10 @@ export default function SettingsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <ImagePlus className="w-4 h-4" /> Mission Banner
+              <ImagePlus className="w-4 h-4" /> {t('admin', 'missionBannerTitle')}
             </CardTitle>
             <CardDescription className="text-xs">
-              The image displayed in the &ldquo;Our Mission&rdquo; section on the public landing page.
-              When set, replaces the text version. Only admins and owners can change this.
+              {t('admin', 'missionBannerDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -344,8 +345,8 @@ export default function SettingsPage() {
                     disabled={uploadingBanner}
                   >
                     {uploadingBanner
-                      ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
-                      : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Replace Image</>}
+                      ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('admin', 'uploading')}</>
+                      : <><Upload className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'replaceImage')}</>}
                   </Button>
                   <Button
                     type="button"
@@ -355,11 +356,11 @@ export default function SettingsPage() {
                     disabled={uploadingBanner}
                     className="text-red-500 hover:text-red-600 hover:bg-red-50"
                   >
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Remove Banner
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'removeBanner')}
                   </Button>
                 </div>
                 <p className="text-[11px] text-gray-400">
-                  Removing the banner restores the styled text version on the public page.
+                  {t('admin', 'removingBannerNote')}
                 </p>
               </>
             ) : (
@@ -370,8 +371,8 @@ export default function SettingsPage() {
                   onClick={() => bannerRef.current?.click()}
                 >
                   <ImagePlus className="w-8 h-8 text-gray-300 mb-2" />
-                  <p className="text-sm font-medium text-gray-500">No banner set</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Click to upload an image</p>
+                  <p className="text-sm font-medium text-gray-500">{t('admin', 'noBannerSet')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{t('admin', 'clickToUpload')}</p>
                 </div>
                 <Button
                   type="button"
@@ -382,14 +383,14 @@ export default function SettingsPage() {
                   style={{ borderColor: '#00352F', color: '#00352F' }}
                 >
                   {uploadingBanner
-                    ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
-                    : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Upload Banner</>}
+                    ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('admin', 'uploading')}</>
+                    : <><Upload className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'uploadBanner')}</>}
                 </Button>
               </>
             )}
 
             <p className="text-[11px] text-gray-400">
-              Recommended: wide image (16:4 or 16:5 ratio). Max 5 MB. JPG, PNG, or WebP.
+              {t('admin', 'bannerRecommended')}
             </p>
           </CardContent>
         </Card>
@@ -400,11 +401,10 @@ export default function SettingsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <ImagePlus className="w-4 h-4" /> Badge Image
+              <ImagePlus className="w-4 h-4" /> {t('admin', 'badgeImageTitle')}
             </CardTitle>
             <CardDescription className="text-xs">
-              The circular badge displayed in the hero, CTA, and footer of the public landing page.
-              When set, replaces the default badge everywhere it appears.
+              {t('admin', 'badgeImageDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -427,8 +427,8 @@ export default function SettingsPage() {
                     <Image src={badgeUrl} alt="Badge preview" fill className="object-contain" />
                   </div>
                   <div className="text-xs text-gray-400 space-y-1">
-                    <p>Shown as a circle on the landing page.</p>
-                    <p>Use a square image for best results.</p>
+                    <p>{t('admin', 'shownAsCircle')}</p>
+                    <p>{t('admin', 'squareImageBest')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -440,8 +440,8 @@ export default function SettingsPage() {
                     disabled={uploadingBadge}
                   >
                     {uploadingBadge
-                      ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
-                      : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Replace Badge</>}
+                      ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('admin', 'uploading')}</>
+                      : <><Upload className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'replaceBadge')}</>}
                   </Button>
                   <Button
                     type="button"
@@ -451,7 +451,7 @@ export default function SettingsPage() {
                     disabled={uploadingBadge}
                     className="text-red-500 hover:text-red-600 hover:bg-red-50"
                   >
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Remove Badge
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'removeBadge')}
                   </Button>
                 </div>
               </>
@@ -462,8 +462,8 @@ export default function SettingsPage() {
                   onClick={() => badgeRef.current?.click()}
                 >
                   <ImagePlus className="w-8 h-8 text-gray-300 mb-2" />
-                  <p className="text-sm font-medium text-gray-500">No custom badge set</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Click to upload an image</p>
+                  <p className="text-sm font-medium text-gray-500">{t('admin', 'noCustomBadge')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{t('admin', 'clickToUpload')}</p>
                 </div>
                 <Button
                   type="button"
@@ -474,14 +474,14 @@ export default function SettingsPage() {
                   style={{ borderColor: '#00352F', color: '#00352F' }}
                 >
                   {uploadingBadge
-                    ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Uploading…</>
-                    : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Upload Badge</>}
+                    ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('admin', 'uploading')}</>
+                    : <><Upload className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'uploadBadge')}</>}
                 </Button>
               </>
             )}
 
             <p className="text-[11px] text-gray-400">
-              Recommended: square image (1:1 ratio). Max 5 MB. JPG, PNG, or WebP.
+              {t('admin', 'badgeRecommended')}
             </p>
           </CardContent>
         </Card>
@@ -491,13 +491,13 @@ export default function SettingsPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <DollarSign className="w-4 h-4" /> Pricing
+            <DollarSign className="w-4 h-4" /> {t('admin', 'pricingTitle')}
           </CardTitle>
-          <CardDescription className="text-xs">Set the shirt price and available sizes</CardDescription>
+          <CardDescription className="text-xs">{t('admin', 'pricingDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="shirt_price">Price Per Shirt (USD)</Label>
+            <Label htmlFor="shirt_price">{t('admin', 'pricePerShirt')}</Label>
             <div className="relative mt-1 max-w-[160px]">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
               <Input
@@ -513,8 +513,8 @@ export default function SettingsPage() {
           </div>
           <Separator />
           <div>
-            <Label>Available Shirt Sizes</Label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-2">Toggle sizes on/off, or add custom sizes (e.g. "Youth M", "2XL")</p>
+            <Label>{t('admin', 'availableSizesLabel')}</Label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-2">{t('admin', 'availableSizesDesc')}</p>
             <div className="flex flex-wrap gap-2 mb-3">
               {PRESET_SIZES.map(size => (
                 <button
@@ -547,7 +547,7 @@ export default function SettingsPage() {
             {/* Add custom size */}
             <div className="flex gap-2 max-w-xs">
               <Input
-                placeholder="Custom size, e.g. Youth M"
+                placeholder={t('admin', 'customSizePlaceholder')}
                 value={customSizeInput}
                 onChange={e => setCustomSizeInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomSize() } }}
@@ -561,7 +561,7 @@ export default function SettingsPage() {
                 disabled={!customSizeInput.trim()}
                 className="h-9 px-3"
               >
-                Add
+                {t('admin', 'addSizeButton')}
               </Button>
             </div>
           </div>
@@ -572,10 +572,10 @@ export default function SettingsPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Percent className="w-4 h-4" /> Order Fees &amp; Taxes
+            <Percent className="w-4 h-4" /> {t('admin', 'orderFeesTitle')}
           </CardTitle>
           <CardDescription className="text-xs">
-            Additional charges applied at checkout. You can target each fee to specific order types (e.g. shipping only for personal orders) or apply it to all orders.
+            {t('admin', 'orderFeesDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -584,11 +584,11 @@ export default function SettingsPage() {
             <div className="space-y-2">
               {orderFees.map(fee => {
                 const targetLabels: Record<string, string> = {
-                  school: 'Schools', government: 'Government', personal: 'Personal', private_company: 'Companies',
+                  school: t('admin', 'schoolType'), government: t('admin', 'governmentType'), personal: t('admin', 'personalType'), private_company: t('admin', 'privateCompanyType'),
                 }
                 const scopeText = !fee.applies_to || fee.applies_to.length === 0
-                  ? 'All orders'
-                  : fee.applies_to.map(t => targetLabels[t]).join(', ')
+                  ? t('admin', 'allOrdersScope')
+                  : fee.applies_to.map(ft => targetLabels[ft]).join(', ')
                 return (
                   <div key={fee.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
                     <div className="flex items-center gap-3">
@@ -602,7 +602,7 @@ export default function SettingsPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">{fee.name}</p>
                         <p className="text-xs text-gray-500">
-                          {fee.type === 'percentage' ? `${fee.value}% of subtotal` : `$${fee.value.toFixed(2)} flat`}
+                          {fee.type === 'percentage' ? `${fee.value}% ${t('admin', 'percentOfSubtotal')}` : `$${fee.value.toFixed(2)} ${t('admin', 'flatFee')}`}
                           {' · '}
                           <span className="italic">{scopeText}</span>
                         </p>
@@ -622,16 +622,16 @@ export default function SettingsPage() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 italic">No fees configured — customers pay the base shirt price only.</p>
+            <p className="text-sm text-gray-400 italic">{t('admin', 'noFeesConfigured')}</p>
           )}
 
           <Separator />
 
           {/* Add fee form */}
           <div className="space-y-3">
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Add a fee</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('admin', 'addFeeLabel')}</p>
             <Input
-              placeholder="Fee name (e.g. Shipping, Sales Tax)"
+              placeholder={t('admin', 'feeNamePlaceholder')}
               value={newFeeName}
               onChange={e => setNewFeeName(e.target.value)}
               className="h-9 text-sm"
@@ -649,7 +649,7 @@ export default function SettingsPage() {
                       : 'bg-white dark:bg-gray-900 text-gray-500 hover:bg-gray-50'
                   }`}
                 >
-                  % Percentage
+                  % {t('admin', 'percentageType')}
                 </button>
                 <button
                   type="button"
@@ -660,7 +660,7 @@ export default function SettingsPage() {
                       : 'bg-white dark:bg-gray-900 text-gray-500 hover:bg-gray-50'
                   }`}
                 >
-                  $ Fixed
+                  $ {t('admin', 'fixedType')}
                 </button>
               </div>
               {/* Value input */}
@@ -683,13 +683,13 @@ export default function SettingsPage() {
             </div>
             {/* Applies-to selector */}
             <div className="space-y-1.5">
-              <p className="text-xs text-gray-500">Apply to <span className="font-medium">(leave all unchecked = applies to every order)</span></p>
+              <p className="text-xs text-gray-500">{t('admin', 'applyToLabel')} <span className="font-medium">({t('admin', 'leaveUncheckedNote')})</span></p>
               <div className="flex gap-2 flex-wrap">
                 {([
-                  { key: 'school', label: 'Schools' },
-                  { key: 'government', label: 'Government' },
-                  { key: 'personal', label: 'Personal' },
-                  { key: 'private_company', label: 'Companies' },
+                  { key: 'school', label: t('admin', 'schoolType') },
+                  { key: 'government', label: t('admin', 'governmentType') },
+                  { key: 'personal', label: t('admin', 'personalType') },
+                  { key: 'private_company', label: t('admin', 'privateCompanyType') },
                 ] as const).map(({ key, label }) => {
                   const active = newFeeAppliesTo.includes(key)
                   return (
@@ -717,10 +717,10 @@ export default function SettingsPage() {
               className="h-9 text-white"
               style={{ backgroundColor: '#00352F' }}
             >
-              <Plus className="w-3.5 h-3.5 mr-1" /> Add Fee
+              <Plus className="w-3.5 h-3.5 mr-1" /> {t('admin', 'addFeeButton')}
             </Button>
             <p className="text-[11px] text-gray-400">
-              Fees are saved when you click &ldquo;Save Settings&rdquo; below.
+              {t('admin', 'feesSavedNote')}
             </p>
           </div>
         </CardContent>
@@ -730,17 +730,17 @@ export default function SettingsPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <School className="w-4 h-4" /> Institution Types
+            <School className="w-4 h-4" /> {t('admin', 'institutionTypesTitle')}
           </CardTitle>
-          <CardDescription className="text-xs">Enable or disable institution order types</CardDescription>
+          <CardDescription className="text-xs">{t('admin', 'institutionTypesDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <School className="w-4 h-4 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">School Orders</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Allow schools to place orders</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'schoolOrdersLabel')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'schoolOrdersDesc')}</p>
               </div>
             </div>
             <Switch checked={schoolEnabled} onCheckedChange={setSchoolEnabled} />
@@ -750,8 +750,8 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <Building2 className="w-4 h-4 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Government Orders</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Allow government organizations to place orders</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'governmentOrdersLabel')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'governmentOrdersDesc')}</p>
               </div>
             </div>
             <Switch checked={govEnabled} onCheckedChange={setGovEnabled} />
@@ -761,8 +761,8 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <User className="w-4 h-4 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Personal Orders</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Allow individuals to place personal orders</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'personalOrdersLabel')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'personalOrdersDesc')}</p>
               </div>
             </div>
             <Switch checked={personalEnabled} onCheckedChange={setPersonalEnabled} />
@@ -772,8 +772,8 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <Briefcase className="w-4 h-4 text-orange-600" />
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Private Company Orders</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Allow private companies to place orders</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'privateCompanyOrdersLabel')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'privateCompanyOrdersDesc')}</p>
               </div>
             </div>
             <Switch checked={privateCompanyEnabled} onCheckedChange={setPrivateCompanyEnabled} />
@@ -785,17 +785,16 @@ export default function SettingsPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <CreditCard className="w-4 h-4" /> Payment Methods
+            <CreditCard className="w-4 h-4" /> {t('admin', 'paymentMethodsTitle')}
           </CardTitle>
-          <CardDescription className="text-xs">Configure which payment methods are available at checkout</CardDescription>
+          <CardDescription className="text-xs">{t('admin', 'paymentMethodsDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* PayPal / Venmo / Card — always on, controlled by PayPal SDK */}
           <div className="p-3 bg-[#E5F2F0] rounded-lg text-xs text-[#00352F] space-y-1">
-            <p className="font-medium">PayPal, Venmo & Card — Always Available</p>
+            <p className="font-medium">{t('admin', 'paypalAlwaysTitle')}</p>
             <p className="text-[#00594F]">
-              These payment buttons are handled by PayPal&apos;s secure checkout. To enable or disable Venmo and card payments,
-              configure funding sources in your <strong>PayPal merchant dashboard</strong>.
+              {t('admin', 'paypalAlwaysDesc')}
             </p>
           </div>
           <Separator />
@@ -804,8 +803,8 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <Banknote className="w-4 h-4 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Cash Payment</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Show a cash option below the PayPal buttons at checkout</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'cashPaymentLabel')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'cashPaymentDesc')}</p>
               </div>
             </div>
             <Switch checked={cashEnabled} onCheckedChange={setCashEnabled} />
@@ -814,8 +813,8 @@ export default function SettingsPage() {
           {/* Personal orders payment methods */}
           <div className="space-y-2">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Personal Orders — Payment Methods</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Allowed payment methods for personal orders</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'personalPaymentLabel')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'personalPaymentDesc')}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               {(['paypal', 'venmo', 'card', 'cash'] as const).map(method => {
@@ -853,10 +852,10 @@ export default function SettingsPage() {
             </div>
             <p className="text-[11px] text-gray-400">
               {personalAllowedPaymentMethods === null
-                ? 'All methods enabled (default)'
+                ? t('admin', 'allMethodsEnabled')
                 : personalAllowedPaymentMethods.length === 0
-                  ? 'No payment methods allowed'
-                  : `${personalAllowedPaymentMethods.length} method${personalAllowedPaymentMethods.length === 1 ? '' : 's'} enabled`}
+                  ? t('admin', 'noMethodsAllowed')
+                  : `${personalAllowedPaymentMethods.length} ${personalAllowedPaymentMethods.length === 1 ? t('admin', 'methodsEnabled') : t('admin', 'methodsEnabledPlural')} ${t('admin', 'enabledSuffix')}`}
             </p>
           </div>
         </CardContent>
@@ -866,15 +865,15 @@ export default function SettingsPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" /> Confirmation Message
+            <MessageSquare className="w-4 h-4" /> {t('admin', 'confirmationTitle')}
           </CardTitle>
-          <CardDescription className="text-xs">Shown to customers after they complete their order</CardDescription>
+          <CardDescription className="text-xs">{t('admin', 'confirmationDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Textarea
             value={confirmationMessage}
             onChange={e => setConfirmationMessage(e.target.value)}
-            placeholder="Thank you for your order! We will process it shortly."
+            placeholder={t('admin', 'confirmationPlaceholder')}
             rows={3}
             className="resize-none"
           />
@@ -885,31 +884,31 @@ export default function SettingsPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" /> Phone Notifications
+            <MessageSquare className="w-4 h-4" /> {t('admin', 'phoneNotificationsTitle')}
           </CardTitle>
-          <CardDescription className="text-xs">Get a push notification on your phone when a new order comes in</CardDescription>
+          <CardDescription className="text-xs">{t('admin', 'phoneNotificationsDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Push Notifications</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Free alerts via the ntfy app — no phone number purchase needed</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'pushNotificationsLabel')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'pushNotificationsDesc')}</p>
             </div>
             <Switch checked={smsNotifications} onCheckedChange={setSmsNotifications} />
           </div>
           {smsNotifications && (
             <div>
-              <Label htmlFor="admin_phone">ntfy Topic Name</Label>
+              <Label htmlFor="admin_phone">{t('admin', 'ntfyTopicLabel')}</Label>
               <Input
                 id="admin_phone"
                 type="text"
                 value={adminPhone}
                 onChange={e => setAdminPhone(e.target.value)}
-                placeholder="e.g. shirt-orders-lih-2026"
+                placeholder={t('admin', 'ntfyTopicPlaceholder')}
                 className="mt-1"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Pick any unique private name. Install the <strong>ntfy</strong> app (iOS/Android), subscribe to this topic, and you&apos;ll receive a notification for every new order.
+                {t('admin', 'ntfyTopicDesc')}
               </p>
             </div>
           )}
@@ -918,11 +917,11 @@ export default function SettingsPage() {
 
       <div className="flex items-center gap-3 pb-6">
         <Button onClick={handleSave} disabled={saving} className="text-white" style={{ backgroundColor: '#00352F' }}>
-          {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><Save className="w-4 h-4 mr-2" /> Save Settings</>}
+          {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('admin', 'savingSettings')}</> : <><Save className="w-4 h-4 mr-2" /> {t('admin', 'saveSettings')}</>}
         </Button>
         {settings && (
           <p className="text-xs text-gray-400">
-            Last updated: {new Date(settings.updated_at).toLocaleDateString()}
+            {t('admin', 'lastUpdated')}: {new Date(settings.updated_at).toLocaleDateString()}
           </p>
         )}
       </div>

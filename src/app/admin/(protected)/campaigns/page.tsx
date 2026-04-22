@@ -27,17 +27,20 @@ import {
   Calendar, ShoppingBag, X, Check
 } from 'lucide-react'
 import type { Campaign } from '@/types'
+import { useT } from '@/contexts/LanguageContext'
 
 /**
  * getCampaignStatus — derives a display label and Tailwind color string for a campaign
  * based on its is_active flag and start/end dates relative to today's date.
  */
-function getCampaignStatus(c: Campaign): { label: string; color: string } {
+type CampaignStatusKey = 'campaignStatusDraft' | 'campaignStatusEnded' | 'campaignStatusScheduled' | 'campaignStatusActive'
+
+function getCampaignStatus(c: Campaign): { labelKey: CampaignStatusKey; color: string } {
   const today = new Date().toISOString().split('T')[0]
-  if (!c.is_active) return { label: 'Draft', color: 'border-gray-300 text-gray-500' }
-  if (c.end_date && c.end_date < today) return { label: 'Ended', color: 'bg-gray-100 text-gray-500' }
-  if (c.start_date && c.start_date > today) return { label: 'Scheduled', color: 'bg-blue-100 text-blue-700' }
-  return { label: 'Active', color: 'bg-[#E5F2F0] text-[#00352F]' }
+  if (!c.is_active) return { labelKey: 'campaignStatusDraft', color: 'border-gray-300 text-gray-500' }
+  if (c.end_date && c.end_date < today) return { labelKey: 'campaignStatusEnded', color: 'bg-gray-100 text-gray-500' }
+  if (c.start_date && c.start_date > today) return { labelKey: 'campaignStatusScheduled', color: 'bg-blue-100 text-blue-700' }
+  return { labelKey: 'campaignStatusActive', color: 'bg-[#E5F2F0] text-[#00352F]' }
 }
 
 const EMPTY_FORM = {
@@ -54,6 +57,7 @@ const EMPTY_FORM = {
  * The active campaign banner reflects whether the campaign is live, ended, or upcoming.
  */
 export default function CampaignsPage() {
+  const t = useT()
   // ── State ──
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
@@ -185,13 +189,13 @@ export default function CampaignsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('admin', 'campaignsTitle')}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Organize orders into events. Orders require an active campaign.
+            {t('admin', 'campaignsSubtitle')}
           </p>
         </div>
         <Button onClick={openNew} className="text-white gap-2" style={{ backgroundColor: '#00352F' }}>
-          <Plus className="w-4 h-4" /> New Campaign
+          <Plus className="w-4 h-4" /> {t('admin', 'newCampaign')}
         </Button>
       </div>
 
@@ -210,10 +214,10 @@ export default function CampaignsPage() {
           />
           <p className="text-sm font-medium" style={{ color: activeBannerEnded ? '#9A3412' : '#00352F' }}>
             {activeBannerEnded
-              ? `"${activeCampaign.name}" has ended — orders are currently closed.`
+              ? `"${activeCampaign.name}" ${t('admin', 'campaignHasEnded')}`
               : activeBannerLive
-                ? `"${activeCampaign.name}" is live — orders are open.`
-                : `"${activeCampaign.name}" is scheduled to start ${activeCampaign.start_date}.`}
+                ? `"${activeCampaign.name}" ${t('admin', 'campaignIsLive')}`
+                : `"${activeCampaign.name}" ${t('admin', 'campaignScheduled')} ${activeCampaign.start_date}.`}
           </p>
         </div>
       )}
@@ -224,8 +228,8 @@ export default function CampaignsPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base">{editingId ? 'Edit Campaign' : 'New Campaign'}</CardTitle>
-                <CardDescription>{editingId ? 'Update campaign details' : 'Create a new order campaign'}</CardDescription>
+                <CardTitle className="text-base">{editingId ? t('admin', 'editCampaign') : t('admin', 'newCampaign')}</CardTitle>
+                <CardDescription>{editingId ? t('admin', 'editCampaignDesc') : t('admin', 'createCampaignDesc')}</CardDescription>
               </div>
               <button onClick={closeForm} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
                 <X className="w-4 h-4" />
@@ -235,29 +239,29 @@ export default function CampaignsPage() {
           <CardContent>
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <Label htmlFor="camp-name">Campaign Name *</Label>
+                <Label htmlFor="camp-name">{t('admin', 'campaignNameLabel')}</Label>
                 <Input
                   id="camp-name"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Spring 2026 Shirt Drive"
+                  placeholder={t('admin', 'campaignNamePlaceholder')}
                   className="mt-1"
                 />
               </div>
               <div>
-                <Label htmlFor="camp-desc">Description <span className="text-gray-400">(optional)</span></Label>
+                <Label htmlFor="camp-desc">{t('admin', 'campaignDescLabel')}</Label>
                 <Textarea
                   id="camp-desc"
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Brief description of this campaign..."
+                  placeholder={t('admin', 'campaignDescPlaceholder')}
                   className="mt-1 resize-none"
                   rows={2}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="camp-start">Start Date <span className="text-gray-400">(optional)</span></Label>
+                  <Label htmlFor="camp-start">{t('admin', 'startDateLabel')}</Label>
                   <Input
                     id="camp-start"
                     type="date"
@@ -267,7 +271,7 @@ export default function CampaignsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="camp-end">End Date <span className="text-gray-400">(optional)</span></Label>
+                  <Label htmlFor="camp-end">{t('admin', 'endDateLabel')}</Label>
                   <Input
                     id="camp-end"
                     type="date"
@@ -278,7 +282,7 @@ export default function CampaignsPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="camp-msg">Message When Orders Close</Label>
+                <Label htmlFor="camp-msg">{t('admin', 'endedMessageLabel')}</Label>
                 <Textarea
                   id="camp-msg"
                   value={form.ended_message}
@@ -286,13 +290,13 @@ export default function CampaignsPage() {
                   className="mt-1 resize-none"
                   rows={2}
                 />
-                <p className="text-xs text-gray-400 mt-1">Shown to customers when this campaign ends or is deactivated.</p>
+                <p className="text-xs text-gray-400 mt-1">{t('admin', 'endedMessageDesc')}</p>
               </div>
               <div className="flex gap-2 pt-1">
                 <Button type="submit" disabled={saving} className="text-white" style={{ backgroundColor: '#00352F' }}>
-                  {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Create Campaign'}
+                  {saving ? t('admin', 'savingCampaign') : editingId ? t('admin', 'saveChanges') : t('admin', 'createCampaign')}
                 </Button>
-                <Button type="button" variant="outline" onClick={closeForm}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={closeForm}>{t('admin', 'cancelCampaign')}</Button>
               </div>
             </form>
           </CardContent>
@@ -310,17 +314,17 @@ export default function CampaignsPage() {
             <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Megaphone className="w-7 h-7 text-gray-300" />
             </div>
-            <p className="font-semibold text-gray-900">No campaigns yet</p>
-            <p className="text-gray-500 text-sm mt-1">Create your first campaign to start accepting orders.</p>
+            <p className="font-semibold text-gray-900">{t('admin', 'noCampaignsYet')}</p>
+            <p className="text-gray-500 text-sm mt-1">{t('admin', 'noCampaignsDesc')}</p>
             <Button onClick={openNew} className="mt-4 text-white gap-2" style={{ backgroundColor: '#00352F' }}>
-              <Plus className="w-4 h-4" /> New Campaign
+              <Plus className="w-4 h-4" /> {t('admin', 'newCampaign')}
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {campaigns.map(campaign => {
-            const { label, color } = getCampaignStatus(campaign)
+            const { labelKey, color } = getCampaignStatus(campaign)
             return (
               <div
                 key={campaign.id}
@@ -340,7 +344,7 @@ export default function CampaignsPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900 text-sm">{campaign.name}</h3>
                       <Badge variant="outline" className={`text-[10px] font-semibold px-2 py-0 ${color}`}>
-                        {label}
+                        {t('admin', labelKey)}
                       </Badge>
                     </div>
                     {campaign.description && (
@@ -370,16 +374,16 @@ export default function CampaignsPage() {
                           ? 'text-gray-500 hover:bg-gray-100'
                           : 'text-[#00352F] hover:bg-[#E5F2F0]'
                       }`}
-                      title={campaign.is_active ? 'Deactivate' : 'Activate'}
+                      title={campaign.is_active ? t('admin', 'deactivateCampaign') : t('admin', 'activateCampaign')}
                     >
                       {campaign.is_active
-                        ? <><Square className="w-3 h-3" /> Deactivate</>
-                        : <><Play className="w-3 h-3" /> Activate</>}
+                        ? <><Square className="w-3 h-3" /> {t('admin', 'deactivateCampaign')}</>
+                        : <><Play className="w-3 h-3" /> {t('admin', 'activateCampaign')}</>}
                     </button>
                     <button
                       onClick={() => openEdit(campaign)}
                       className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                      title="Edit"
+                      title={t('admin', 'editCampaignBtn')}
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -387,7 +391,7 @@ export default function CampaignsPage() {
                       onClick={() => handleDelete(campaign)}
                       disabled={deletingId === campaign.id || campaign.is_active}
                       className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      title={campaign.is_active ? 'Deactivate before deleting' : 'Delete'}
+                      title={campaign.is_active ? t('admin', 'deactivateBeforeDelete') : t('admin', 'deleteCampaignBtn')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

@@ -21,6 +21,7 @@ import {
   ExternalLink, Link2, Users, Settings2, ChevronDown, ChevronUp
 } from 'lucide-react'
 import type { PrivateCompany } from '@/types'
+import { useT } from '@/contexts/LanguageContext'
 
 const PAYMENT_METHODS = ['paypal', 'venmo', 'card', 'cash'] as const
 type PaymentMethod = typeof PAYMENT_METHODS[number]
@@ -42,6 +43,7 @@ function isMethodEnabled(methods: string[] | null, method: PaymentMethod): boole
  * method settings. Mirrors the Schools page structure but without grade management.
  */
 export default function CompaniesPage() {
+  const t = useT()
   const [companies, setCompanies] = useState<PrivateCompany[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
@@ -187,14 +189,14 @@ export default function CompaniesPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Private Companies</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin', 'companiesTitle')}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Generate unique order links for each private company
+            {t('admin', 'companiesSubtitle')}
           </p>
         </div>
         {!adding && (
           <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#00352F' }}>
-            <Plus className="w-4 h-4 mr-2" /> Add Company
+            <Plus className="w-4 h-4 mr-2" /> {t('admin', 'addCompany')}
           </Button>
         )}
       </div>
@@ -205,25 +207,25 @@ export default function CompaniesPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Briefcase className="w-4 h-4 text-blue-600" />
-              New Company Link
+              {t('admin', 'newCompanyLink')}
             </CardTitle>
-            <CardDescription>Enter the company name to generate a unique shareable order link.</CardDescription>
+            <CardDescription>{t('admin', 'newCompanyLinkDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAdd} className="flex gap-3">
               <Input
                 autoFocus
-                placeholder="e.g. Acme Corporation"
+                placeholder={t('admin', 'companyNamePlaceholder')}
                 value={newCompanyName}
                 onChange={e => setNewCompanyName(e.target.value)}
                 className="flex-1"
                 disabled={submitting}
               />
               <Button type="submit" disabled={submitting || !newCompanyName.trim()} className="text-white" style={{ backgroundColor: '#00352F' }}>
-                {submitting ? 'Creating...' : 'Create Link'}
+                {submitting ? t('admin', 'creatingCompany') : t('admin', 'createLink')}
               </Button>
               <Button type="button" variant="outline" onClick={() => { setAdding(false); setNewCompanyName('') }} disabled={submitting}>
-                Cancel
+                {t('admin', 'cancelCompany')}
               </Button>
             </form>
           </CardContent>
@@ -250,10 +252,10 @@ export default function CompaniesPage() {
             <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
               <Briefcase className="w-6 h-6 text-gray-400" />
             </div>
-            <p className="font-medium text-gray-900 dark:text-white">No companies yet</p>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Add a company to generate a unique order link.</p>
+            <p className="font-medium text-gray-900 dark:text-white">{t('admin', 'noCompaniesYet')}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('admin', 'noCompaniesDesc')}</p>
             <Button onClick={() => setAdding(true)} className="mt-4 text-white" style={{ backgroundColor: '#00352F' }}>
-              <Plus className="w-4 h-4 mr-2" /> Add First Company
+              <Plus className="w-4 h-4 mr-2" /> {t('admin', 'addFirstCompany')}
             </Button>
           </CardContent>
         </Card>
@@ -276,7 +278,7 @@ export default function CompaniesPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-gray-900 dark:text-white">{company.name}</span>
                         <Badge variant={company.is_active ? 'default' : 'secondary'} className={company.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0' : 'bg-gray-100 text-gray-500 border-0'}>
-                          {company.is_active ? 'Active' : 'Inactive'}
+                          {company.is_active ? t('admin', 'activeStatus') : t('admin', 'inactiveStatus')}
                         </Badge>
                         {(company.order_count ?? 0) > 0 && (
                           <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
@@ -303,13 +305,13 @@ export default function CompaniesPage() {
                           className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-[#00352F] transition-colors"
                         >
                           <Settings2 className="w-3.5 h-3.5" />
-                          Payment Settings
+                          {t('admin', 'paymentSettings')}
                           {paymentOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         </button>
 
                         {paymentOpen && (
                           <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-100 dark:border-gray-700">
-                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Allowed Payment Methods</p>
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin', 'allowedPaymentMethods')}</p>
                             <div className="flex gap-2 flex-wrap">
                               {PAYMENT_METHODS.map(method => {
                                 const enabled = isMethodEnabled(company.allowed_payment_methods, method)
@@ -333,10 +335,10 @@ export default function CompaniesPage() {
                             </div>
                             <p className="text-[11px] text-gray-400 mt-2">
                               {company.allowed_payment_methods === null
-                                ? 'All methods enabled (default)'
+                                ? t('admin', 'allMethodsEnabled')
                                 : company.allowed_payment_methods.length === 0
-                                  ? 'No payment methods allowed'
-                                  : `${company.allowed_payment_methods.length} method${company.allowed_payment_methods.length === 1 ? '' : 's'} enabled`}
+                                  ? t('admin', 'noMethodsAllowed')
+                                  : `${company.allowed_payment_methods.length} ${company.allowed_payment_methods.length === 1 ? t('admin', 'methodsEnabled') : t('admin', 'methodsEnabledPlural')} ${t('admin', 'enabledSuffix')}`}
                             </p>
                           </div>
                         )}
@@ -352,12 +354,12 @@ export default function CompaniesPage() {
                         onClick={() => handleCopy(company)}
                         className="gap-1.5"
                         disabled={!company.is_active}
-                        title={company.is_active ? 'Copy shareable link' : 'Link is inactive'}
+                        title={company.is_active ? t('admin', 'copyLink') : t('admin', 'inactiveStatus')}
                       >
                         {copiedId === company.id ? (
-                          <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</>
+                          <><Check className="w-3.5 h-3.5 text-green-500" /> {t('admin', 'copiedLink')}</>
                         ) : (
-                          <><Copy className="w-3.5 h-3.5" /> Copy Link</>
+                          <><Copy className="w-3.5 h-3.5" /> {t('admin', 'copyLink')}</>
                         )}
                       </Button>
 
@@ -368,7 +370,7 @@ export default function CompaniesPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <Button size="sm" variant="outline" title="Open order form">
+                          <Button size="sm" variant="outline" title={t('admin', 'openOrderForm')}>
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Button>
                         </a>
@@ -380,7 +382,7 @@ export default function CompaniesPage() {
                         variant="outline"
                         onClick={() => handleToggle(company)}
                         disabled={togglingId === company.id}
-                        title={company.is_active ? 'Deactivate link' : 'Activate link'}
+                        title={company.is_active ? t('admin', 'deactivateLink') : t('admin', 'activateLink')}
                         className={company.is_active ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}
                       >
                         {togglingId === company.id ? (
@@ -398,7 +400,7 @@ export default function CompaniesPage() {
                         variant="outline"
                         onClick={() => handleDelete(company)}
                         disabled={deletingId === company.id}
-                        title="Delete company"
+                        title={t('admin', 'deleteCompany')}
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         {deletingId === company.id ? (
@@ -422,7 +424,7 @@ export default function CompaniesPage() {
           <CardContent className="p-4 flex gap-3">
             <Link2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              Each company link opens an order form pre-filled with the company name. Share it with employees so orders are automatically attributed to the correct company.
+              {t('admin', 'companyInfoNote')}
             </p>
           </CardContent>
         </Card>

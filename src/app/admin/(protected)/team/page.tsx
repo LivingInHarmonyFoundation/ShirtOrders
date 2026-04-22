@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_COLORS } from '@/lib/permissions'
 import type { TeamMember, UserRole } from '@/types'
+import { useT } from '@/contexts/LanguageContext'
 
 const ROLE_ICONS: Record<UserRole, React.ElementType> = {
   owner: Crown,
@@ -68,6 +69,7 @@ function InitialsAvatar({ name, email, role }: { name: string | null; email: str
  * password and login URL are surfaced after creation for manual sharing.
  */
 export default function TeamPage() {
+  const t = useT()
   // ── State ──
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
@@ -90,14 +92,14 @@ export default function TeamPage() {
   // Password strength — derived from invitePassword on every render (not memoized intentionally)
   // pwScore 0→none, 1→weak, 2→almost, 3→strong; pwValid gates the submit button
   const pwRules = [
-    { label: 'At least 8 characters', pass: invitePassword.length >= 8 },
-    { label: 'One uppercase letter (A–Z)', pass: /[A-Z]/.test(invitePassword) },
-    { label: 'One number (0–9)', pass: /[0-9]/.test(invitePassword) },
+    { label: t('admin', 'pwRuleLength'), pass: invitePassword.length >= 8 },
+    { label: t('admin', 'pwRuleUppercase'), pass: /[A-Z]/.test(invitePassword) },
+    { label: t('admin', 'pwRuleNumber'), pass: /[0-9]/.test(invitePassword) },
   ]
   const pwScore = pwRules.filter(r => r.pass).length
   const pwValid = pwScore === 3
   const pwStrengthColor = pwScore === 0 ? '' : pwScore === 1 ? 'bg-red-400' : pwScore === 2 ? 'bg-yellow-400' : 'bg-[#CEDC00]'
-  const pwStrengthLabel = ['', 'Weak', 'Almost', 'Strong'][pwScore]
+  const pwStrengthLabel = ['', t('admin', 'pwWeak'), t('admin', 'pwAlmost'), t('admin', 'pwStrong')][pwScore]
   const pwStrengthTextColor = pwScore === 1 ? 'text-red-500' : pwScore === 2 ? 'text-yellow-600' : 'text-[#00352F]'
 
   // ── Handlers ──
@@ -222,9 +224,9 @@ export default function TeamPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Team Members</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin', 'teamTitle')}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Manage who has access to the admin panel and what they can do
+            {t('admin', 'teamSubtitle')}
           </p>
         </div>
         {!adding && (
@@ -233,7 +235,7 @@ export default function TeamPage() {
             className="text-white"
             style={{ backgroundColor: '#00352F' }}
           >
-            <Plus className="w-4 h-4 mr-2" /> Add Member
+            <Plus className="w-4 h-4 mr-2" /> {t('admin', 'addMember')}
           </Button>
         )}
       </div>
@@ -266,13 +268,13 @@ export default function TeamPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-[#00352F] flex-shrink-0" />
-                <p className="font-semibold text-[#00352F] text-sm">Account created. Share these login details:</p>
+                <p className="font-semibold text-[#00352F] text-sm">{t('admin', 'accountCreated')}</p>
               </div>
               <button
                 onClick={() => setLastCreatedMinimized(v => !v)}
                 className="ml-3 text-xs text-[#00352F]/60 hover:text-[#00352F] underline flex-shrink-0"
               >
-                {lastCreatedMinimized ? 'Show' : 'Hide'}
+                {lastCreatedMinimized ? t('admin', 'showDetails') : t('admin', 'hideDetails')}
               </button>
             </div>
 
@@ -280,9 +282,9 @@ export default function TeamPage() {
             {!lastCreatedMinimized && (
               <div className="mt-3 space-y-3">
                 <div className="bg-white rounded-lg border border-[#CEDC00]/40 p-3 space-y-2 text-sm font-mono">
-                  <div><span className="text-gray-400 font-sans text-xs">Login URL</span><br />{typeof window !== 'undefined' ? `${window.location.origin}/admin/login` : '/admin/login'}</div>
-                  <div><span className="text-gray-400 font-sans text-xs">Email</span><br />{lastCreated.email}</div>
-                  <div><span className="text-gray-400 font-sans text-xs">Password</span><br />{lastCreated.password}</div>
+                  <div><span className="text-gray-400 font-sans text-xs">{t('admin', 'loginUrlLabel')}</span><br />{typeof window !== 'undefined' ? `${window.location.origin}/admin/login` : '/admin/login'}</div>
+                  <div><span className="text-gray-400 font-sans text-xs">{t('admin', 'teamEmailLabel')}</span><br />{lastCreated.email}</div>
+                  <div><span className="text-gray-400 font-sans text-xs">{t('admin', 'passwordLabel2')}</span><br />{lastCreated.password}</div>
                 </div>
                 <Button
                   size="sm"
@@ -295,7 +297,7 @@ export default function TeamPage() {
                     setTimeout(() => setCopied(false), 2000)
                   }}
                 >
-                  {copied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy to clipboard</>}
+                  {copied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'copiedToClipboard')}</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'copyToClipboard')}</>}
                 </Button>
               </div>
             )}
@@ -307,19 +309,19 @@ export default function TeamPage() {
       {adding && (
         <Card className="border-[#CEDC00]/40">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Add Team Member</CardTitle>
-            <CardDescription>Set a temporary password and share the login link with them directly. No email needed.</CardDescription>
+            <CardTitle className="text-base">{t('admin', 'addTeamMember')}</CardTitle>
+            <CardDescription>{t('admin', 'addTeamMemberDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleInvite} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="invite-email">Email Address *</Label>
+                  <Label htmlFor="invite-email">{t('admin', 'emailAddressLabel')}</Label>
                   <Input
                     id="invite-email"
                     type="email"
                     autoFocus
-                    placeholder="employee@example.com"
+                    placeholder={t('admin', 'emailAddressPlaceholder')}
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
                     required
@@ -328,7 +330,7 @@ export default function TeamPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="invite-name">Full Name <span className="text-gray-400">(optional)</span></Label>
+                  <Label htmlFor="invite-name">{t('admin', 'fullNameLabel')}</Label>
                   <Input
                     id="invite-name"
                     placeholder="Jane Smith"
@@ -340,12 +342,12 @@ export default function TeamPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="invite-password">Temporary Password *</Label>
+                <Label htmlFor="invite-password">{t('admin', 'tempPasswordLabel')}</Label>
                 <div className="relative mt-1">
                   <Input
                     id="invite-password"
                     type={showInvitePassword ? 'text' : 'password'}
-                    placeholder="Min. 8 chars, 1 uppercase, 1 number"
+                    placeholder={t('admin', 'tempPasswordPlaceholder')}
                     value={invitePassword}
                     onChange={e => setInvitePassword(e.target.value)}
                     className="pr-10"
@@ -386,7 +388,7 @@ export default function TeamPage() {
                 )}
               </div>
               <div>
-                <Label htmlFor="invite-role">Role *</Label>
+                <Label htmlFor="invite-role">{t('admin', 'roleLabel')}</Label>
                 <Select value={inviteRole} onValueChange={v => v && setInviteRole(v as UserRole)}>
                   <SelectTrigger id="invite-role" className="mt-1">
                     <SelectValue />
@@ -395,19 +397,19 @@ export default function TeamPage() {
                     <SelectItem value="owner">
                       <div className="flex items-center gap-2">
                         <Crown className="w-3.5 h-3.5 text-[#00352F]" />
-                        <span>Owner — Full access including team management</span>
+                        <span>{t('admin', 'ownerRoleDesc')}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="admin">
                       <div className="flex items-center gap-2">
                         <Shield className="w-3.5 h-3.5 text-[#00594F]" />
-                        <span>Admin — Orders, schools, settings, reports</span>
+                        <span>{t('admin', 'adminRoleDesc')}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="staff">
                       <div className="flex items-center gap-2">
                         <UserCheck className="w-3.5 h-3.5 text-gray-500" />
-                        <span>Staff — View and update orders only</span>
+                        <span>{t('admin', 'staffRoleDesc')}</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -420,7 +422,7 @@ export default function TeamPage() {
                   className="text-white"
                   style={{ backgroundColor: '#00352F' }}
                 >
-                  {submitting ? 'Creating...' : 'Create Account'}
+                  {submitting ? t('admin', 'creatingAccount') : t('admin', 'createAccount')}
                 </Button>
                 <Button
                   type="button"
@@ -428,7 +430,7 @@ export default function TeamPage() {
                   onClick={() => { setAdding(false); setInviteEmail(''); setInviteName(''); setInvitePassword(''); setShowInvitePassword(false); setLastCreated(null) }}
                   disabled={submitting}
                 >
-                  Cancel
+                  {t('admin', 'cancelTeam')}
                 </Button>
               </div>
             </form>
@@ -459,8 +461,8 @@ export default function TeamPage() {
             <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Users className="w-6 h-6 text-gray-400" />
             </div>
-            <p className="font-medium text-gray-900">No team members yet</p>
-            <p className="text-gray-500 text-sm mt-1">Invite someone to get started.</p>
+            <p className="font-medium text-gray-900">{t('admin', 'noTeamYet')}</p>
+            <p className="text-gray-500 text-sm mt-1">{t('admin', 'noTeamDesc')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -502,7 +504,7 @@ export default function TeamPage() {
                         {/* Status badges */}
                         {!member.is_active && (
                           <Badge variant="outline" className="text-xs bg-gray-100 text-gray-500 border-gray-200">
-                            Inactive
+                            {t('admin', 'inactiveStatus2')}
                           </Badge>
                         )}
                       </div>
@@ -511,7 +513,7 @@ export default function TeamPage() {
                         <p className="text-xs text-gray-400 mt-0.5">{member.email}</p>
                       )}
                       <p className="text-xs text-gray-400 mt-0.5">
-                        Joined {new Date(member.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {t('admin', 'joined')} {new Date(member.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                     </div>
 
@@ -541,8 +543,8 @@ export default function TeamPage() {
                         disabled={togglingId === member.id || isOnlyOwner}
                         title={
                           isOnlyOwner
-                            ? 'Cannot deactivate the only owner'
-                            : member.is_active ? 'Deactivate' : 'Reactivate'
+                            ? t('admin', 'cannotDeactivateOwner')
+                            : member.is_active ? t('admin', 'deactivateMember') : t('admin', 'reactivateMember')
                         }
                         className={member.is_active
                           ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50'
@@ -564,7 +566,7 @@ export default function TeamPage() {
                         variant="outline"
                         onClick={() => handleDelete(member)}
                         disabled={deletingId === member.id || isOnlyOwner}
-                        title={isOnlyOwner ? 'Cannot remove the only owner' : 'Remove from team'}
+                        title={isOnlyOwner ? t('admin', 'cannotRemoveOwner') : t('admin', 'removeMember')}
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         {deletingId === member.id ? (
@@ -588,7 +590,7 @@ export default function TeamPage() {
           <CardContent className="p-4 flex gap-3">
             <Info className="w-4 h-4 text-[#00352F] flex-shrink-0 mt-0.5" />
             <div className="text-sm text-[#00352F]">
-              <p>Accounts are created immediately — no email invite needed. After creating an account, the login details appear so you can copy and send them directly (text, WhatsApp, etc.).</p>
+              <p>{t('admin', 'teamInfoNote')}</p>
             </div>
           </CardContent>
         </Card>

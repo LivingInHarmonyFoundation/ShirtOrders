@@ -29,6 +29,7 @@ import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionB
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Order, DashboardStats, GovOrg, SchoolLink, PrivateCompany, Campaign } from '@/types'
 import { toast } from 'sonner'
+import { useT } from '@/contexts/LanguageContext'
 
 // Color cycle for the catalog style cards
 const CATALOG_COLORS = ['#00352F', '#00594F', '#CEDC00', '#00594F', '#00352F']
@@ -39,6 +40,7 @@ const CATALOG_COLORS = ['#00352F', '#00594F', '#CEDC00', '#00594F', '#00352F']
  * catalog style breakdown are derived client-side from the response array.
  */
 export default function ReportsPage() {
+  const t = useT()
   // ── State ──
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
@@ -157,22 +159,22 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between print:hidden">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Exports</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Filter and export order data</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin', 'reportsTitle')}</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{t('admin', 'reportsSubtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="w-4 h-4 mr-1" /> Print
+            <Printer className="w-4 h-4 mr-1" /> {t('admin', 'printButton')}
           </Button>
           <Button onClick={handleExport} size="sm" className="text-white" style={{ backgroundColor: '#00352F' }}>
-            <Download className="w-4 h-4 mr-1" /> Export CSV
+            <Download className="w-4 h-4 mr-1" /> {t('admin', 'exportCsv')}
           </Button>
         </div>
       </div>
 
       {/* Print-only header */}
       <div className="hidden print:block mb-4 border-b pb-3">
-        <h1 className="text-xl font-bold">Living in Harmony Foundation — Report</h1>
+        <h1 className="text-xl font-bold">{t('admin', 'printHeader')}</h1>
         <p className="text-sm text-gray-500">Generated {new Date().toLocaleDateString()}</p>
       </div>
 
@@ -180,21 +182,21 @@ export default function ReportsPage() {
       <Card className="print:hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Filter className="w-4 h-4" /> Filter Report
+            <Filter className="w-4 h-4" /> {t('admin', 'filterReport')}
           </CardTitle>
-          <CardDescription className="text-xs">Apply filters then click Generate Report</CardDescription>
+          <CardDescription className="text-xs">{t('admin', 'filterReportDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {campaigns.length > 0 && (
               <div>
-                <Label className="text-xs flex items-center gap-1"><Megaphone className="w-3 h-3" /> Campaign</Label>
+                <Label className="text-xs flex items-center gap-1"><Megaphone className="w-3 h-3" /> {t('admin', 'campaignFilterLabel')}</Label>
                 <Select value={campaignId || 'all'} onValueChange={v => setCampaignId(!v || v === 'all' ? '' : v)}>
                   <SelectTrigger className="mt-1 h-8 text-xs">
-                    <SelectValue placeholder="All Campaigns" />
+                    <SelectValue placeholder={t('admin', 'allCampaigns')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Campaigns</SelectItem>
+                    <SelectItem value="all">{t('admin', 'allCampaigns')}</SelectItem>
                     {campaigns.map(c => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}{c.is_active ? ' ●' : ''}
@@ -205,21 +207,21 @@ export default function ReportsPage() {
               </div>
             )}
             <div>
-              <Label className="text-xs">Institution Type</Label>
+              <Label className="text-xs">{t('admin', 'institutionTypeLabel')}</Label>
               <Select value={institutionType} onValueChange={v => {
-                const t = !v || v === 'all' ? '' : v
-                setInstitutionType(t)
+                const val = !v || v === 'all' ? '' : v
+                setInstitutionType(val)
                 setOrganizationName(''); setSchoolName(''); setCompanyName('')
               }}>
                 <SelectTrigger className="mt-1 h-8 text-xs">
-                  <SelectValue placeholder="All" />
+                  <SelectValue placeholder={t('admin', 'allTypes')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="school">School</SelectItem>
-                  <SelectItem value="government">Gobierno</SelectItem>
-                  <SelectItem value="personal">Personal</SelectItem>
-                  <SelectItem value="private_company">Private Company</SelectItem>
+                  <SelectItem value="all">{t('admin', 'allTypes')}</SelectItem>
+                  <SelectItem value="school">{t('admin', 'schoolType')}</SelectItem>
+                  <SelectItem value="government">{t('admin', 'governmentType')}</SelectItem>
+                  <SelectItem value="personal">{t('admin', 'personalType')}</SelectItem>
+                  <SelectItem value="private_company">{t('admin', 'privateCompanyType')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -227,13 +229,13 @@ export default function ReportsPage() {
             {/* Sub-filter by specific org/school/company */}
             {institutionType === 'government' && govOrgs.length > 0 && (
               <div>
-                <Label className="text-xs">Agency</Label>
+                <Label className="text-xs">{t('admin', 'agencyLabel')}</Label>
                 <Select value={organizationName} onValueChange={v => setOrganizationName(!v || v === 'all' ? '' : v)}>
                   <SelectTrigger className="mt-1 h-8 text-xs">
-                    <SelectValue placeholder="All agencies" />
+                    <SelectValue placeholder={t('admin', 'allAgencies')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All agencies</SelectItem>
+                    <SelectItem value="all">{t('admin', 'allAgencies')}</SelectItem>
                     {govOrgs.filter(o => o.is_active).map(o => (
                       <SelectItem key={o.id} value={o.name}>{o.name}</SelectItem>
                     ))}
@@ -244,13 +246,13 @@ export default function ReportsPage() {
 
             {institutionType === 'school' && schools.length > 0 && (
               <div>
-                <Label className="text-xs">School</Label>
+                <Label className="text-xs">{t('admin', 'schoolLabel')}</Label>
                 <Select value={schoolName} onValueChange={v => setSchoolName(!v || v === 'all' ? '' : v)}>
                   <SelectTrigger className="mt-1 h-8 text-xs">
-                    <SelectValue placeholder="All schools" />
+                    <SelectValue placeholder={t('admin', 'allSchools')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All schools</SelectItem>
+                    <SelectItem value="all">{t('admin', 'allSchools')}</SelectItem>
                     {schools.map(s => (
                       <SelectItem key={s.id} value={s.school_name}>{s.school_name}</SelectItem>
                     ))}
@@ -261,13 +263,13 @@ export default function ReportsPage() {
 
             {institutionType === 'private_company' && companies.length > 0 && (
               <div>
-                <Label className="text-xs">Company</Label>
+                <Label className="text-xs">{t('admin', 'companyLabel')}</Label>
                 <Select value={companyName} onValueChange={v => setCompanyName(!v || v === 'all' ? '' : v)}>
                   <SelectTrigger className="mt-1 h-8 text-xs">
-                    <SelectValue placeholder="All companies" />
+                    <SelectValue placeholder={t('admin', 'allCompanies')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All companies</SelectItem>
+                    <SelectItem value="all">{t('admin', 'allCompanies')}</SelectItem>
                     {companies.filter(c => c.is_active).map(c => (
                       <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                     ))}
@@ -276,42 +278,42 @@ export default function ReportsPage() {
               </div>
             )}
             <div>
-              <Label className="text-xs">Payment Status</Label>
+              <Label className="text-xs">{t('admin', 'paymentStatusLabel')}</Label>
               <Select value={paymentStatus} onValueChange={v => setPaymentStatus(!v || v === 'all' ? '' : v)}>
                 <SelectTrigger className="mt-1 h-8 text-xs">
-                  <SelectValue placeholder="All" />
+                  <SelectValue placeholder={t('admin', 'allPaymentFilter')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="manual">Manual</SelectItem>
+                  <SelectItem value="all">{t('admin', 'allPaymentFilter')}</SelectItem>
+                  <SelectItem value="pending">{t('admin', 'pendingPayment')}</SelectItem>
+                  <SelectItem value="paid">{t('admin', 'paidPayment')}</SelectItem>
+                  <SelectItem value="failed">{t('admin', 'failedPayment')}</SelectItem>
+                  <SelectItem value="manual">{t('admin', 'manualPayment')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Delivery Status</Label>
+              <Label className="text-xs">{t('admin', 'deliveryStatusLabel')}</Label>
               <Select value={deliveryStatus} onValueChange={v => setDeliveryStatus(!v || v === 'all' ? '' : v)}>
                 <SelectTrigger className="mt-1 h-8 text-xs">
-                  <SelectValue placeholder="All" />
+                  <SelectValue placeholder={t('admin', 'allDeliveries')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="not_delivered">Not Delivered</SelectItem>
-                  <SelectItem value="partially_delivered">Partial</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="all">{t('admin', 'allDeliveries')}</SelectItem>
+                  <SelectItem value="not_delivered">{t('admin', 'notDelivered')}</SelectItem>
+                  <SelectItem value="partially_delivered">{t('admin', 'partialDelivery')}</SelectItem>
+                  <SelectItem value="delivered">{t('admin', 'allDelivery')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Shirt Size</Label>
+              <Label className="text-xs">{t('admin', 'shirtSizeLabel')}</Label>
               <Select value={shirtSize} onValueChange={v => setShirtSize(!v || v === 'all' ? '' : v)}>
                 <SelectTrigger className="mt-1 h-8 text-xs">
-                  <SelectValue placeholder="All" />
+                  <SelectValue placeholder={t('admin', 'allSizes')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Sizes</SelectItem>
+                  <SelectItem value="all">{t('admin', 'allSizes')}</SelectItem>
                   {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
@@ -319,35 +321,35 @@ export default function ReportsPage() {
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Date From</Label>
+              <Label className="text-xs">{t('admin', 'dateFromLabel')}</Label>
               <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="mt-1 h-8 text-xs" />
             </div>
             <div>
-              <Label className="text-xs">Date To</Label>
+              <Label className="text-xs">{t('admin', 'dateToLabel')}</Label>
               <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="mt-1 h-8 text-xs" />
             </div>
           </div>
           {(institutionType === 'school' || !institutionType) && (
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <Label className="text-xs">Grade</Label>
-                <Input value={grade} onChange={e => setGrade(e.target.value)} className="mt-1 h-8 text-xs" placeholder="e.g. 5" />
+                <Label className="text-xs">{t('admin', 'gradeLabel')}</Label>
+                <Input value={grade} onChange={e => setGrade(e.target.value)} className="mt-1 h-8 text-xs" placeholder={t('admin', 'gradePlaceholderFilter')} />
               </div>
               <div>
-                <Label className="text-xs">Classroom</Label>
-                <Input value={classroom} onChange={e => setClassroom(e.target.value)} className="mt-1 h-8 text-xs" placeholder="e.g. 3-A" />
+                <Label className="text-xs">{t('admin', 'classroomLabel')}</Label>
+                <Input value={classroom} onChange={e => setClassroom(e.target.value)} className="mt-1 h-8 text-xs" placeholder={t('admin', 'classroomPlaceholderFilter')} />
               </div>
             </div>
           )}
           {(institutionType === 'government' || institutionType === 'private_company' || !institutionType) && (
             <div className="mt-1">
-              <Label className="text-xs">Department</Label>
-              <Input value={department} onChange={e => setDepartment(e.target.value)} className="mt-1 h-8 text-xs" placeholder="e.g. Finance" />
+              <Label className="text-xs">{t('admin', 'departmentLabel')}</Label>
+              <Input value={department} onChange={e => setDepartment(e.target.value)} className="mt-1 h-8 text-xs" placeholder={t('admin', 'departmentPlaceholderFilter')} />
             </div>
           )}
           <div className="flex gap-2 mt-3">
             <Button onClick={fetchReport} size="sm" className="text-white" style={{ backgroundColor: '#00352F' }}>
-              <FileText className="w-4 h-4 mr-1" /> Generate Report
+              <FileText className="w-4 h-4 mr-1" /> {t('admin', 'generateReport')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => {
               setInstitutionType(''); setPaymentStatus(''); setDeliveryStatus('')
@@ -355,7 +357,7 @@ export default function ReportsPage() {
               setGrade(''); setClassroom(''); setDepartment('')
               setOrganizationName(''); setSchoolName(''); setCompanyName('')
               setCampaignId('')
-            }}>Clear</Button>
+            }}>{t('admin', 'clearReport')}</Button>
           </div>
         </CardContent>
       </Card>
@@ -364,13 +366,13 @@ export default function ReportsPage() {
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total Orders</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'totalOrdersStat')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{orders.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total Shirts</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'totalShirtsStat')}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
               {orders.reduce((s, o) => s + o.quantity, 0)}
             </p>
@@ -378,7 +380,7 @@ export default function ReportsPage() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Revenue (Paid)</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'revenueStatLabel')}</p>
             <p className="text-2xl font-bold text-blue-600 mt-1">{formatCurrency(totalRevenue)}</p>
           </CardContent>
         </Card>
@@ -393,8 +395,8 @@ export default function ReportsPage() {
                 <Shirt className="w-4 h-4 text-[#00352F]" />
               </div>
               <div>
-                <CardTitle className="text-sm font-semibold">Shirts by Style</CardTitle>
-                <CardDescription className="text-xs">Based on current filtered results</CardDescription>
+                <CardTitle className="text-sm font-semibold">{t('admin', 'shirtsByStyleTitle')}</CardTitle>
+                <CardDescription className="text-xs">{t('admin', 'shirtsByStyleDesc')}</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -427,17 +429,17 @@ export default function ReportsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50 dark:bg-gray-900/50">
-                <TableHead className="text-xs font-semibold pl-4">Order #</TableHead>
-                <TableHead className="text-xs font-semibold">Name</TableHead>
-                <TableHead className="text-xs font-semibold">Institution</TableHead>
-                <TableHead className="text-xs font-semibold">Shirt Style</TableHead>
-                <TableHead className="text-xs font-semibold">Size</TableHead>
-                <TableHead className="text-xs font-semibold">Qty</TableHead>
-                <TableHead className="text-xs font-semibold">Total</TableHead>
-                <TableHead className="text-xs font-semibold">Payment</TableHead>
-                <TableHead className="text-xs font-semibold">Status</TableHead>
-                <TableHead className="text-xs font-semibold">Delivery</TableHead>
-                <TableHead className="text-xs font-semibold">Date</TableHead>
+                <TableHead className="text-xs font-semibold pl-4">{t('admin', 'tableOrderNum')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableNameCol')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableInstitution')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableShirtStyle')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'allSizes')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableQtyCol')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableTotal')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tablePayment')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableStatusCol')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableDelivery')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableDate')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -452,7 +454,7 @@ export default function ReportsPage() {
               ) : orders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={11} className="text-center py-8 text-gray-400">
-                    No orders match the current filters
+                    {t('admin', 'noOrdersFilter')}
                   </TableCell>
                 </TableRow>
               ) : (

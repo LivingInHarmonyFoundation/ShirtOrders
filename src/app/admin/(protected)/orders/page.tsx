@@ -12,6 +12,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useT } from '@/contexts/LanguageContext'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,6 +52,8 @@ import { toast } from 'sonner'
  * and catalog item). Requires canManageOrders permission (enforced server-side).
  */
 export default function AdminOrdersPage() {
+  const t = useT()
+
   // ── State ──
   const [data, setData] = useState<PaginatedOrders | null>(null)
   const [loading, setLoading] = useState(true)
@@ -176,13 +179,13 @@ export default function AdminOrdersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Orders</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin', 'ordersTitle')}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
-            {data ? `${data.total} order${data.total === 1 ? '' : 's'}` : 'Loading...'}
+            {data ? `${data.total} ${data.total === 1 ? t('admin', 'orderSingular') : t('admin', 'orderPlural')}` : t('admin', 'loadingText')}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchOrders}>
-          <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+          <RefreshCw className="w-4 h-4 mr-1" /> {t('admin', 'refresh')}
         </Button>
       </div>
 
@@ -196,7 +199,7 @@ export default function AdminOrdersPage() {
               </div>
               <div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{data.summary.total_orders.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">Orders</p>
+                <p className="text-xs text-gray-500">{t('admin', 'ordersLabel')}</p>
               </div>
             </div>
             <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 flex items-center gap-3">
@@ -205,7 +208,7 @@ export default function AdminOrdersPage() {
               </div>
               <div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{data.summary.total_shirts.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">Shirts</p>
+                <p className="text-xs text-gray-500">{t('admin', 'shirtsLabel')}</p>
               </div>
             </div>
             <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 flex items-center gap-3">
@@ -214,7 +217,7 @@ export default function AdminOrdersPage() {
               </div>
               <div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(data.summary.total_revenue)}</p>
-                <p className="text-xs text-gray-500">Revenue</p>
+                <p className="text-xs text-gray-500">{t('admin', 'revenueLabel')}</p>
               </div>
             </div>
           </div>
@@ -222,15 +225,15 @@ export default function AdminOrdersPage() {
           {/* By size breakdown */}
           {data.summary.by_size.length > 0 && (
             <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3">
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">By Size</p>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">{t('admin', 'bySize')}</p>
               <div className="flex flex-wrap gap-2">
                 {[...data.summary.by_size].sort((a, b) => b.shirts - a.shirts).map(s => (
                   <div key={s.size} className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700/50 border rounded-lg px-3 py-1.5">
                     <span className="text-sm font-bold text-gray-900 dark:text-white">{s.size}</span>
                     <span className="text-xs text-gray-400">·</span>
-                    <span className="text-xs text-gray-600 dark:text-gray-300">{s.shirts} shirts</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-300">{s.shirts} {t('admin', 'shirtsLabel').toLowerCase()}</span>
                     <span className="text-xs text-gray-400">·</span>
-                    <span className="text-xs text-gray-500">{s.orders} orders</span>
+                    <span className="text-xs text-gray-500">{s.orders} {t('admin', 'ordersLabel').toLowerCase()}</span>
                   </div>
                 ))}
               </div>
@@ -240,13 +243,13 @@ export default function AdminOrdersPage() {
           {/* By catalog item (only if multiple items) */}
           {data.summary.by_catalog_item.length > 1 && (
             <div className="bg-white dark:bg-gray-800 border rounded-xl px-4 py-3">
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">By Shirt Style</p>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">{t('admin', 'byShirtStyle')}</p>
               <div className="flex flex-wrap gap-2">
                 {data.summary.by_catalog_item.map(item => (
                   <div key={item.name} className="flex items-center gap-1.5 bg-[#E5F2F0] border border-[#CEDC00]/30 rounded-lg px-3 py-1.5">
                     <span className="text-sm font-medium text-[#00352F]">{item.name}</span>
                     <span className="text-xs text-gray-400">·</span>
-                    <span className="text-xs text-[#00352F]/70">{item.shirts} shirts</span>
+                    <span className="text-xs text-[#00352F]/70">{item.shirts} {t('admin', 'shirtsLabel').toLowerCase()}</span>
                   </div>
                 ))}
               </div>
@@ -262,7 +265,7 @@ export default function AdminOrdersPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                placeholder="Search by name, email, order #, school..."
+                placeholder={t('admin', 'searchPlaceholder')}
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1) }}
                 className="pl-9"
@@ -273,12 +276,12 @@ export default function AdminOrdersPage() {
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="not_delivered">Not Delivered</SelectItem>
+                <SelectItem value="newest">{t('admin', 'sortNewest')}</SelectItem>
+                <SelectItem value="oldest">{t('admin', 'sortOldest')}</SelectItem>
+                <SelectItem value="paid">{t('admin', 'sortPaid')}</SelectItem>
+                <SelectItem value="unpaid">{t('admin', 'sortUnpaid')}</SelectItem>
+                <SelectItem value="delivered">{t('admin', 'sortDelivered')}</SelectItem>
+                <SelectItem value="not_delivered">{t('admin', 'sortNotDelivered')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -288,10 +291,10 @@ export default function AdminOrdersPage() {
               <Select value={campaignId || 'all'} onValueChange={v => { setCampaignId(!v || v === 'all' ? '' : v); setPage(1) }}>
                 <SelectTrigger className="w-44 h-8 text-xs">
                   <Megaphone className="w-3 h-3 mr-1 flex-shrink-0" />
-                  <SelectValue placeholder="All Campaigns" />
+                  <SelectValue placeholder={t('admin', 'allCampaigns')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Campaigns</SelectItem>
+                  <SelectItem value="all">{t('admin', 'allCampaigns')}</SelectItem>
                   {campaigns.map(c => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}{c.is_active ? ' ●' : ''}
@@ -310,14 +313,14 @@ export default function AdminOrdersPage() {
             }}>
               <SelectTrigger className="w-36 h-8 text-xs">
                 <Filter className="w-3 h-3 mr-1" />
-                <SelectValue placeholder="Institution" />
+                <SelectValue placeholder={t('admin', 'institutionFilterLabel')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="school">School</SelectItem>
-                <SelectItem value="government">Gobierno</SelectItem>
-                <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="private_company">Private Company</SelectItem>
+                <SelectItem value="all">{t('admin', 'allTypes')}</SelectItem>
+                <SelectItem value="school">{t('admin', 'schoolType')}</SelectItem>
+                <SelectItem value="government">{t('admin', 'governmentType')}</SelectItem>
+                <SelectItem value="personal">{t('admin', 'personalType')}</SelectItem>
+                <SelectItem value="private_company">{t('admin', 'privateCompanyType')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -325,10 +328,10 @@ export default function AdminOrdersPage() {
             {institutionType === 'government' && govOrgs.length > 0 && (
               <Select value={organizationName} onValueChange={v => { setOrganizationName(!v || v === 'all' ? '' : v); setPage(1) }}>
                 <SelectTrigger className="w-48 h-8 text-xs">
-                  <SelectValue placeholder="All agencies..." />
+                  <SelectValue placeholder={t('admin', 'allAgencies')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All agencies</SelectItem>
+                  <SelectItem value="all">{t('admin', 'allAgencies')}</SelectItem>
                   {govOrgs.filter(o => o.is_active).map(o => (
                     <SelectItem key={o.id} value={o.name}>{o.name}</SelectItem>
                   ))}
@@ -339,10 +342,10 @@ export default function AdminOrdersPage() {
             {institutionType === 'school' && schools.length > 0 && (
               <Select value={schoolName} onValueChange={v => { setSchoolName(!v || v === 'all' ? '' : v); setPage(1) }}>
                 <SelectTrigger className="w-48 h-8 text-xs">
-                  <SelectValue placeholder="All schools..." />
+                  <SelectValue placeholder={t('admin', 'allSchools')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All schools</SelectItem>
+                  <SelectItem value="all">{t('admin', 'allSchools')}</SelectItem>
                   {schools.map(s => (
                     <SelectItem key={s.id} value={s.school_name}>{s.school_name}</SelectItem>
                   ))}
@@ -353,10 +356,10 @@ export default function AdminOrdersPage() {
             {institutionType === 'private_company' && companies.length > 0 && (
               <Select value={companyName} onValueChange={v => { setCompanyName(!v || v === 'all' ? '' : v); setPage(1) }}>
                 <SelectTrigger className="w-48 h-8 text-xs">
-                  <SelectValue placeholder="All companies..." />
+                  <SelectValue placeholder={t('admin', 'allCompanies')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All companies</SelectItem>
+                  <SelectItem value="all">{t('admin', 'allCompanies')}</SelectItem>
                   {companies.filter(c => c.is_active).map(c => (
                     <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                   ))}
@@ -366,36 +369,36 @@ export default function AdminOrdersPage() {
 
             <Select value={paymentStatus} onValueChange={v => { setPaymentStatus(!v || v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-36 h-8 text-xs">
-                <SelectValue placeholder="Payment" />
+                <SelectValue placeholder={t('admin', 'paymentFilterLabel')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Payments</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="refunded">Refunded</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="all">{t('admin', 'allPayments')}</SelectItem>
+                <SelectItem value="pending">{t('admin', 'pendingPayment')}</SelectItem>
+                <SelectItem value="paid">{t('admin', 'paidPayment')}</SelectItem>
+                <SelectItem value="failed">{t('admin', 'failedPayment')}</SelectItem>
+                <SelectItem value="refunded">{t('admin', 'refundedPayment')}</SelectItem>
+                <SelectItem value="manual">{t('admin', 'manualPayment')}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={deliveryStatus} onValueChange={v => { setDeliveryStatus(!v || v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-40 h-8 text-xs">
-                <SelectValue placeholder="Delivery" />
+                <SelectValue placeholder={t('admin', 'deliveryFilterLabel')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Deliveries</SelectItem>
-                <SelectItem value="not_delivered">Not Delivered</SelectItem>
-                <SelectItem value="partially_delivered">Partially Delivered</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="all">{t('admin', 'allDeliveries')}</SelectItem>
+                <SelectItem value="not_delivered">{t('admin', 'notDelivered')}</SelectItem>
+                <SelectItem value="partially_delivered">{t('admin', 'partiallyDelivered')}</SelectItem>
+                <SelectItem value="delivered">{t('admin', 'deliveredStatus')}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={shirtSize} onValueChange={v => { setShirtSize(!v || v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-28 h-8 text-xs">
-                <SelectValue placeholder="Size" />
+                <SelectValue placeholder={t('admin', 'sizeFilterLabel')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Sizes</SelectItem>
+                <SelectItem value="all">{t('admin', 'allSizes')}</SelectItem>
                 {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (
                   <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
@@ -422,7 +425,7 @@ export default function AdminOrdersPage() {
                 value={grade}
                 onChange={e => { setGrade(e.target.value); setPage(1) }}
                 className="w-28 h-8 text-xs"
-                placeholder="Grade"
+                placeholder={t('admin', 'gradePlaceholderFilter')}
               />
             )}
             {(institutionType === 'school' || !institutionType) && (
@@ -430,7 +433,7 @@ export default function AdminOrdersPage() {
                 value={classroom}
                 onChange={e => { setClassroom(e.target.value); setPage(1) }}
                 className="w-32 h-8 text-xs"
-                placeholder="Classroom"
+                placeholder={t('admin', 'classroomPlaceholderFilter')}
               />
             )}
             {(institutionType === 'government' || institutionType === 'private_company' || !institutionType) && (
@@ -438,13 +441,13 @@ export default function AdminOrdersPage() {
                 value={department}
                 onChange={e => { setDepartment(e.target.value); setPage(1) }}
                 className="w-36 h-8 text-xs"
-                placeholder="Department"
+                placeholder={t('admin', 'departmentPlaceholderFilter')}
               />
             )}
 
             {hasFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs text-gray-500">
-                Clear filters
+                {t('admin', 'clearFilters')}
               </Button>
             )}
           </div>
@@ -454,22 +457,22 @@ export default function AdminOrdersPage() {
       {/* Bulk actions */}
       {selectedIds.length > 0 && (
         <div className="flex items-center gap-3 p-3 bg-[#E5F2F0] dark:bg-green-900/20 rounded-lg border border-[#CEDC00]/40">
-          <span className="text-sm font-medium text-[#00352F] dark:text-green-400">{selectedIds.length} selected</span>
+          <span className="text-sm font-medium text-[#00352F] dark:text-green-400">{selectedIds.length} {t('admin', 'selectedCount')}</span>
           <Select value={bulkStatus} onValueChange={v => setBulkStatus(v ?? '')}>
             <SelectTrigger className="w-52 h-8 text-xs">
-              <SelectValue placeholder="Bulk action..." />
+              <SelectValue placeholder={t('admin', 'bulkActionPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="delivery_status:delivered">Mark as Delivered</SelectItem>
-              <SelectItem value="delivery_status:partially_delivered">Mark Partially Delivered</SelectItem>
-              <SelectItem value="payment_status:manual">Mark as Manual Payment</SelectItem>
-              <SelectItem value="order_status:processing">Mark as Processing</SelectItem>
-              <SelectItem value="order_status:completed">Mark as Completed</SelectItem>
-              <SelectItem value="order_status:cancelled">Mark as Cancelled</SelectItem>
+              <SelectItem value="delivery_status:delivered">{t('admin', 'markAsDelivered')}</SelectItem>
+              <SelectItem value="delivery_status:partially_delivered">{t('admin', 'markPartiallyDelivered')}</SelectItem>
+              <SelectItem value="payment_status:manual">{t('admin', 'markAsManualPayment')}</SelectItem>
+              <SelectItem value="order_status:processing">{t('admin', 'markAsProcessing')}</SelectItem>
+              <SelectItem value="order_status:completed">{t('admin', 'markAsCompleted')}</SelectItem>
+              <SelectItem value="order_status:cancelled">{t('admin', 'markAsCancelled')}</SelectItem>
             </SelectContent>
           </Select>
-          <Button size="sm" onClick={handleBulkUpdate} disabled={!bulkStatus} className="h-8 text-xs">Apply</Button>
-          <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="h-8 text-xs">Cancel</Button>
+          <Button size="sm" onClick={handleBulkUpdate} disabled={!bulkStatus} className="h-8 text-xs">{t('admin', 'applyBulk')}</Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="h-8 text-xs">{t('admin', 'cancelBulk')}</Button>
         </div>
       )}
 
@@ -485,16 +488,16 @@ export default function AdminOrdersPage() {
                     onCheckedChange={toggleSelectAll}
                   />
                 </TableHead>
-                <TableHead className="text-xs font-semibold">Order #</TableHead>
-                <TableHead className="text-xs font-semibold">Customer</TableHead>
-                <TableHead className="text-xs font-semibold">Institution</TableHead>
-                <TableHead className="text-xs font-semibold">Shirt Style</TableHead>
-                <TableHead className="text-xs font-semibold">Size / Qty</TableHead>
-                <TableHead className="text-xs font-semibold">Total</TableHead>
-                <TableHead className="text-xs font-semibold">Payment</TableHead>
-                <TableHead className="text-xs font-semibold">Order</TableHead>
-                <TableHead className="text-xs font-semibold">Delivery</TableHead>
-                <TableHead className="text-xs font-semibold">Date</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableOrderNum')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableCustomer')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableInstitution')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableShirtStyle')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableSizeQty')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableTotal')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tablePayment')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableOrder')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableDelivery')}</TableHead>
+                <TableHead className="text-xs font-semibold">{t('admin', 'tableDate')}</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
@@ -510,7 +513,7 @@ export default function AdminOrdersPage() {
               ) : data?.orders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={12} className="text-center py-12 text-gray-400">
-                    No orders found
+                    {t('admin', 'noOrdersFound')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -601,7 +604,7 @@ export default function AdminOrdersPage() {
       {data && data.total_pages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Page {data.page} of {data.total_pages} ({data.total} orders)
+            {t('admin', 'pageOf')} {data.page} {t('admin', 'of')} {data.total_pages} ({data.total} {t('admin', 'ordersLabel').toLowerCase()})
           </p>
           <div className="flex items-center gap-2">
             <Button

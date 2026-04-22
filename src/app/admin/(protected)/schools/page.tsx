@@ -25,6 +25,7 @@ import {
   ExternalLink, Link2, Users, Settings2, ChevronDown, ChevronUp, Tag, X
 } from 'lucide-react'
 import type { SchoolLink } from '@/types'
+import { useT } from '@/contexts/LanguageContext'
 
 const PAYMENT_METHODS = ['paypal', 'venmo', 'card', 'cash'] as const
 type PaymentMethod = typeof PAYMENT_METHODS[number]
@@ -47,6 +48,7 @@ function isMethodEnabled(methods: string[] | null, method: PaymentMethod): boole
  * expanding one collapses the other to keep the UI manageable.
  */
 export default function SchoolsPage() {
+  const t = useT()
   const [schools, setSchools] = useState<SchoolLink[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
@@ -250,14 +252,14 @@ export default function SchoolsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Schools</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin', 'schoolsTitle')}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Generate unique order links for each school
+            {t('admin', 'schoolsSubtitle')}
           </p>
         </div>
         {!adding && (
           <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#00352F' }}>
-            <Plus className="w-4 h-4 mr-2" /> Add School
+            <Plus className="w-4 h-4 mr-2" /> {t('admin', 'addSchool')}
           </Button>
         )}
       </div>
@@ -268,25 +270,25 @@ export default function SchoolsPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-blue-600" />
-              New School Link
+              {t('admin', 'newSchoolLink')}
             </CardTitle>
-            <CardDescription>Enter the school name to generate a unique shareable order link.</CardDescription>
+            <CardDescription>{t('admin', 'newSchoolLinkDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAdd} className="flex gap-3">
               <Input
                 autoFocus
-                placeholder="e.g. Rizal Elementary School"
+                placeholder={t('admin', 'schoolNamePlaceholder')}
                 value={newSchoolName}
                 onChange={e => setNewSchoolName(e.target.value)}
                 className="flex-1"
                 disabled={submitting}
               />
               <Button type="submit" disabled={submitting || !newSchoolName.trim()} className="text-white" style={{ backgroundColor: '#00352F' }}>
-                {submitting ? 'Creating...' : 'Create Link'}
+                {submitting ? t('admin', 'creatingSchool') : t('admin', 'createSchoolLink')}
               </Button>
               <Button type="button" variant="outline" onClick={() => { setAdding(false); setNewSchoolName('') }} disabled={submitting}>
-                Cancel
+                {t('admin', 'cancelSchool')}
               </Button>
             </form>
           </CardContent>
@@ -313,10 +315,10 @@ export default function SchoolsPage() {
             <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
               <GraduationCap className="w-6 h-6 text-gray-400" />
             </div>
-            <p className="font-medium text-gray-900 dark:text-white">No schools yet</p>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Add a school to generate a unique order link.</p>
+            <p className="font-medium text-gray-900 dark:text-white">{t('admin', 'noSchoolsYet')}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('admin', 'noSchoolsDesc')}</p>
             <Button onClick={() => setAdding(true)} className="mt-4 text-white" style={{ backgroundColor: '#00352F' }}>
-              <Plus className="w-4 h-4 mr-2" /> Add First School
+              <Plus className="w-4 h-4 mr-2" /> {t('admin', 'addFirstSchool')}
             </Button>
           </CardContent>
         </Card>
@@ -339,7 +341,7 @@ export default function SchoolsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-gray-900 dark:text-white">{school.school_name}</span>
                         <Badge variant={school.is_active ? 'default' : 'secondary'} className={school.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0' : 'bg-gray-100 text-gray-500 border-0'}>
-                          {school.is_active ? 'Active' : 'Inactive'}
+                          {school.is_active ? t('admin', 'activeStatus') : t('admin', 'inactiveStatus')}
                         </Badge>
                         {(school.order_count ?? 0) > 0 && (
                           <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
@@ -366,7 +368,7 @@ export default function SchoolsPage() {
                           className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${gradesOpen ? 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40' : 'text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}
                         >
                           <Tag className="w-3.5 h-3.5" />
-                          Grades
+                          {t('admin', 'gradesButton')}
                           {(school.grades || []).length > 0 && (
                             <span className="bg-[#CEDC00]/30 text-[#00352F] px-1.5 rounded-full text-[10px] font-bold">
                               {(school.grades || []).length}
@@ -380,7 +382,7 @@ export default function SchoolsPage() {
                           className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${paymentOpen ? 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40' : 'text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}
                         >
                           <Settings2 className="w-3.5 h-3.5" />
-                          Payment Settings
+                          {t('admin', 'paymentSettingsSchool')}
                           {paymentOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         </button>
                       </div>
@@ -388,10 +390,10 @@ export default function SchoolsPage() {
                       {/* Grades expandable */}
                       {gradesOpen && (
                         <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Grades</p>
+                          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin', 'gradesLabel')}</p>
                           <div className="flex flex-wrap gap-1.5 mb-3">
                             {(school.grades || []).length === 0 ? (
-                              <p className="text-xs text-gray-400">No grades added yet — grade field will be a text input</p>
+                              <p className="text-xs text-gray-400">{t('admin', 'noGradesYet')}</p>
                             ) : (
                               (school.grades || []).map(grade => (
                                 <span
@@ -413,7 +415,7 @@ export default function SchoolsPage() {
                           </div>
                           <div className="flex gap-2">
                             <Input
-                              placeholder="e.g. Grade 5"
+                              placeholder={t('admin', 'addGradePlaceholder')}
                               value={newGrade[school.id] || ''}
                               onChange={e => setNewGrade(prev => ({ ...prev, [school.id]: e.target.value }))}
                               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddGrade(school) } }}
@@ -427,7 +429,7 @@ export default function SchoolsPage() {
                               className="text-white h-8"
                               style={{ backgroundColor: '#00352F' }}
                             >
-                              Add
+                              {t('admin', 'addGradeButton')}
                             </Button>
                           </div>
                         </div>
@@ -436,7 +438,7 @@ export default function SchoolsPage() {
                       {/* Payment Settings expandable */}
                       {paymentOpen && (
                         <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Allowed Payment Methods</p>
+                          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin', 'allowedPaymentMethods')}</p>
                           <div className="flex gap-2 flex-wrap">
                             {PAYMENT_METHODS.map(method => {
                               const enabled = isMethodEnabled(school.allowed_payment_methods, method)
@@ -460,10 +462,10 @@ export default function SchoolsPage() {
                           </div>
                           <p className="text-[11px] text-gray-400 mt-2">
                             {school.allowed_payment_methods === null
-                              ? 'All methods enabled (default)'
+                              ? t('admin', 'allMethodsEnabled')
                               : school.allowed_payment_methods.length === 0
-                                ? 'No payment methods allowed'
-                                : `${school.allowed_payment_methods.length} method${school.allowed_payment_methods.length === 1 ? '' : 's'} enabled`}
+                                ? t('admin', 'noMethodsAllowed')
+                                : `${school.allowed_payment_methods.length} ${school.allowed_payment_methods.length === 1 ? t('admin', 'methodsEnabled') : t('admin', 'methodsEnabledPlural')} ${t('admin', 'enabledSuffix')}`}
                           </p>
                         </div>
                       )}
@@ -478,12 +480,12 @@ export default function SchoolsPage() {
                         onClick={() => handleCopy(school)}
                         className="gap-1.5"
                         disabled={!school.is_active}
-                        title={school.is_active ? 'Copy shareable link' : 'Link is inactive'}
+                        title={school.is_active ? t('admin', 'copySchoolLink') : t('admin', 'inactiveStatus')}
                       >
                         {copiedId === school.id ? (
-                          <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</>
+                          <><Check className="w-3.5 h-3.5 text-green-500" /> {t('admin', 'copiedSchoolLink')}</>
                         ) : (
-                          <><Copy className="w-3.5 h-3.5" /> Copy Link</>
+                          <><Copy className="w-3.5 h-3.5" /> {t('admin', 'copySchoolLink')}</>
                         )}
                       </Button>
 
@@ -494,7 +496,7 @@ export default function SchoolsPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <Button size="sm" variant="outline" title="Open order form">
+                          <Button size="sm" variant="outline" title={t('admin', 'openOrderForm')}>
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Button>
                         </a>
@@ -506,7 +508,7 @@ export default function SchoolsPage() {
                         variant="outline"
                         onClick={() => handleToggle(school)}
                         disabled={togglingId === school.id}
-                        title={school.is_active ? 'Deactivate link' : 'Activate link'}
+                        title={school.is_active ? t('admin', 'deactivateSchoolLink') : t('admin', 'activateSchoolLink')}
                         className={school.is_active ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}
                       >
                         {togglingId === school.id ? (
@@ -524,7 +526,7 @@ export default function SchoolsPage() {
                         variant="outline"
                         onClick={() => handleDelete(school)}
                         disabled={deletingId === school.id}
-                        title="Delete school"
+                        title={t('admin', 'deleteSchool')}
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         {deletingId === school.id ? (
@@ -548,7 +550,7 @@ export default function SchoolsPage() {
           <CardContent className="p-4 flex gap-3">
             <Link2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              Each school link opens an order form pre-filled with the school name and institution type. Share it with teachers or parents so orders are automatically attributed to the correct school.
+              {t('admin', 'schoolInfoNote')}
             </p>
           </CardContent>
         </Card>

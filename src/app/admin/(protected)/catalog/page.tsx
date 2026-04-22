@@ -11,6 +11,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useT } from '@/contexts/LanguageContext'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,6 +43,7 @@ async function uploadImage(file: File): Promise<string> {
  * or the back image can be added later via the hover overlay on an existing card.
  */
 export default function CatalogPage() {
+  const t = useT()
   const [items, setItems] = useState<ShirtCatalogItem[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
@@ -238,18 +240,18 @@ export default function CatalogPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Shirt Catalog</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage the shirts displayed on the public home page</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('admin', 'catalogTitle')}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t('admin', 'catalogSubtitle')}</p>
         </div>
         {!adding && (
           <Button onClick={() => setAdding(true)} className="text-white" style={{ backgroundColor: '#00352F' }}>
-            <Plus className="w-4 h-4 mr-2" /> Add Shirt
+            <Plus className="w-4 h-4 mr-2" /> {t('admin', 'addShirt')}
           </Button>
         )}
       </div>
 
       <div className="flex gap-3">
-        {[{ label: 'Total Items', value: items.length, color: 'text-gray-900' }, { label: 'Visible', value: visibleCount, color: 'text-[#00352F]' }, { label: 'Hidden', value: items.length - visibleCount, color: 'text-gray-400' }].map(s => (
+        {[{ label: t('admin', 'totalItems'), value: items.length, color: 'text-gray-900' }, { label: t('admin', 'visibleItems'), value: visibleCount, color: 'text-[#00352F]' }, { label: t('admin', 'hiddenItems'), value: items.length - visibleCount, color: 'text-gray-400' }].map(s => (
           <div key={s.label} className="bg-white border rounded-xl px-4 py-3 text-center min-w-[100px]">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
@@ -262,9 +264,9 @@ export default function CatalogPage() {
         <Card className="border-[#CEDC00]/40">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ImagePlus className="w-4 h-4 text-[#00352F]" /> Add New Shirt
+              <ImagePlus className="w-4 h-4 text-[#00352F]" /> {t('admin', 'addNewShirt')}
             </CardTitle>
-            <CardDescription>Upload front and back images. Both are optional — you can add them later.</CardDescription>
+            <CardDescription>{t('admin', 'addNewShirtDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAdd} className="space-y-4">
@@ -274,7 +276,7 @@ export default function CatalogPage() {
                   onFileChange={handleFileChange}
                   onClear={clearImage}
                   inputRef={fileRef}
-                  label="Front Image"
+                  label={t('admin', 'frontImage')}
                   disabled={uploading}
                 />
                 <ImageUploadBox
@@ -282,28 +284,28 @@ export default function CatalogPage() {
                   onFileChange={handleBackFileChange}
                   onClear={clearBackImage}
                   inputRef={backFileRef}
-                  label="Back Image"
+                  label={t('admin', 'backImage')}
                   disabled={uploading}
                 />
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="item-name">Shirt Name *</Label>
-                  <Input id="item-name" placeholder="e.g. Classic Green Polo" value={name} onChange={e => setName(e.target.value)} required className="mt-1" disabled={uploading} />
+                  <Label htmlFor="item-name">{t('admin', 'shirtNameLabel')}</Label>
+                  <Input id="item-name" placeholder={t('admin', 'shirtNamePlaceholder')} value={name} onChange={e => setName(e.target.value)} required className="mt-1" disabled={uploading} />
                 </div>
                 <div>
-                  <Label htmlFor="item-desc">Description <span className="text-gray-400 font-normal">(optional)</span></Label>
-                  <Textarea id="item-desc" placeholder="Short description..." value={description} onChange={e => setDescription(e.target.value)} className="mt-1 resize-none" rows={2} disabled={uploading} />
+                  <Label htmlFor="item-desc">{t('admin', 'descriptionLabel')} <span className="text-gray-400 font-normal">({t('common', 'optional')})</span></Label>
+                  <Textarea id="item-desc" placeholder={t('admin', 'descriptionPlaceholder')} value={description} onChange={e => setDescription(e.target.value)} className="mt-1 resize-none" rows={2} disabled={uploading} />
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <Button type="submit" disabled={uploading || !name.trim()} className="text-white" style={{ backgroundColor: '#00352F' }}>
-                  {uploading ? 'Adding...' : 'Add to Catalog'}
+                  {uploading ? t('admin', 'addingShirt') : t('admin', 'addToCatalog')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => { setAdding(false); setName(''); setDescription(''); clearImage(); clearBackImage() }} disabled={uploading}>
-                  Cancel
+                  {t('admin', 'cancelAction')}
                 </Button>
               </div>
             </form>
@@ -330,10 +332,10 @@ export default function CatalogPage() {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Shirt className="w-8 h-8 text-gray-300" />
             </div>
-            <p className="font-semibold text-gray-900">No shirts in catalog yet</p>
-            <p className="text-gray-500 text-sm mt-1">Add your first shirt to display it on the home page.</p>
+            <p className="font-semibold text-gray-900">{t('admin', 'noShirtsYet')}</p>
+            <p className="text-gray-500 text-sm mt-1">{t('admin', 'noShirtsDesc')}</p>
             <Button onClick={() => setAdding(true)} className="mt-4 text-white" style={{ backgroundColor: '#00352F' }}>
-              <Plus className="w-4 h-4 mr-2" /> Add First Shirt
+              <Plus className="w-4 h-4 mr-2" /> {t('admin', 'addFirstShirt')}
             </Button>
           </CardContent>
         </Card>
@@ -353,12 +355,12 @@ export default function CatalogPage() {
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300">
                       <Shirt className="w-12 h-12" />
-                      <span className="text-xs mt-2">No image</span>
+                      <span className="text-xs mt-2">{t('admin', 'noImage')}</span>
                     </div>
                   )}
                   {!item.is_active && (
                     <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                      <Badge variant="outline" className="bg-white text-gray-500 text-xs">Hidden</Badge>
+                      <Badge variant="outline" className="bg-white text-gray-500 text-xs">{t('admin', 'hiddenBadge')}</Badge>
                     </div>
                   )}
 
@@ -370,14 +372,14 @@ export default function CatalogPage() {
                         onClick={() => setViewBack(prev => ({ ...prev, [item.id]: false }))}
                         className={`px-3 py-1 text-xs font-medium transition-colors ${!showingBack ? 'bg-[#00352F] text-white' : 'bg-white/90 text-gray-600 hover:bg-white'}`}
                       >
-                        Front
+                        {t('admin', 'frontSide')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setViewBack(prev => ({ ...prev, [item.id]: true }))}
                         className={`px-3 py-1 text-xs font-medium transition-colors ${showingBack ? 'bg-[#00352F] text-white' : 'bg-white/90 text-gray-600 hover:bg-white'}`}
                       >
-                        Back
+                        {t('admin', 'backSide')}
                       </button>
                     </div>
                   )}
@@ -392,7 +394,7 @@ export default function CatalogPage() {
                         className="flex items-center gap-1.5 bg-white/95 text-[#00352F] text-xs font-medium px-3 py-1.5 rounded-lg shadow hover:bg-white transition-colors disabled:opacity-60"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        {uploadingBackId === item.id ? 'Uploading...' : 'Add back image'}
+                        {uploadingBackId === item.id ? t('admin', 'uploadingText') : t('admin', 'addBackImage')}
                       </button>
                       <input
                         ref={el => { backUploadRefs.current[item.id] = el }}
@@ -411,7 +413,7 @@ export default function CatalogPage() {
                       <p className="font-semibold text-gray-900 text-sm leading-tight">{item.name}</p>
                       {item.back_image_url && (
                         <p className="text-[10px] text-[#00352F]/60 mt-0.5 flex items-center gap-1">
-                          <RotateCcw className="w-2.5 h-2.5" /> Both sides
+                          <RotateCcw className="w-2.5 h-2.5" /> {t('admin', 'bothSides')}
                         </p>
                       )}
                     </div>
@@ -419,7 +421,7 @@ export default function CatalogPage() {
                       <button
                         onClick={() => handleToggle(item)}
                         disabled={togglingId === item.id}
-                        title={item.is_active ? 'Hide from home page' : 'Show on home page'}
+                        title={item.is_active ? t('admin', 'hideFromHome') : t('admin', 'showOnHome')}
                         className={`p-1.5 rounded-lg transition-colors ${item.is_active ? 'text-[#00352F] hover:bg-[#E5F2F0]' : 'text-gray-400 hover:bg-gray-100'}`}
                       >
                         {item.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -427,7 +429,7 @@ export default function CatalogPage() {
                       <button
                         onClick={() => handleDelete(item)}
                         disabled={deletingId === item.id}
-                        title="Remove from catalog"
+                        title={t('admin', 'removeFromCatalog')}
                         className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
