@@ -1,0 +1,2 @@
+- [Auth and authorization model](project_auth_model.md) — Two-client Supabase pattern; role enforcement is frontend-only; no middleware.ts exists
+- [Known security vulnerabilities (April 2026 audit)](project_known_vulns.md) — 9 findings across admin APIs, bulk PATCH, CSV export, file upload, public order submission
