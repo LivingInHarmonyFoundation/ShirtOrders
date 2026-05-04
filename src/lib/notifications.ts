@@ -72,3 +72,38 @@ export async function sendOrderNotifications(
     console.error('Push notification failed:', e)
   }
 }
+
+/**
+ * sendLowInventoryNotification — fires a high-priority ntfy.sh push notification
+ * when one or more inventory items have crossed below their low-stock threshold.
+ * Silently no-ops when notifications are disabled, the topic is not configured,
+ * or the items list is empty.
+ *
+ * Errors during the fetch are caught and logged, never re-thrown.
+ */
+export async function sendLowInventoryNotification(
+  items: { size: string; catalogItemName: string | null; quantity: number; threshold: number }[],
+  settings: { admin_phone?: string | null; sms_notifications_enabled?: boolean }
+) {
+  if (!settings.sms_notifications_enabled || !settings.admin_phone || items.length === 0) return
+
+  const lines = items.map(i => {
+    const name = i.catalogItemName ? `${i.catalogItemName} — ` : ''
+    return `${name}${i.size}: ${i.quantity} left (threshold: ${i.threshold})`
+  }).join('\n')
+
+  try {
+    await fetch(`https://ntfy.sh/${settings.admin_phone}`, {
+      method: 'POST',
+      headers: {
+        'Title': `⚠️ Low Inventory Alert`,
+        'Priority': 'high',
+        'Tags': 'warning,shirt',
+        'Content-Type': 'text/plain',
+      },
+      body: `Low stock detected:\n${lines}`,
+    })
+  } catch (e) {
+    console.error('Low inventory notification failed:', e)
+  }
+}

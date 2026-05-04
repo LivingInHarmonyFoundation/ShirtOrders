@@ -339,3 +339,15 @@ export interface Campaign {
   updated_at: string
   order_count?: number
 }
+
+export interface ShirtInventoryItem {
+  id: string
+  catalog_item_id: string | null
+  shirt_size: string
+  quantity: number
+  low_stock_threshold: number
+  created_at: string
+  updated_at: string
+  // joined field from shirt_catalog
+  catalog_item_name?: string | null
+}

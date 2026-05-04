@@ -19,7 +19,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateOrderNumber } from '@/lib/utils'
-import { sendOrderNotifications } from '@/lib/notifications'
+import { sendOrderNotifications, sendLowInventoryNotification } from '@/lib/notifications'
 import { z } from 'zod'
 
 // ─── Validation Schemas ───────────────────────────────────────
@@ -278,6 +278,44 @@ export async function POST(request: NextRequest) {
     if (itemsError) {
       // Non-fatal: order row is already created; log but don't fail the request
       console.error('Error inserting order_items:', itemsError)
+    }
+
+    // Decrement inventory for each cart item (non-fatal)
+    try {
+      for (const item of cartItems) {
+        // Try catalog-item-specific inventory first, then fall back to general (null catalog_item_id)
+        const { data: invRow } = await supabase
+          .from('shirt_inventory')
+          .select('id, quantity, low_stock_threshold')
+          .eq('shirt_size', item.shirt_size)
+          .or(
+            item.catalog_item_id
+              ? `catalog_item_id.eq.${item.catalog_item_id},catalog_item_id.is.null`
+              : 'catalog_item_id.is.null'
+          )
+          .order('catalog_item_id', { ascending: false, nullsFirst: false }) // prefer specific over general
+          .limit(1)
+          .maybeSingle()
+
+        if (invRow) {
+          const newQty = invRow.quantity - item.quantity
+          await supabase
+            .from('shirt_inventory')
+            .update({ quantity: newQty, updated_at: new Date().toISOString() })
+            .eq('id', invRow.id)
+
+          // Check if low stock threshold just crossed (not already below before this order)
+          if (newQty <= invRow.low_stock_threshold && newQty > invRow.low_stock_threshold - item.quantity) {
+            // Just crossed the threshold — send notification (fire and forget)
+            sendLowInventoryNotification(
+              [{ size: item.shirt_size, catalogItemName: item.catalog_item_name ?? null, quantity: newQty, threshold: invRow.low_stock_threshold }],
+              settings
+            ).catch(e => console.error('Low inventory notification error:', e))
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Inventory deduction error:', e)
     }
 
     sendOrderNotifications(order, settings).catch(e => console.error('Notification error:', e))

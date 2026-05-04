@@ -18,10 +18,10 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   ShoppingBag, DollarSign, CreditCard, Package,
-  TrendingUp, Users, Truck, Clock, Settings2, Megaphone, X, Shirt
+  TrendingUp, Users, Truck, Clock, Settings2, Megaphone, X, Shirt, AlertTriangle
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import type { DashboardStats, Campaign } from '@/types'
+import type { DashboardStats, Campaign, ShirtInventoryItem } from '@/types'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend
@@ -81,6 +81,9 @@ export default function DashboardPage() {
   const [hiddenWidgets, setHiddenWidgets] = useState<Set<string>>(new Set())
   const [showWidgetPanel, setShowWidgetPanel] = useState(false)
 
+  // Low-stock inventory widget — separate fetch, own state
+  const [lowStockItems, setLowStockItems] = useState<ShirtInventoryItem[]>([])
+
   // ── Effects ──
 
   // Restore hidden-widget preferences from localStorage
@@ -96,6 +99,17 @@ export default function DashboardPage() {
     fetch('/api/admin/campaigns')
       .then(r => r.json())
       .then(j => setCampaigns(j.campaigns || []))
+      .catch(() => {})
+  }, [])
+
+  // Load inventory once to surface low-stock items on the dashboard
+  useEffect(() => {
+    fetch('/api/admin/inventory')
+      .then(r => r.json())
+      .then(j => {
+        const all: ShirtInventoryItem[] = j.inventory || []
+        setLowStockItems(all.filter(item => item.quantity <= item.low_stock_threshold))
+      })
       .catch(() => {})
   }, [])
 
@@ -328,6 +342,47 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* Low-stock inventory widget — only shown when there are items at/below threshold */}
+      {lowStockItems.length > 0 && (
+        <Card className="border-amber-200" style={{ backgroundColor: '#fffbeb' }}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <p className="text-sm font-semibold text-amber-800">
+                    {t('admin', 'lowStockAlert')} — {lowStockItems.length} {lowStockItems.length === 1 ? t('admin', 'shirtSingular') : t('admin', 'shirtPlural')}
+                  </p>
+                  <a
+                    href="/admin/inventory"
+                    className="text-xs font-medium underline underline-offset-2 flex-shrink-0"
+                    style={{ color: '#00352F' }}
+                  >
+                    {t('admin', 'inventory')} →
+                  </a>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {lowStockItems.map(item => (
+                    <span
+                      key={item.id}
+                      className="inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium"
+                      style={{
+                        backgroundColor: item.quantity <= 0 ? '#fee2e2' : '#fef3c7',
+                        color: item.quantity <= 0 ? '#991b1b' : '#92400e',
+                      }}
+                    >
+                      {item.catalog_item_name ? `${item.catalog_item_name} — ` : ''}{item.shirt_size}: {item.quantity}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Shirt style breakdown */}
       {show('chart_styles') && (loading || stats?.has_catalog_breakdown) && (
