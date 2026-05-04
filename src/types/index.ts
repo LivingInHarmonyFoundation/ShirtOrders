@@ -105,6 +105,8 @@ export interface Order {
   catalog_item_name: string | null
   notes: string | null
   applied_fees?: { name: string; type: 'percentage' | 'fixed'; value: number; amount: number }[] | null
+  discount_code?: string | null
+  discount_amount?: number
   admin_notes: string | null
   created_at: string
   updated_at: string
@@ -147,6 +149,24 @@ export interface OrderFee {
   value: number
   /** null or empty array means applies to all institution types */
   applies_to: InstitutionType[] | null
+}
+
+// ─── Discount Codes ───────────────────────────────────────────
+
+/**
+ * DiscountCode — a promotional code that can reduce an order's total.
+ * Stored in the discount_codes table. type 'percentage' applies a percent
+ * reduction to total_amount; 'fixed' subtracts a flat USD amount.
+ */
+export interface DiscountCode {
+  id: string
+  code: string
+  type: 'percentage' | 'fixed'
+  value: number
+  expires_at: string | null
+  enabled: boolean
+  created_at: string
+  updated_at: string
 }
 
 // ─── Application Settings ─────────────────────────────────────

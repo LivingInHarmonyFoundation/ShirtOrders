@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   LayoutDashboard, List, BarChart2, Settings,
-  LogOut, Menu, X, ChevronRight, GraduationCap, Users, Shirt, Building2, Briefcase, Megaphone, QrCode
+  LogOut, Menu, X, ChevronRight, GraduationCap, Users, Shirt, Building2, Briefcase, Megaphone, QrCode, Tag
 } from 'lucide-react'
 import { useState } from 'react'
 import { useRole } from '@/components/admin/role-provider'
@@ -46,7 +46,8 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
     { href: '/admin/government', label: t('admin', 'government'), icon: Building2,       show: permissions.canManageSettings },
     { href: '/admin/companies',  label: t('admin', 'companies'),  icon: Briefcase,       show: permissions.canManageSettings },
     { href: '/admin/campaigns',  label: t('admin', 'campaigns'),  icon: Megaphone,       show: permissions.canManageSettings },
-    { href: '/admin/qr-code',   label: t('admin', 'qrCode'),     icon: QrCode,          show: permissions.canManageSettings },
+    { href: '/admin/qr-code',         label: t('admin', 'qrCode'),        icon: QrCode, show: permissions.canManageSettings },
+    { href: '/admin/discount-codes',  label: t('admin', 'discountCodes'), icon: Tag,    show: permissions.canManageSettings },
     { href: '/admin/schools',    label: t('admin', 'schools'),    icon: GraduationCap,   show: permissions.canManageSchools },
     { href: '/admin/reports',    label: t('admin', 'reports'),    icon: BarChart2,       show: permissions.canViewReports },
     { href: '/admin/settings',   label: t('admin', 'settings'),   icon: Settings,        show: permissions.canManageSettings },

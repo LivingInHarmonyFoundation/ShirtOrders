@@ -24,10 +24,11 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote } from 'lucide-react'
+import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote, Tag, X } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
@@ -47,6 +48,9 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(true)
   const [cashConfirmed, setCashConfirmed] = useState(false)
   const [cashLoading, setCashLoading] = useState(false)
+  const [discountCode, setDiscountCode] = useState('')
+  const [discountLoading, setDiscountLoading] = useState(false)
+  const [discountError, setDiscountError] = useState('')
 
   // ── Effects ──
 
@@ -65,6 +69,62 @@ function CheckoutContent() {
   }, [orderId, router])
 
   // ── Handlers ──
+
+  const handleApplyDiscount = async () => {
+    if (!order || !discountCode.trim()) return
+    setDiscountLoading(true)
+    setDiscountError('')
+    try {
+      // First validate the code
+      const validateRes = await fetch('/api/discount-codes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountCode.trim() }),
+      })
+      const validateData = await validateRes.json()
+      if (!validateRes.ok) {
+        setDiscountError(validateData.error || t('checkout', 'discountCodeInvalid'))
+        return
+      }
+      // Apply it to the order server-side
+      const applyRes = await fetch(`/api/orders/${order.id}/discount`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discount_code: validateData.discount.code }),
+      })
+      const applyData = await applyRes.json()
+      if (!applyRes.ok) {
+        setDiscountError(applyData.error || t('checkout', 'discountCodeInvalid'))
+        return
+      }
+      setOrder(applyData.order)
+      setDiscountCode('')
+      toast.success(t('checkout', 'discountApplied'))
+    } catch {
+      setDiscountError(t('errors', 'somethingWentWrong'))
+    } finally {
+      setDiscountLoading(false)
+    }
+  }
+
+  const handleRemoveDiscount = async () => {
+    if (!order) return
+    try {
+      const res = await fetch(`/api/orders/${order.id}/discount`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discount_code: null }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || t('errors', 'somethingWentWrong'))
+        return
+      }
+      setOrder(data.order)
+    } catch {
+      toast.error(t('errors', 'somethingWentWrong'))
+    }
+  }
 
   const handleCashSelect = async () => {
     if (!order) return
@@ -237,25 +297,43 @@ function CheckoutContent() {
                 </div>
               )}
               <Separator />
-              {/* Fee breakdown — only shown when fees were applied at order creation */}
-              {order.applied_fees && order.applied_fees.length > 0 && (() => {
-                const feesTotal = order.applied_fees.reduce((s, f) => s + f.amount, 0)
-                const subtotal = order.total_amount - feesTotal
+              {/* Fee + discount breakdown */}
+              {(() => {
+                const hasFees = order.applied_fees && order.applied_fees.length > 0
+                const hasDiscount = (order.discount_amount ?? 0) > 0
+                if (!hasFees && !hasDiscount) return null
+
+                const feesTotal = hasFees ? order.applied_fees!.reduce((s, f) => s + f.amount, 0) : 0
+                // Reconstruct the pre-discount total (discount was already subtracted from total_amount)
+                const totalWithDiscount = order.total_amount
+                const discountAmt = order.discount_amount ?? 0
+                const subtotal = (totalWithDiscount + discountAmt) - feesTotal
+
                 return (
                   <>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>{t('checkout', 'subtotal') || 'Subtotal'}</span>
-                      <span>{formatCurrency(subtotal)}</span>
-                    </div>
-                    {order.applied_fees.map((fee, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm text-gray-500">
-                        <span>
-                          {fee.name}
-                          {fee.type === 'percentage' && <span className="text-xs ml-1 text-gray-400">({fee.value}%)</span>}
-                        </span>
-                        <span>{formatCurrency(fee.amount)}</span>
+                    {hasFees && (
+                      <>
+                        <div className="flex items-center justify-between text-sm text-gray-500">
+                          <span>{t('checkout', 'subtotal') || 'Subtotal'}</span>
+                          <span>{formatCurrency(subtotal)}</span>
+                        </div>
+                        {order.applied_fees!.map((fee, i) => (
+                          <div key={i} className="flex items-center justify-between text-sm text-gray-500">
+                            <span>
+                              {fee.name}
+                              {fee.type === 'percentage' && <span className="text-xs ml-1 text-gray-400">({fee.value}%)</span>}
+                            </span>
+                            <span>{formatCurrency(fee.amount)}</span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {hasDiscount && (
+                      <div className="flex items-center justify-between text-sm text-green-600 font-medium">
+                        <span>{t('checkout', 'discount')} ({order.discount_code})</span>
+                        <span>-{formatCurrency(discountAmt)}</span>
                       </div>
-                    ))}
+                    )}
                     <Separator />
                   </>
                 )
@@ -265,6 +343,69 @@ function CheckoutContent() {
                 <span className="font-bold text-xl text-[#00352F]">{formatCurrency(order.total_amount)}</span>
               </div>
               <p className="text-xs text-gray-400">{t('checkout', 'submitted')} {formatDateTime(order.date_submitted)}</p>
+            </CardContent>
+          </Card>
+
+          {/* Discount Code */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Tag className="w-4 h-4 text-gray-500" />
+                {t('checkout', 'discountCode')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {order.discount_amount && order.discount_amount > 0 ? (
+                /* Discount already applied */
+                <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-200">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-green-700" />
+                    <div>
+                      <p className="text-sm font-semibold text-green-900 font-mono">{order.discount_code}</p>
+                      <p className="text-xs text-green-700">
+                        -{formatCurrency(order.discount_amount)} {t('checkout', 'discount').toLowerCase()}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleRemoveDiscount}
+                    className="text-green-600 hover:text-green-900 transition-colors p-1 rounded"
+                    title={t('checkout', 'removeDiscount')}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                /* Code entry form */
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={discountCode}
+                      onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountError('') }}
+                      placeholder={t('checkout', 'discountCodePlaceholder')}
+                      className="font-mono uppercase flex-1"
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyDiscount() } }}
+                    />
+                    <Button
+                      onClick={handleApplyDiscount}
+                      disabled={discountLoading || !discountCode.trim()}
+                      style={{ backgroundColor: '#00352F', color: 'white' }}
+                      className="shrink-0"
+                    >
+                      {discountLoading
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : t('checkout', 'applyDiscount')
+                      }
+                    </Button>
+                  </div>
+                  {discountError && (
+                    <p className="text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      {discountError}
+                    </p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
