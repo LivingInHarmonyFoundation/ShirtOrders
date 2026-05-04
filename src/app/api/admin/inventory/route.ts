@@ -59,10 +59,12 @@ export async function GET() {
 // ─── POST /api/admin/inventory ────────────────────────────────
 
 /**
- * POST /api/admin/inventory — upsert one inventory row.
+ * POST /api/admin/inventory — create or update one inventory row.
  * Requires canManageSettings permission.
  * Body: { catalog_item_id?: string | null, shirt_size: string, quantity: number, low_stock_threshold: number }
- * Uses onConflict targeting the appropriate partial unique index.
+ *
+ * Uses select-then-insert-or-update instead of upsert because PostgREST cannot
+ * resolve partial unique indexes (those with WHERE clauses) via onConflict.
  * Response: { item: ShirtInventoryItem } with status 201.
  */
 export async function POST(request: NextRequest) {
@@ -88,102 +90,58 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = await createAdminClient()
+  const normalizedCatalogId: string | null = catalog_item_id ?? null
+  const normalizedSize = shirt_size.trim()
+  const now = new Date().toISOString()
 
-  const payload = {
-    catalog_item_id: catalog_item_id ?? null,
-    shirt_size: shirt_size.trim(),
-    quantity,
-    low_stock_threshold,
-    updated_at: new Date().toISOString(),
+  // ── Check for existing row ──
+  const existingQuery = admin
+    .from('shirt_inventory')
+    .select('id')
+    .eq('shirt_size', normalizedSize)
+
+  const { data: existing } = await (normalizedCatalogId
+    ? existingQuery.eq('catalog_item_id', normalizedCatalogId)
+    : existingQuery.is('catalog_item_id', null)
+  ).maybeSingle()
+
+  // ── Insert or update ──
+  let row: Record<string, unknown> | null = null
+  let dbError: unknown = null
+
+  if (existing) {
+    const { data, error } = await admin
+      .from('shirt_inventory')
+      .update({ quantity, low_stock_threshold, updated_at: now })
+      .eq('id', existing.id)
+      .select('*, shirt_catalog(name)')
+      .single()
+    row = data as Record<string, unknown> | null
+    dbError = error
+  } else {
+    const { data, error } = await admin
+      .from('shirt_inventory')
+      .insert({ catalog_item_id: normalizedCatalogId, shirt_size: normalizedSize, quantity, low_stock_threshold, updated_at: now })
+      .select('*, shirt_catalog(name)')
+      .single()
+    row = data as Record<string, unknown> | null
+    dbError = error
   }
 
-  // Supabase upsert with onConflict on the two columns that together make the natural key.
-  // The partial unique indexes enforce the constraint at the DB level; onConflict here
-  // tells PostgREST which columns to use for the conflict resolution.
-  const { data: row, error } = await admin
-    .from('shirt_inventory')
-    .upsert(payload, { onConflict: 'catalog_item_id,shirt_size' })
-    .select('*, shirt_catalog(name)')
-    .single()
-
-  if (error) {
-    // Fall back to a separate upsert for the general (null catalog_item_id) case
-    // because PostgREST can't reference a partial index directly for null columns.
-    if (payload.catalog_item_id === null) {
-      // Try to find an existing general row for this size and update it
-      const { data: existing } = await admin
-        .from('shirt_inventory')
-        .select('id')
-        .is('catalog_item_id', null)
-        .eq('shirt_size', payload.shirt_size)
-        .maybeSingle()
-
-      if (existing) {
-        const { data: updated, error: updateError } = await admin
-          .from('shirt_inventory')
-          .update({ quantity, low_stock_threshold, updated_at: payload.updated_at })
-          .eq('id', existing.id)
-          .select('*, shirt_catalog(name)')
-          .single()
-
-        if (updateError) {
-          console.error('Error updating general inventory:', updateError)
-          return NextResponse.json({ error: 'Failed to update inventory' }, { status: 500 })
-        }
-
-        const catalog = (updated as Record<string, unknown>).shirt_catalog as { name: string } | null
-        const item: ShirtInventoryItem = {
-          id: (updated as Record<string, unknown>).id as string,
-          catalog_item_id: null,
-          shirt_size: (updated as Record<string, unknown>).shirt_size as string,
-          quantity: (updated as Record<string, unknown>).quantity as number,
-          low_stock_threshold: (updated as Record<string, unknown>).low_stock_threshold as number,
-          created_at: (updated as Record<string, unknown>).created_at as string,
-          updated_at: (updated as Record<string, unknown>).updated_at as string,
-          catalog_item_name: catalog?.name ?? null,
-        }
-        return NextResponse.json({ item }, { status: 201 })
-      }
-
-      // No existing row — insert fresh
-      const { data: inserted, error: insertError } = await admin
-        .from('shirt_inventory')
-        .insert(payload)
-        .select('*, shirt_catalog(name)')
-        .single()
-
-      if (insertError) {
-        console.error('Error inserting general inventory:', insertError)
-        return NextResponse.json({ error: 'Failed to create inventory' }, { status: 500 })
-      }
-
-      const catalog = (inserted as Record<string, unknown>).shirt_catalog as { name: string } | null
-      const item: ShirtInventoryItem = {
-        id: (inserted as Record<string, unknown>).id as string,
-        catalog_item_id: null,
-        shirt_size: (inserted as Record<string, unknown>).shirt_size as string,
-        quantity: (inserted as Record<string, unknown>).quantity as number,
-        low_stock_threshold: (inserted as Record<string, unknown>).low_stock_threshold as number,
-        created_at: (inserted as Record<string, unknown>).created_at as string,
-        updated_at: (inserted as Record<string, unknown>).updated_at as string,
-        catalog_item_name: catalog?.name ?? null,
-      }
-      return NextResponse.json({ item }, { status: 201 })
-    }
-
-    console.error('Error upserting inventory:', error)
+  if (dbError || !row) {
+    console.error('Error saving inventory:', dbError)
     return NextResponse.json({ error: 'Failed to save inventory' }, { status: 500 })
   }
 
-  const catalog = (row as Record<string, unknown>).shirt_catalog as { name: string } | null
+  const catalog = row.shirt_catalog as { name: string } | null
   const item: ShirtInventoryItem = {
-    id: (row as Record<string, unknown>).id as string,
-    catalog_item_id: (row as Record<string, unknown>).catalog_item_id as string | null,
-    shirt_size: (row as Record<string, unknown>).shirt_size as string,
-    quantity: (row as Record<string, unknown>).quantity as number,
-    low_stock_threshold: (row as Record<string, unknown>).low_stock_threshold as number,
-    created_at: (row as Record<string, unknown>).created_at as string,
-    updated_at: (row as Record<string, unknown>).updated_at as string,
+    id: row.id as string,
+    catalog_item_id: row.catalog_item_id as string | null,
+    shirt_size: row.shirt_size as string,
+    quantity: row.quantity as number,
+    low_stock_threshold: row.low_stock_threshold as number,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
     catalog_item_name: catalog?.name ?? null,
   }
 
