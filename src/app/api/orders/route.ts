@@ -56,6 +56,28 @@ const orderSchema = z.object({
   catalog_item_name: z.string().optional(),
 })
 
+// ─── Helpers ─────────────────────────────────────────────────
+
+/**
+ * isInAnnualWindow — returns true if `now` falls within the annual recurrence window
+ * defined by the month+day of startDate and endDate. Year is ignored; only the
+ * month-day portion matters. Handles windows that span a year boundary (e.g. Nov–Jan).
+ */
+function isInAnnualWindow(now: Date, startDate: string, endDate: string): boolean {
+  const s = new Date(startDate)
+  const e = new Date(endDate)
+  // Encode as (month * 100 + day) for easy integer comparison
+  const nowMD = now.getMonth() * 100 + now.getDate()
+  const startMD = s.getMonth() * 100 + s.getDate()
+  const endMD = e.getMonth() * 100 + e.getDate()
+  if (startMD <= endMD) {
+    // Window stays within the same calendar year (e.g. Feb–Jun)
+    return nowMD >= startMD && nowMD <= endMD
+  }
+  // Window crosses a year boundary (e.g. Nov–Jan)
+  return nowMD >= startMD || nowMD <= endMD
+}
+
 // ─── POST /api/orders ─────────────────────────────────────────
 
 /**
@@ -70,23 +92,28 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    // Validate active campaign
-    const { data: activeCampaign } = await supabase
+    // Find the effectively active campaign.
+    // For recurring campaigns, is_active=true means "recurring is enabled" — we still
+    // check whether today falls within the annual month-day window before accepting orders.
+    const { data: enabledCampaigns } = await supabase
       .from('campaigns')
-      .select('id, end_date, ended_message')
+      .select('id, end_date, ended_message, start_date, is_recurring')
       .eq('is_active', true)
-      .single()
+
+    const now = new Date()
+    const todayStr = now.toISOString().split('T')[0]
+
+    const activeCampaign = (enabledCampaigns || []).find(c => {
+      if (c.is_recurring && c.start_date && c.end_date) {
+        return isInAnnualWindow(now, c.start_date, c.end_date)
+      }
+      // Non-recurring: active unless end_date is in the past
+      if (c.end_date && c.end_date < todayStr) return false
+      return true
+    })
 
     if (!activeCampaign) {
       return NextResponse.json({ error: 'Orders are not currently open.' }, { status: 400 })
-    }
-
-    const today = new Date().toISOString().split('T')[0]
-    if (activeCampaign.end_date && activeCampaign.end_date < today) {
-      return NextResponse.json(
-        { error: activeCampaign.ended_message || 'This campaign has ended. Thank you for your participation.' },
-        { status: 400 }
-      )
     }
 
     const { data: settings } = await supabase

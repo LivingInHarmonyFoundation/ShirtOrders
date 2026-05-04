@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
   const admin = await createAdminClient()
   const body = await request.json()
 
-  const { name, description, start_date, end_date, ended_message } = body
+  const { name, description, start_date, end_date, ended_message, is_recurring } = body
   if (!name?.trim()) return NextResponse.json({ error: 'Campaign name is required' }, { status: 400 })
 
   // ─── Insert ──────────────────────────────────────────────────
@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
       end_date: end_date || null,
       ended_message: ended_message?.trim() || 'This campaign has ended. Thank you for your participation.',
       is_active: false,
+      is_recurring: !!is_recurring,
     })
     .select()
     .single()

@@ -334,6 +334,8 @@ export interface Campaign {
   start_date: string | null
   end_date: string | null
   is_active: boolean
+  /** When true, start_date/end_date are treated as an annual month-day window that auto-activates yearly */
+  is_recurring: boolean
   ended_message: string
   created_at: string
   updated_at: string

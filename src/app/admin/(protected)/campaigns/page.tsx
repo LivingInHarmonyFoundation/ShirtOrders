@@ -1,12 +1,12 @@
 /**
  * @file page.tsx
- * @description Admin campaign management. Campaigns gate order creation — only one
- * campaign may be active at a time. When a campaign is activated, the server
- * automatically deactivates all others. The UI reflects this by locally updating all
- * sibling campaigns to is_active=false when an activation succeeds.
+ * @description Admin campaign management. Supports one-time and recurring annual campaigns.
  *
- * Campaigns have optional start/end dates; the computed status badge (Draft / Scheduled /
- * Active / Ended) is derived client-side for display purposes only.
+ * Recurring campaigns: start_date/end_date are treated as annual month-day windows.
+ * When is_active=true and today falls within the window, orders are accepted automatically.
+ * No manual toggle needed each year.
+ *
+ * One-time campaigns: behave as before — admin manually activates/deactivates.
  *
  * Auth: provided by the parent (protected) layout. Requires canManageSettings permission.
  */
@@ -21,27 +21,82 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Separator } from '@/components/ui/separator'
 import {
   Plus, Pencil, Trash2, Play, Square, Megaphone,
-  Calendar, ShoppingBag, X, Check
+  Calendar, ShoppingBag, X, RefreshCw, RepeatIcon
 } from 'lucide-react'
 import type { Campaign } from '@/types'
 import { useT } from '@/contexts/LanguageContext'
 
-/**
- * getCampaignStatus — derives a display label and Tailwind color string for a campaign
- * based on its is_active flag and start/end dates relative to today's date.
- */
-type CampaignStatusKey = 'campaignStatusDraft' | 'campaignStatusEnded' | 'campaignStatusScheduled' | 'campaignStatusActive'
+// ─── Helpers ──────────────────────────────────────────────────
 
-function getCampaignStatus(c: Campaign): { labelKey: CampaignStatusKey; color: string } {
-  const today = new Date().toISOString().split('T')[0]
-  if (!c.is_active) return { labelKey: 'campaignStatusDraft', color: 'border-gray-300 text-gray-500' }
-  if (c.end_date && c.end_date < today) return { labelKey: 'campaignStatusEnded', color: 'bg-gray-100 text-gray-500' }
-  if (c.start_date && c.start_date > today) return { labelKey: 'campaignStatusScheduled', color: 'bg-blue-100 text-blue-700' }
-  return { labelKey: 'campaignStatusActive', color: 'bg-[#E5F2F0] text-[#00352F]' }
+/**
+ * isInAnnualWindow — same logic as the server-side helper in /api/orders/route.ts.
+ * Determines if today falls within the annual month-day window.
+ */
+function isInAnnualWindow(now: Date, startDate: string, endDate: string): boolean {
+  const s = new Date(startDate)
+  const e = new Date(endDate)
+  const nowMD = now.getMonth() * 100 + now.getDate()
+  const startMD = s.getMonth() * 100 + s.getDate()
+  const endMD = e.getMonth() * 100 + e.getDate()
+  if (startMD <= endMD) return nowMD >= startMD && nowMD <= endMD
+  return nowMD >= startMD || nowMD <= endMD
 }
+
+/** Returns true if this campaign is effectively accepting orders right now. */
+function isEffectivelyActive(c: Campaign): boolean {
+  if (!c.is_active) return false
+  if (c.is_recurring && c.start_date && c.end_date) {
+    return isInAnnualWindow(new Date(), c.start_date, c.end_date)
+  }
+  const today = new Date().toISOString().split('T')[0]
+  if (c.end_date && c.end_date < today) return false
+  return true
+}
+
+/** Format a date string as "Month Day" without the year (for annual display). */
+function formatMonthDay(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+/** Compute the next upcoming start or end date for a recurring campaign. */
+function nextOccurrence(dateStr: string): string {
+  const ref = new Date(dateStr + 'T12:00:00')
+  const now = new Date()
+  const candidate = new Date(now.getFullYear(), ref.getMonth(), ref.getDate())
+  if (candidate < now) candidate.setFullYear(now.getFullYear() + 1)
+  return candidate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+type StatusInfo = { label: string; color: string; dot: string }
+
+function getCampaignStatus(c: Campaign): StatusInfo {
+  const today = new Date().toISOString().split('T')[0]
+
+  if (!c.is_active) {
+    return { label: 'Draft', color: 'border-gray-300 text-gray-500', dot: '#9CA3AF' }
+  }
+
+  if (c.is_recurring && c.start_date && c.end_date) {
+    const inWindow = isInAnnualWindow(new Date(), c.start_date, c.end_date)
+    if (inWindow) {
+      return { label: 'Active (Recurring)', color: 'bg-[#E5F2F0] text-[#00352F]', dot: '#00352F' }
+    }
+    return { label: 'Recurring · Off-season', color: 'bg-blue-50 text-blue-700', dot: '#3B82F6' }
+  }
+
+  if (c.end_date && c.end_date < today) {
+    return { label: 'Ended', color: 'bg-gray-100 text-gray-500', dot: '#9CA3AF' }
+  }
+  if (c.start_date && c.start_date > today) {
+    return { label: 'Scheduled', color: 'bg-blue-50 text-blue-700', dot: '#3B82F6' }
+  }
+  return { label: 'Active', color: 'bg-[#E5F2F0] text-[#00352F]', dot: '#00352F' }
+}
+
+// ─── Form default ─────────────────────────────────────────────
 
 const EMPTY_FORM = {
   name: '',
@@ -49,16 +104,14 @@ const EMPTY_FORM = {
   start_date: '',
   end_date: '',
   ended_message: 'This campaign has ended. Thank you for your participation.',
+  is_recurring: false,
 }
 
-/**
- * CampaignsPage — manages fundraising campaigns that gate order submission.
- * Only one campaign may be active at a time; activating one deactivates the rest.
- * The active campaign banner reflects whether the campaign is live, ended, or upcoming.
- */
+// ─── Page ─────────────────────────────────────────────────────
+
 export default function CampaignsPage() {
   const t = useT()
-  // ── State ──
+
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -68,7 +121,7 @@ export default function CampaignsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
-  // ── Handlers ──
+  // ── Data ──
 
   const fetchCampaigns = async () => {
     try {
@@ -76,13 +129,15 @@ export default function CampaignsPage() {
       const json = await res.json()
       setCampaigns(json.campaigns || [])
     } catch {
-      toast.error('Failed to load campaigns')
+      toast.error(t('admin', 'campaignFetchError'))
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchCampaigns() }, [])
+  useEffect(() => { fetchCampaigns() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Form ──
 
   const openNew = () => {
     setEditingId(null)
@@ -98,6 +153,7 @@ export default function CampaignsPage() {
       start_date: c.start_date || '',
       end_date: c.end_date || '',
       ended_message: c.ended_message,
+      is_recurring: c.is_recurring,
     })
     setShowForm(true)
   }
@@ -106,7 +162,7 @@ export default function CampaignsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Campaign name is required'); return }
+    if (!form.name.trim()) { toast.error(t('admin', 'campaignNameRequired')); return }
     setSaving(true)
     try {
       const url = editingId ? `/api/admin/campaigns/${editingId}` : '/api/admin/campaigns'
@@ -117,21 +173,23 @@ export default function CampaignsPage() {
         body: JSON.stringify(form),
       })
       const json = await res.json()
-      if (!res.ok) { toast.error(json.error || 'Failed to save campaign'); return }
+      if (!res.ok) { toast.error(json.error || t('admin', 'campaignSaveError')); return }
       if (editingId) {
         setCampaigns(prev => prev.map(c => c.id === editingId ? json.campaign : c))
-        toast.success('Campaign updated')
+        toast.success(t('admin', 'campaignUpdated'))
       } else {
         setCampaigns(prev => [json.campaign, ...prev])
-        toast.success(`"${json.campaign.name}" created`)
+        toast.success(`"${json.campaign.name}" ${t('admin', 'campaignCreated')}`)
       }
       closeForm()
     } catch {
-      toast.error('Something went wrong')
+      toast.error(t('admin', 'campaignSaveError'))
     } finally {
       setSaving(false)
     }
   }
+
+  // ── Toggle active ──
 
   const handleToggleActive = async (campaign: Campaign) => {
     setTogglingId(campaign.id)
@@ -142,57 +200,56 @@ export default function CampaignsPage() {
         body: JSON.stringify({ is_active: !campaign.is_active }),
       })
       const json = await res.json()
-      if (!res.ok) { toast.error(json.error || 'Failed to update'); return }
-      // If activating, all others get deactivated
+      if (!res.ok) { toast.error(json.error || t('admin', 'campaignToggleError')); return }
       if (!campaign.is_active) {
+        // activating: server deactivates all others
         setCampaigns(prev => prev.map(c => ({ ...c, is_active: c.id === campaign.id })))
       } else {
         setCampaigns(prev => prev.map(c => c.id === campaign.id ? json.campaign : c))
       }
-      toast.success(campaign.is_active ? 'Campaign deactivated' : `"${campaign.name}" is now active`)
+      toast.success(campaign.is_active
+        ? t('admin', 'campaignDeactivated')
+        : `"${campaign.name}" ${t('admin', 'campaignActivated')}`)
     } catch {
-      toast.error('Failed to update')
+      toast.error(t('admin', 'campaignToggleError'))
     } finally {
       setTogglingId(null)
     }
   }
 
+  // ── Delete ──
+
   const handleDelete = async (campaign: Campaign) => {
-    if (!confirm(`Delete "${campaign.name}"? This cannot be undone. Orders linked to this campaign will remain but lose the campaign link.`)) return
+    if (!confirm(`Delete "${campaign.name}"? Orders linked to this campaign will remain but lose the campaign link.`)) return
     setDeletingId(campaign.id)
     try {
       const res = await fetch(`/api/admin/campaigns/${campaign.id}`, { method: 'DELETE' })
       const json = await res.json()
-      if (!res.ok) { toast.error(json.error || 'Failed to delete'); return }
+      if (!res.ok) { toast.error(json.error || t('admin', 'campaignDeleteError')); return }
       setCampaigns(prev => prev.filter(c => c.id !== campaign.id))
-      toast.success(`"${campaign.name}" deleted`)
+      toast.success(`"${campaign.name}" ${t('admin', 'campaignDeleted')}`)
     } catch {
-      toast.error('Failed to delete')
+      toast.error(t('admin', 'campaignDeleteError'))
     } finally {
       setDeletingId(null)
     }
   }
 
-  const activeCampaign = campaigns.find(c => c.is_active)
+  // ── Derived ──
+
+  const effectivelyActiveCampaign = campaigns.find(isEffectivelyActive)
+  const today = new Date().toISOString().split('T')[0]
 
   // ── Render ──
 
-  // Compute banner state ahead of return to avoid an IIFE in JSX
-  const today = new Date().toISOString().split('T')[0]
-  const activeBannerEnded = activeCampaign?.end_date && activeCampaign.end_date < today
-  const activeBannerLive = activeCampaign
-    && (!activeCampaign.start_date || activeCampaign.start_date <= today)
-    && (!activeCampaign.end_date || activeCampaign.end_date >= today)
-
   return (
     <div className="space-y-6 max-w-3xl">
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('admin', 'campaignsTitle')}</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {t('admin', 'campaignsSubtitle')}
-          </p>
+          <p className="text-gray-500 text-sm mt-1">{t('admin', 'campaignsSubtitle')}</p>
         </div>
         <Button onClick={openNew} className="text-white gap-2" style={{ backgroundColor: '#00352F' }}>
           <Plus className="w-4 h-4" /> {t('admin', 'newCampaign')}
@@ -200,36 +257,48 @@ export default function CampaignsPage() {
       </div>
 
       {/* Active campaign status banner */}
-      {activeCampaign && (
-        <div
-          className="rounded-xl px-4 py-3 flex items-center gap-3 border"
-          style={{
-            backgroundColor: activeBannerEnded ? '#FFF7ED' : '#E5F2F0',
-            borderColor: activeBannerEnded ? '#FED7AA' : 'rgba(0,53,47,0.2)',
-          }}
-        >
-          <div
-            className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: activeBannerEnded ? '#F97316' : '#00352F' }}
-          />
-          <p className="text-sm font-medium" style={{ color: activeBannerEnded ? '#9A3412' : '#00352F' }}>
-            {activeBannerEnded
-              ? `"${activeCampaign.name}" ${t('admin', 'campaignHasEnded')}`
-              : activeBannerLive
-                ? `"${activeCampaign.name}" ${t('admin', 'campaignIsLive')}`
-                : `"${activeCampaign.name}" ${t('admin', 'campaignScheduled')} ${activeCampaign.start_date}.`}
+      {effectivelyActiveCampaign ? (
+        <div className="rounded-xl px-4 py-3 flex items-center gap-3 border"
+          style={{ backgroundColor: '#E5F2F0', borderColor: 'rgba(0,53,47,0.2)' }}>
+          <div className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse" style={{ backgroundColor: '#00352F' }} />
+          <p className="text-sm font-medium" style={{ color: '#00352F' }}>
+            &ldquo;{effectivelyActiveCampaign.name}&rdquo; {t('admin', 'campaignIsLive')}
+            {effectivelyActiveCampaign.is_recurring && effectivelyActiveCampaign.end_date && (
+              <span className="font-normal opacity-70">
+                {' '}· {t('admin', 'recurringEndsOn')} {formatMonthDay(effectivelyActiveCampaign.end_date)}
+              </span>
+            )}
           </p>
         </div>
-      )}
+      ) : campaigns.some(c => c.is_active) ? (
+        // An is_active=true campaign exists but it's in off-season (recurring)
+        <div className="rounded-xl px-4 py-3 flex items-center gap-3 border"
+          style={{ backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }}>
+          <RefreshCw className="w-4 h-4 flex-shrink-0 text-blue-500" />
+          <p className="text-sm font-medium text-blue-800">
+            {t('admin', 'campaignOffSeason')}
+            {(() => {
+              const c = campaigns.find(x => x.is_active && x.is_recurring && x.start_date)
+              return c?.start_date
+                ? <span className="font-normal"> · {t('admin', 'recurringResumesOn')} {nextOccurrence(c.start_date)}</span>
+                : null
+            })()}
+          </p>
+        </div>
+      ) : null}
 
-      {/* New / Edit form */}
+      {/* Create / Edit form */}
       {showForm && (
         <Card className="border-[#CEDC00]/40">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base">{editingId ? t('admin', 'editCampaign') : t('admin', 'newCampaign')}</CardTitle>
-                <CardDescription>{editingId ? t('admin', 'editCampaignDesc') : t('admin', 'createCampaignDesc')}</CardDescription>
+                <CardTitle className="text-base">
+                  {editingId ? t('admin', 'editCampaign') : t('admin', 'newCampaign')}
+                </CardTitle>
+                <CardDescription>
+                  {editingId ? t('admin', 'editCampaignDesc') : t('admin', 'createCampaignDesc')}
+                </CardDescription>
               </div>
               <button onClick={closeForm} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
                 <X className="w-4 h-4" />
@@ -238,6 +307,8 @@ export default function CampaignsPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSave} className="space-y-4">
+
+              {/* Name */}
               <div>
                 <Label htmlFor="camp-name">{t('admin', 'campaignNameLabel')}</Label>
                 <Input
@@ -246,8 +317,11 @@ export default function CampaignsPage() {
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder={t('admin', 'campaignNamePlaceholder')}
                   className="mt-1"
+                  required
                 />
               </div>
+
+              {/* Description */}
               <div>
                 <Label htmlFor="camp-desc">{t('admin', 'campaignDescLabel')}</Label>
                 <Textarea
@@ -259,9 +333,39 @@ export default function CampaignsPage() {
                   rows={2}
                 />
               </div>
+
+              {/* Recurring toggle */}
+              <div
+                className="flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors"
+                style={{
+                  borderColor: form.is_recurring ? '#00352F' : 'transparent',
+                  backgroundColor: form.is_recurring ? '#E5F2F0' : '#F9FAFB',
+                }}
+                onClick={() => setForm(f => ({ ...f, is_recurring: !f.is_recurring }))}
+              >
+                <input
+                  id="camp-recurring"
+                  type="checkbox"
+                  checked={form.is_recurring}
+                  onChange={e => setForm(f => ({ ...f, is_recurring: e.target.checked }))}
+                  onClick={e => e.stopPropagation()}
+                  className="mt-0.5 w-4 h-4 accent-[#00352F]"
+                />
+                <div>
+                  <label htmlFor="camp-recurring" className="font-medium text-sm cursor-pointer flex items-center gap-1.5">
+                    <RepeatIcon className="w-3.5 h-3.5" style={{ color: '#00352F' }} />
+                    {t('admin', 'recurringCampaign')}
+                  </label>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('admin', 'recurringCampaignDesc')}</p>
+                </div>
+              </div>
+
+              {/* Dates */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="camp-start">{t('admin', 'startDateLabel')}</Label>
+                  <Label htmlFor="camp-start">
+                    {form.is_recurring ? t('admin', 'annualStartLabel') : t('admin', 'startDateLabel')}
+                  </Label>
                   <Input
                     id="camp-start"
                     type="date"
@@ -271,7 +375,9 @@ export default function CampaignsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="camp-end">{t('admin', 'endDateLabel')}</Label>
+                  <Label htmlFor="camp-end">
+                    {form.is_recurring ? t('admin', 'annualEndLabel') : t('admin', 'endDateLabel')}
+                  </Label>
                   <Input
                     id="camp-end"
                     type="date"
@@ -281,22 +387,41 @@ export default function CampaignsPage() {
                   />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="camp-msg">{t('admin', 'endedMessageLabel')}</Label>
-                <Textarea
-                  id="camp-msg"
-                  value={form.ended_message}
-                  onChange={e => setForm(f => ({ ...f, ended_message: e.target.value }))}
-                  className="mt-1 resize-none"
-                  rows={2}
-                />
-                <p className="text-xs text-gray-400 mt-1">{t('admin', 'endedMessageDesc')}</p>
-              </div>
+
+              {/* Recurring explanation */}
+              {form.is_recurring && form.start_date && form.end_date && (
+                <div className="flex items-start gap-2 text-xs rounded-lg px-3 py-2.5 bg-blue-50 border border-blue-100 text-blue-800">
+                  <RepeatIcon className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <p>
+                    {t('admin', 'recurringPreview')}{' '}
+                    <strong>{formatMonthDay(form.start_date)}</strong> → <strong>{formatMonthDay(form.end_date)}</strong>{' '}
+                    {t('admin', 'recurringPreviewEveryYear')}
+                  </p>
+                </div>
+              )}
+
+              {/* Ended message (non-recurring only) */}
+              {!form.is_recurring && (
+                <div>
+                  <Label htmlFor="camp-msg">{t('admin', 'endedMessageLabel')}</Label>
+                  <Textarea
+                    id="camp-msg"
+                    value={form.ended_message}
+                    onChange={e => setForm(f => ({ ...f, ended_message: e.target.value }))}
+                    className="mt-1 resize-none"
+                    rows={2}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">{t('admin', 'endedMessageDesc')}</p>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-1">
                 <Button type="submit" disabled={saving} className="text-white" style={{ backgroundColor: '#00352F' }}>
                   {saving ? t('admin', 'savingCampaign') : editingId ? t('admin', 'saveChanges') : t('admin', 'createCampaign')}
                 </Button>
-                <Button type="button" variant="outline" onClick={closeForm}>{t('admin', 'cancelCampaign')}</Button>
+                <Button type="button" variant="outline" onClick={closeForm}>
+                  {t('admin', 'cancelCampaign')}
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -324,19 +449,25 @@ export default function CampaignsPage() {
       ) : (
         <div className="space-y-3">
           {campaigns.map(campaign => {
-            const { labelKey, color } = getCampaignStatus(campaign)
+            const { label, color, dot } = getCampaignStatus(campaign)
+            const effectiveNow = isEffectivelyActive(campaign)
+
             return (
               <div
                 key={campaign.id}
-                className={`bg-white border rounded-xl p-4 transition-shadow hover:shadow-sm ${campaign.is_active ? 'border-[#00352F]/30 shadow-sm' : 'border-gray-200'}`}
+                className={`bg-white border rounded-xl p-4 transition-shadow hover:shadow-sm ${
+                  effectiveNow ? 'border-[#00352F]/30 shadow-sm' : 'border-gray-200'
+                }`}
               >
                 <div className="flex items-start gap-4">
                   {/* Icon */}
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: campaign.is_active ? '#E5F2F0' : '#F9FAFB' }}
+                    style={{ backgroundColor: effectiveNow ? '#E5F2F0' : '#F9FAFB' }}
                   >
-                    <Megaphone className="w-5 h-5" style={{ color: campaign.is_active ? '#00352F' : '#9CA3AF' }} />
+                    {campaign.is_recurring
+                      ? <RepeatIcon className="w-5 h-5" style={{ color: campaign.is_active ? '#00352F' : '#9CA3AF' }} />
+                      : <Megaphone className="w-5 h-5" style={{ color: effectiveNow ? '#00352F' : '#9CA3AF' }} />}
                   </div>
 
                   {/* Info */}
@@ -344,22 +475,42 @@ export default function CampaignsPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900 text-sm">{campaign.name}</h3>
                       <Badge variant="outline" className={`text-[10px] font-semibold px-2 py-0 ${color}`}>
-                        {t('admin', labelKey)}
+                        <span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{ backgroundColor: dot }} />
+                        {label}
                       </Badge>
+                      {campaign.is_recurring && (
+                        <Badge variant="outline" className="text-[10px] px-2 py-0 text-blue-600 border-blue-200">
+                          <RepeatIcon className="w-2.5 h-2.5 mr-1" /> {t('admin', 'annual')}
+                        </Badge>
+                      )}
                     </div>
+
                     {campaign.description && (
                       <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{campaign.description}</p>
                     )}
-                    <div className="flex items-center gap-4 mt-2">
+
+                    <div className="flex items-center gap-4 mt-2 flex-wrap">
+                      {/* Date display */}
                       {(campaign.start_date || campaign.end_date) && (
                         <span className="flex items-center gap-1 text-xs text-gray-400">
                           <Calendar className="w-3 h-3" />
-                          {campaign.start_date || '—'} → {campaign.end_date || '—'}
+                          {campaign.is_recurring
+                            ? `${campaign.start_date ? formatMonthDay(campaign.start_date) : '—'} → ${campaign.end_date ? formatMonthDay(campaign.end_date) : '—'} (annual)`
+                            : `${campaign.start_date || '—'} → ${campaign.end_date || '—'}`}
                         </span>
                       )}
+
+                      {/* Next occurrence hint for off-season recurring */}
+                      {campaign.is_recurring && campaign.is_active && !effectiveNow && campaign.start_date && (
+                        <span className="flex items-center gap-1 text-xs text-blue-500">
+                          <RefreshCw className="w-3 h-3" />
+                          {t('admin', 'recurringResumesOn')} {nextOccurrence(campaign.start_date)}
+                        </span>
+                      )}
+
                       <span className="flex items-center gap-1 text-xs text-gray-400">
                         <ShoppingBag className="w-3 h-3" />
-                        {campaign.order_count ?? 0} orders
+                        {campaign.order_count ?? 0} {t('admin', 'orders')}
                       </span>
                     </div>
                   </div>
@@ -383,7 +534,6 @@ export default function CampaignsPage() {
                     <button
                       onClick={() => openEdit(campaign)}
                       className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                      title={t('admin', 'editCampaignBtn')}
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -400,6 +550,14 @@ export default function CampaignsPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Explanation footer */}
+      {campaigns.some(c => c.is_recurring) && (
+        <div className="flex items-start gap-2 text-xs text-gray-400 bg-gray-50 border rounded-lg p-3">
+          <RepeatIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <p>{t('admin', 'recurringFootnote')}</p>
         </div>
       )}
     </div>
