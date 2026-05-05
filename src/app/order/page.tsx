@@ -38,9 +38,6 @@ import { Briefcase, User } from 'lucide-react'
 import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
 
 // ─── Zod Validation Schema ────────────────────────────────────
-// Base fields are always required. Institution-specific fields are
-// optional at the type level and enforced conditionally via superRefine,
-// which mirrors the server-side validation model.
 const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Valid email is required'),
@@ -84,19 +81,6 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-/**
- * OrderPage — main public order form.
- *
- * Lifecycle:
- * 1. On mount, fetches settings, catalog, gov orgs, private companies, and the
- *    active campaign in parallel.
- * 2. Renders a campaign-closed screen if no active campaign exists or the
- *    active campaign's end_date has passed.
- * 3. Otherwise renders the stepped order form with conditional sections for
- *    each institution type.
- * 4. On submit, adds the item to CartContext and opens the CartDrawer.
- *    The drawer holds the full checkout payload and handles final order creation.
- */
 export default function OrderPage() {
   const t = useT()
   const { addItem, openCart, items: cartItems, totalItems } = useCart()
@@ -106,7 +90,9 @@ export default function OrderPage() {
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [selectedGovOrg, setSelectedGovOrg] = useState<GovOrg | null>(null)
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
-  const [activeCampaign, setActiveCampaign] = useState<Campaign | null | 'none'>(null)
+  // null = loading; [] = none active; [one] = single (no picker); [two+] = picker shown
+  const [activeCampaigns, setActiveCampaigns] = useState<Campaign[] | null>(null)
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [institutionType, setInstitutionType] = useState<InstitutionType | ''>('')
   const [checkoutPayload, setCheckoutPayload] = useState<null | {
@@ -123,6 +109,7 @@ export default function OrderPage() {
     company_department?: string
     delivery_address?: string
     notes?: string
+    campaign_id?: string
   }>(null)
 
   const { register, handleSubmit, setValue, watch, reset, trigger, getValues, formState: { errors } } = useForm<FormData>({
@@ -159,14 +146,9 @@ export default function OrderPage() {
 
     fetch('/api/campaigns/active')
       .then(r => r.json())
-      .then(({ campaign }) => setActiveCampaign(campaign ?? 'none'))
-      .catch(() => setActiveCampaign('none'))
+      .then(({ campaigns }) => setActiveCampaigns(campaigns ?? []))
+      .catch(() => setActiveCampaigns([]))
   }, [])
-
-  // ─── Data Fetching ───────────────────────────────────────────
-  // Parallel fetches on mount: settings (price, sizes, toggles), catalog,
-  // gov orgs, private companies, and the active campaign. Campaign result
-  // is initialized to null (loading) and set to 'none' when absent.
 
   // Auto-select if only one shirt
   useEffect(() => {
@@ -201,6 +183,7 @@ export default function OrderPage() {
         company_department: data.company_department,
         delivery_address,
         notes: data.notes,
+        campaign_id: selectedCampaign?.id ?? activeCampaigns?.[0]?.id,
       }
       setCheckoutPayload(payload)
 
@@ -225,8 +208,6 @@ export default function OrderPage() {
   }
 
   // handleCheckoutValidate — called by CartDrawer before navigating to checkout.
-  // Re-validates the contact and institution-type fields and snapshots the
-  // current form values into checkoutPayload so CartDrawer can send them.
   const handleCheckoutValidate = async () => {
     const result = await trigger(['full_name', 'email', 'institution_type'])
     if (!result) return false
@@ -250,28 +231,20 @@ export default function OrderPage() {
       company_department: data.company_department,
       delivery_address,
       notes: data.notes,
+      campaign_id: selectedCampaign?.id ?? activeCampaigns?.[0]?.id,
     })
     return true
   }
 
   // ─── Campaign Gate ────────────────────────────────────────────
-  // campaignClosed is true when: no campaign exists ('none'), the active
-  // campaign has an end_date in the past, or the campaign is otherwise null.
-  // The closed message prefers the campaign's own ended_message over the
-  // generic i18n fallback.
-  const today = new Date().toISOString().split('T')[0]
-  const campaignClosed =
-    activeCampaign === 'none' ||
-    (activeCampaign !== null && typeof activeCampaign === 'object' &&
-      activeCampaign.end_date !== null && activeCampaign.end_date < today)
-
-  const closedMessage =
-    activeCampaign === 'none' || activeCampaign === null
-      ? t('errors', 'ordersNotOpen')
-      : (activeCampaign as Campaign).ended_message || t('errors', 'campaignEnded')
+  const campaignClosed = activeCampaigns !== null && activeCampaigns.length === 0
 
   const sizes: string[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const showCatalogPicker = catalog.length > 1
+  const showCampaignPicker = activeCampaigns !== null && activeCampaigns.length > 1
+  // base step number for institution type card (campaign picker + catalog picker contribute 1 each when shown)
+  const baseStep = (showCampaignPicker ? 1 : 0) + (showCatalogPicker ? 1 : 0) + 1
+
   const institutionOptions = [
     { value: 'school' as const,          labelKey: 'school' as const,          icon: School,    enabled: settings?.school_orders_enabled !== false },
     { value: 'government' as const,      labelKey: 'government' as const,      icon: Building2, enabled: settings?.government_orders_enabled !== false },
@@ -279,7 +252,7 @@ export default function OrderPage() {
     { value: 'private_company' as const, labelKey: 'privateCompany' as const,  icon: Briefcase, enabled: settings?.private_company_orders_enabled !== false },
   ]
 
-  if (activeCampaign === null) {
+  if (activeCampaigns === null) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F4F0' }}>
         <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#00352F' }} />
@@ -312,7 +285,7 @@ export default function OrderPage() {
             <ShoppingBag className="w-8 h-8" style={{ color: '#00352F' }} />
           </div>
           <h1 className="font-heading text-2xl font-bold text-gray-900 mb-3">{t('errors', 'ordersClosed')}</h1>
-          <p className="text-gray-500 max-w-sm leading-relaxed mb-8">{closedMessage}</p>
+          <p className="text-gray-500 max-w-sm leading-relaxed mb-8">{t('errors', 'ordersNotOpen')}</p>
           <Link
             href="/"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm transition-all hover:-translate-y-0.5"
@@ -378,6 +351,75 @@ export default function OrderPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
+          {/* Campaign Picker — only shown when multiple campaigns are active */}
+          {showCampaignPicker && (
+            <Card className={cn('border-2 shadow-sm transition-colors', !selectedCampaign ? 'border-amber-300 bg-amber-50/60' : 'border-[#CEDC00]/40')}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
+                    style={{ backgroundColor: '#00352F' }}
+                  >
+                    1
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{t('order', 'selectCampaign')} *</CardTitle>
+                    <CardDescription className="mt-0.5">{t('order', 'selectCampaignSub')}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-3">
+                  {activeCampaigns.map(campaign => {
+                    const isSelected = selectedCampaign?.id === campaign.id
+                    return (
+                      <button
+                        key={campaign.id}
+                        type="button"
+                        onClick={() => setSelectedCampaign(campaign)}
+                        className={cn(
+                          'flex items-start gap-4 p-4 rounded-xl border-2 text-left transition-all focus:outline-none',
+                          isSelected
+                            ? 'border-[#00352F] bg-[#E5F2F0] shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-[#00352F]/40'
+                        )}
+                      >
+                        {/* Radio circle */}
+                        <div className={cn(
+                          'mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors',
+                          isSelected ? 'border-[#00352F] bg-[#00352F]' : 'border-gray-300 bg-white'
+                        )}>
+                          {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                        </div>
+                        {/* Text */}
+                        <div className="min-w-0">
+                          <p className={cn('font-semibold text-sm leading-tight', isSelected ? 'text-[#00352F]' : 'text-gray-900')}>
+                            {campaign.name}
+                          </p>
+                          {campaign.description && (
+                            <p className="text-xs text-gray-500 mt-1 leading-snug">{campaign.description}</p>
+                          )}
+                          {(campaign.start_date || campaign.end_date) && (
+                            <p className="text-xs mt-1.5" style={{ color: isSelected ? '#00352F' : '#9CA3AF' }}>
+                              {campaign.start_date && campaign.end_date
+                                ? `${campaign.start_date} – ${campaign.end_date}`
+                                : campaign.end_date
+                                  ? `Ends ${campaign.end_date}`
+                                  : `From ${campaign.start_date}`}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                {!selectedCampaign && (
+                  <p className="text-amber-600 text-xs mt-3 font-medium">{t('order', 'selectCampaignToContinue')}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Shirt Style Picker — only shown when multiple options exist */}
           {showCatalogPicker && (
             <Card className={cn('border-2 shadow-sm transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50/60' : 'border-[#CEDC00]/40')}>
@@ -387,7 +429,7 @@ export default function OrderPage() {
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
                     style={{ backgroundColor: '#00352F' }}
                   >
-                    1
+                    {showCampaignPicker ? '2' : '1'}
                   </div>
                   <div>
                     <CardTitle className="text-base">{t('order', 'chooseShirt')} *</CardTitle>
@@ -453,7 +495,7 @@ export default function OrderPage() {
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
                   style={{ backgroundColor: '#00352F' }}
                 >
-                  {showCatalogPicker ? '2' : '1'}
+                  {String(baseStep)}
                 </div>
                 <div>
                   <CardTitle className="text-base">{t('order', 'orderType')}</CardTitle>
@@ -524,7 +566,7 @@ export default function OrderPage() {
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
                   style={{ backgroundColor: '#00352F' }}
                 >
-                  {showCatalogPicker ? '3' : '2'}
+                  {String(baseStep + 1)}
                 </div>
                 <CardTitle className="text-base">{t('order', 'personalInfo')}</CardTitle>
               </div>
@@ -565,7 +607,7 @@ export default function OrderPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
-                    {showCatalogPicker ? '4' : '3'}
+                    {String(baseStep + 2)}
                   </div>
                   <CardTitle className="text-base">{t('order', 'schoolInfo')}</CardTitle>
                 </div>
@@ -598,7 +640,7 @@ export default function OrderPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
-                    {showCatalogPicker ? '4' : '3'}
+                    {String(baseStep + 2)}
                   </div>
                   <CardTitle className="text-base">{t('order', 'orgInfo')}</CardTitle>
                 </div>
@@ -656,7 +698,7 @@ export default function OrderPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
-                    {showCatalogPicker ? '4' : '3'}
+                    {String(baseStep + 2)}
                   </div>
                   <CardTitle className="text-base">{t('order', 'companyInfo')}</CardTitle>
                 </div>
@@ -694,7 +736,7 @@ export default function OrderPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
-                    {showCatalogPicker ? '4' : '3'}
+                    {String(baseStep + 2)}
                   </div>
                   <div>
                     <CardTitle className="text-base">{t('order', 'deliveryInfo')}</CardTitle>
@@ -766,7 +808,7 @@ export default function OrderPage() {
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
                   style={{ backgroundColor: '#00352F' }}
                 >
-                  {institutionType ? (showCatalogPicker ? '5' : '4') : (showCatalogPicker ? '4' : '3')}
+                  {institutionType ? String(baseStep + 3) : String(baseStep + 2)}
                 </div>
                 <CardTitle className="text-base">{t('order', 'shirtDetails')}</CardTitle>
               </div>
@@ -877,7 +919,7 @@ export default function OrderPage() {
 
           <Button
             type="submit"
-            disabled={isAdding || !institutionType || (showCatalogPicker && !selectedCatalogItem)}
+            disabled={isAdding || !institutionType || (showCatalogPicker && !selectedCatalogItem) || (showCampaignPicker && !selectedCampaign)}
             className="w-full text-white h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
             style={{ backgroundColor: '#00352F' }}
           >

@@ -133,6 +133,7 @@ export interface OrderFormData {
   shirt_size: ShirtSize
   quantity: number
   notes?: string
+  campaign_id?: string
 }
 
 // ─── Fees ─────────────────────────────────────────────────

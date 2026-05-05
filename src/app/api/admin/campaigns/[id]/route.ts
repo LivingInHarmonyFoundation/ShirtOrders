@@ -1,7 +1,7 @@
 /**
  * @file route.ts
- * @description Single-campaign endpoint (by UUID). PATCH updates allowed fields and
- * handles campaign activation (which deactivates all other campaigns server-side).
+ * @description Single-campaign endpoint (by UUID). PATCH updates allowed fields;
+ * multiple campaigns can be active simultaneously (no deactivation side effect).
  * DELETE removes a campaign but blocks deletion of currently active campaigns.
  * Both handlers require authentication and the `canManageSettings` permission.
  * Uses `createAdminClient()` (bypasses RLS) for all DB reads and writes.
@@ -15,9 +15,8 @@ import { requirePermission } from '@/lib/supabase/require-role'
 /**
  * PATCH /api/admin/campaigns/[id] — update a campaign's allowed fields.
  * Requires authentication and the `canManageSettings` permission.
- * Allowed body keys: name, description, start_date, end_date, ended_message, is_active.
- * Side effect: if `is_active` is set to `true`, all OTHER campaigns are deactivated
- * server-side before this one is activated (only one campaign may be active at a time).
+ * Allowed body keys: name, description, start_date, end_date, ended_message, is_active, is_recurring.
+ * Multiple campaigns may be active simultaneously; activating one does NOT deactivate others.
  * Response: { campaign: Campaign } with the refreshed row and derived order_count.
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -31,7 +30,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (auth instanceof NextResponse) return auth
 
   // ─── Input Validation & Field Allowlist ──────────────────────
-  // createAdminClient() bypasses RLS — required to write campaigns and deactivate others
   const admin = await createAdminClient()
   const body = await request.json()
 
@@ -39,13 +37,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]
-  }
-
-  // ─── Activation Guard ────────────────────────────────────────
-  // If activating, deactivate all other campaigns first
-  // Only one campaign may be active at a time; this is enforced server-side
-  if (updates.is_active === true) {
-    await admin.from('campaigns').update({ is_active: false }).neq('id', id)
   }
 
   // ─── Update & Fetch ──────────────────────────────────────────

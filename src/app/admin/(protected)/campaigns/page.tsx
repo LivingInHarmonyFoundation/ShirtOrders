@@ -201,12 +201,7 @@ export default function CampaignsPage() {
       })
       const json = await res.json()
       if (!res.ok) { toast.error(json.error || t('admin', 'campaignToggleError')); return }
-      if (!campaign.is_active) {
-        // activating: server deactivates all others
-        setCampaigns(prev => prev.map(c => ({ ...c, is_active: c.id === campaign.id })))
-      } else {
-        setCampaigns(prev => prev.map(c => c.id === campaign.id ? json.campaign : c))
-      }
+      setCampaigns(prev => prev.map(c => c.id === campaign.id ? json.campaign : c))
       toast.success(campaign.is_active
         ? t('admin', 'campaignDeactivated')
         : `"${campaign.name}" ${t('admin', 'campaignActivated')}`)
@@ -237,7 +232,7 @@ export default function CampaignsPage() {
 
   // ── Derived ──
 
-  const effectivelyActiveCampaign = campaigns.find(isEffectivelyActive)
+  const effectivelyActiveCampaigns = campaigns.filter(isEffectivelyActive)
   const today = new Date().toISOString().split('T')[0]
 
   // ── Render ──
@@ -257,16 +252,25 @@ export default function CampaignsPage() {
       </div>
 
       {/* Active campaign status banner */}
-      {effectivelyActiveCampaign ? (
+      {effectivelyActiveCampaigns.length > 0 ? (
         <div className="rounded-xl px-4 py-3 flex items-center gap-3 border"
           style={{ backgroundColor: '#E5F2F0', borderColor: 'rgba(0,53,47,0.2)' }}>
           <div className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse" style={{ backgroundColor: '#00352F' }} />
           <p className="text-sm font-medium" style={{ color: '#00352F' }}>
-            &ldquo;{effectivelyActiveCampaign.name}&rdquo; {t('admin', 'campaignIsLive')}
-            {effectivelyActiveCampaign.is_recurring && effectivelyActiveCampaign.end_date && (
-              <span className="font-normal opacity-70">
-                {' '}· {t('admin', 'recurringEndsOn')} {formatMonthDay(effectivelyActiveCampaign.end_date)}
-              </span>
+            {effectivelyActiveCampaigns.length === 1 ? (
+              <>
+                &ldquo;{effectivelyActiveCampaigns[0].name}&rdquo; {t('admin', 'campaignIsLive')}
+                {effectivelyActiveCampaigns[0].is_recurring && effectivelyActiveCampaigns[0].end_date && (
+                  <span className="font-normal opacity-70">
+                    {' '}· {t('admin', 'recurringEndsOn')} {formatMonthDay(effectivelyActiveCampaigns[0].end_date)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                {effectivelyActiveCampaigns.length} {t('admin', 'campaignsLiveCount')}:{' '}
+                {effectivelyActiveCampaigns.map(c => c.name).join(', ')}
+              </>
             )}
           </p>
         </div>

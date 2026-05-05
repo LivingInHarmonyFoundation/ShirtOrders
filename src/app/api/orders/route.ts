@@ -47,6 +47,7 @@ const orderSchema = z.object({
   notes: z.string().optional(),
   school_link_id: z.string().uuid().optional(),
   company_link_id: z.string().uuid().optional(),
+  campaign_id: z.string().uuid().optional(),
   // Multi-item cart submission
   items: z.array(cartItemSchema).min(1).max(50).optional(),
   // Legacy single-item fields (kept for backwards compat; ignored when items is present)
@@ -92,28 +93,40 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    // Find the effectively active campaign.
-    // For recurring campaigns, is_active=true means "recurring is enabled" — we still
-    // check whether today falls within the annual month-day window before accepting orders.
+    // Build the list of effectively active campaigns.
+    // Multiple campaigns can be active simultaneously. For recurring campaigns,
+    // is_active=true is "recurring enabled" — we still check the annual window.
     const { data: enabledCampaigns } = await supabase
       .from('campaigns')
       .select('id, end_date, ended_message, start_date, is_recurring')
       .eq('is_active', true)
+      .order('created_at', { ascending: false })
 
     const now = new Date()
     const todayStr = now.toISOString().split('T')[0]
 
-    const activeCampaign = (enabledCampaigns || []).find(c => {
+    const effectiveCampaigns = (enabledCampaigns || []).filter(c => {
       if (c.is_recurring && c.start_date && c.end_date) {
         return isInAnnualWindow(now, c.start_date, c.end_date)
       }
-      // Non-recurring: active unless end_date is in the past
       if (c.end_date && c.end_date < todayStr) return false
       return true
     })
 
-    if (!activeCampaign) {
+    if (effectiveCampaigns.length === 0) {
       return NextResponse.json({ error: 'Orders are not currently open.' }, { status: 400 })
+    }
+
+    // If the client sent a campaign_id (user picked from the multi-campaign picker),
+    // validate it is in the effective list. Otherwise fall back to the first effective
+    // campaign (preserves behavior for school/company slug pages that never send one).
+    let selectedCampaign = effectiveCampaigns[0]
+    if (data.campaign_id) {
+      const matched = effectiveCampaigns.find(c => c.id === data.campaign_id)
+      if (!matched) {
+        return NextResponse.json({ error: 'Selected campaign is no longer active.' }, { status: 400 })
+      }
+      selectedCampaign = matched
     }
 
     const { data: settings } = await supabase
@@ -274,7 +287,7 @@ export async function POST(request: NextRequest) {
         order_allowed_payment_methods: orderAllowedPaymentMethods,
         catalog_item_id: primaryItem.catalog_item_id || null,
         catalog_item_name: primaryItem.catalog_item_name || null,
-        campaign_id: activeCampaign.id,
+        campaign_id: selectedCampaign.id,
         payment_status: 'pending',
         order_status: 'new',
         delivery_status: 'not_delivered',

@@ -39,6 +39,7 @@ interface CheckoutPayload {
   notes?: string
   school_link_id?: string
   company_link_id?: string
+  campaign_id?: string
 }
 
 interface CartDrawerProps {
