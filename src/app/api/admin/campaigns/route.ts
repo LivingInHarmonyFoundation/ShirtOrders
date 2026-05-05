@@ -44,7 +44,11 @@ export async function GET() {
     start_date: c.start_date,
     end_date: c.end_date,
     is_active: c.is_active,
+    is_recurring: c.is_recurring,
     ended_message: c.ended_message,
+    slug: c.slug ?? null,
+    banner_url: c.banner_url ?? null,
+    badge_url: c.badge_url ?? null,
     created_at: c.created_at,
     updated_at: c.updated_at,
     order_count: Array.isArray(c.orders) ? (c.orders[0] as { count: number })?.count ?? 0 : 0,
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest) {
   const admin = await createAdminClient()
   const body = await request.json()
 
-  const { name, description, start_date, end_date, ended_message, is_recurring } = body
+  const { name, description, start_date, end_date, ended_message, is_recurring, slug, banner_url, badge_url } = body
   if (!name?.trim()) return NextResponse.json({ error: 'Campaign name is required' }, { status: 400 })
 
   // ─── Insert ──────────────────────────────────────────────────
@@ -89,6 +93,9 @@ export async function POST(request: NextRequest) {
       ended_message: ended_message?.trim() || 'This campaign has ended. Thank you for your participation.',
       is_active: false,
       is_recurring: !!is_recurring,
+      slug: slug?.trim() || null,
+      banner_url: banner_url || null,
+      badge_url: badge_url || null,
     })
     .select()
     .single()

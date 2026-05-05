@@ -16,7 +16,7 @@ import {
   School, Building2, User, Briefcase,
   CheckCircle, Shield, CreditCard, FileText, ArrowRight,
 } from 'lucide-react'
-import type { ShirtCatalogItem } from '@/types'
+import type { ShirtCatalogItem, Campaign } from '@/types'
 import ShirtViewer from '@/components/shared/ShirtViewer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import { useT } from '@/contexts/LanguageContext'
@@ -25,6 +25,7 @@ interface LandingContentProps {
   catalog: ShirtCatalogItem[]
   missionBannerUrl: string | null
   badgeUrl: string | null
+  campaigns: Campaign[]
 }
 
 /**
@@ -37,9 +38,12 @@ interface LandingContentProps {
  * @param badgeUrl - Optional custom badge image URL. Falls back to /badge.jpeg
  *   when null.
  */
-export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: LandingContentProps) {
+export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, campaigns }: LandingContentProps) {
   const t = useT()
   const badgeSrc = badgeUrl || '/badge.jpeg'
+
+  const campaignsWithSlug = campaigns.filter(c => c.slug)
+  const primaryOrderHref = campaignsWithSlug.length === 1 ? `/campaign/${campaignsWithSlug[0].slug}` : '/order'
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F5F4F0' }}>
@@ -149,7 +153,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
                 </p>
 
                 {/* CTA — full-width on mobile */}
-                <Link href="/order" className="block sm:inline-block">
+                <Link href={primaryOrderHref} className="block sm:inline-block">
                   <Button
                     size="lg"
                     className="w-full sm:w-auto text-white h-12 px-8 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
@@ -224,6 +228,84 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
             </div>
           </div>
         </section>
+
+        {/* ── Active Campaigns ────────────────────────────────── */}
+        {campaignsWithSlug.length > 0 && (
+          <section className="py-16 sm:py-20 px-4 sm:px-6" style={{ backgroundColor: '#F5F4F0' }}>
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-10">
+                <div
+                  className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 mb-4 font-bold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: '#E5F2F0',
+                    color: '#00352F',
+                    border: '1px solid rgba(206,220,0,0.35)',
+                    fontSize: '10px',
+                  }}
+                >
+                  {t('landing', 'orderNow')}
+                </div>
+                <h2 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">
+                  {campaignsWithSlug.length === 1 ? campaignsWithSlug[0].name : t('landing', 'placeAnOrder')}
+                </h2>
+                {campaignsWithSlug.length === 1 && campaignsWithSlug[0].description && (
+                  <p className="text-gray-500 mt-2 mx-auto" style={{ maxWidth: '480px', fontSize: '14px' }}>
+                    {campaignsWithSlug[0].description}
+                  </p>
+                )}
+              </div>
+
+              <div className={`grid gap-4 sm:gap-6 ${campaignsWithSlug.length === 1 ? 'max-w-md mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
+                {campaignsWithSlug.map(campaign => (
+                  <div
+                    key={campaign.id}
+                    className="bg-white rounded-2xl border-2 overflow-hidden transition-all duration-200 hover:border-[#00352F]/30 hover:shadow-lg"
+                    style={{ borderColor: 'rgba(206,220,0,0.35)' }}
+                  >
+                    {campaign.banner_url && (
+                      <div className="relative w-full h-32 overflow-hidden">
+                        <Image src={campaign.banner_url} alt={campaign.name} fill className="object-cover" />
+                      </div>
+                    )}
+                    <div className="p-5 flex items-start gap-4">
+                      {campaign.badge_url && (
+                        <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0">
+                          <Image src={campaign.badge_url} alt={campaign.name} fill className="object-cover" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-heading font-bold text-gray-900 text-lg leading-tight">{campaign.name}</h3>
+                        {campaign.description && (
+                          <p className="text-gray-500 text-sm mt-1 leading-snug line-clamp-2">{campaign.description}</p>
+                        )}
+                        {(campaign.start_date || campaign.end_date) && (
+                          <p className="text-xs mt-2" style={{ color: '#00352F' }}>
+                            {campaign.start_date && campaign.end_date
+                              ? `${campaign.start_date} – ${campaign.end_date}`
+                              : campaign.end_date
+                                ? `Ends ${campaign.end_date}`
+                                : `From ${campaign.start_date}`}
+                          </p>
+                        )}
+                        <div className="mt-4">
+                          <Link href={`/campaign/${campaign.slug}`}>
+                            <Button
+                              size="sm"
+                              className="text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
+                              style={{ backgroundColor: '#00352F' }}
+                            >
+                              {t('landing', 'orderNow')} →
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ── Mission ─────────────────────────────────────────── */}
         {missionBannerUrl ? (
@@ -323,7 +405,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
               </div>
 
               <div className="text-center mt-12">
-                <Link href="/order" className="block sm:inline-block">
+                <Link href={primaryOrderHref} className="block sm:inline-block">
                   <Button
                     size="lg"
                     className="w-full sm:w-auto text-white px-10 h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
@@ -450,7 +532,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl }: 
             <p className="mb-8 leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '14px' }}>
               {t('landing', 'readySub')}
             </p>
-            <Link href="/order" className="block sm:inline-block">
+            <Link href={primaryOrderHref} className="block sm:inline-block">
               <Button
                 size="lg"
                 className="w-full sm:w-auto h-12 px-10 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5"

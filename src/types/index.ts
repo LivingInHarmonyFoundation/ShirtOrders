@@ -338,6 +338,9 @@ export interface Campaign {
   /** When true, start_date/end_date are treated as an annual month-day window that auto-activates yearly */
   is_recurring: boolean
   ended_message: string
+  slug: string | null
+  banner_url: string | null
+  badge_url: string | null
   created_at: string
   updated_at: string
   order_count?: number

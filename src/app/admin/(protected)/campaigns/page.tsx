@@ -12,7 +12,7 @@
  */
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,8 +23,9 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Plus, Pencil, Trash2, Play, Square, Megaphone,
-  Calendar, ShoppingBag, X, RefreshCw, RepeatIcon
+  Calendar, ShoppingBag, X, RefreshCw, RepeatIcon, Upload, Loader2,
 } from 'lucide-react'
+import Image from 'next/image'
 import type { Campaign } from '@/types'
 import { useT } from '@/contexts/LanguageContext'
 
@@ -105,6 +106,9 @@ const EMPTY_FORM = {
   end_date: '',
   ended_message: 'This campaign has ended. Thank you for your participation.',
   is_recurring: false,
+  slug: '',
+  banner_url: '',
+  badge_url: '',
 }
 
 // ─── Page ─────────────────────────────────────────────────────
@@ -120,6 +124,10 @@ export default function CampaignsPage() {
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
+  const [uploadingBadge, setUploadingBadge] = useState(false)
+  const bannerRef = useRef<HTMLInputElement>(null)
+  const badgeRef = useRef<HTMLInputElement>(null)
 
   // ── Data ──
 
@@ -154,11 +162,39 @@ export default function CampaignsPage() {
       end_date: c.end_date || '',
       ended_message: c.ended_message,
       is_recurring: c.is_recurring,
+      slug: c.slug || '',
+      banner_url: c.banner_url || '',
+      badge_url: c.badge_url || '',
     })
     setShowForm(true)
   }
 
   const closeForm = () => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }
+
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: 'banner_url' | 'badge_url',
+    ref: React.RefObject<HTMLInputElement | null>,
+    setUploading: (v: boolean) => void,
+  ) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return }
+    if (ref.current) ref.current.value = ''
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const upRes = await fetch('/api/admin/catalog/upload', { method: 'POST', body: fd })
+      const upJson = await upRes.json()
+      if (!upRes.ok) { toast.error(upJson.error || 'Upload failed'); return }
+      setForm(f => ({ ...f, [field]: upJson.url }))
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -170,7 +206,12 @@ export default function CampaignsPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          slug: form.slug.trim() || null,
+          banner_url: form.banner_url || null,
+          badge_url: form.badge_url || null,
+        }),
       })
       const json = await res.json()
       if (!res.ok) { toast.error(json.error || t('admin', 'campaignSaveError')); return }
@@ -323,6 +364,110 @@ export default function CampaignsPage() {
                   className="mt-1"
                   required
                 />
+              </div>
+
+              {/* Slug */}
+              <div>
+                <Label htmlFor="camp-slug">{t('admin', 'campaignSlugLabel')}</Label>
+                <Input
+                  id="camp-slug"
+                  value={form.slug}
+                  onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
+                  onBlur={() => {
+                    if (!form.slug && form.name) {
+                      setForm(f => ({
+                        ...f,
+                        slug: f.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+                      }))
+                    }
+                  }}
+                  placeholder="e.g. spring-2026-drive"
+                  className="mt-1 font-mono text-sm"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  {t('admin', 'campaignSlugHelper')}
+                  {form.slug && (
+                    <span className="ml-1 text-[#00352F] font-medium">/campaign/{form.slug}</span>
+                  )}
+                </p>
+              </div>
+
+              {/* Banner image */}
+              <div>
+                <Label>{t('admin', 'campaignBannerLabel')}</Label>
+                <p className="text-xs text-gray-400 mt-0.5 mb-2">{t('admin', 'campaignBannerDesc')}</p>
+                <input
+                  ref={bannerRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => handleImageUpload(e, 'banner_url', bannerRef, setUploadingBanner)}
+                />
+                {form.banner_url ? (
+                  <div className="space-y-2">
+                    <div className="relative w-full h-24 rounded-lg overflow-hidden border border-gray-200">
+                      <Image src={form.banner_url} alt="Campaign banner" fill className="object-cover" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" disabled={uploadingBanner}
+                        onClick={() => bannerRef.current?.click()}>
+                        {uploadingBanner
+                          ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('admin', 'uploading')}</>
+                          : <><Upload className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'replaceImage')}</>}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" className="text-red-500 hover:text-red-600"
+                        onClick={() => setForm(f => ({ ...f, banner_url: '' }))}>
+                        {t('admin', 'removeBanner')}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button type="button" size="sm" variant="outline" disabled={uploadingBanner}
+                    onClick={() => bannerRef.current?.click()}>
+                    {uploadingBanner
+                      ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('admin', 'uploading')}</>
+                      : <><Upload className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'uploadBanner')}</>}
+                  </Button>
+                )}
+              </div>
+
+              {/* Badge image */}
+              <div>
+                <Label>{t('admin', 'campaignBadgeLabel')}</Label>
+                <p className="text-xs text-gray-400 mt-0.5 mb-2">{t('admin', 'campaignBadgeDesc')}</p>
+                <input
+                  ref={badgeRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => handleImageUpload(e, 'badge_url', badgeRef, setUploadingBadge)}
+                />
+                {form.badge_url ? (
+                  <div className="space-y-2">
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200">
+                      <Image src={form.badge_url} alt="Campaign badge" fill className="object-cover" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" disabled={uploadingBadge}
+                        onClick={() => badgeRef.current?.click()}>
+                        {uploadingBadge
+                          ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('admin', 'uploading')}</>
+                          : <><Upload className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'replaceBadge')}</>}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" className="text-red-500 hover:text-red-600"
+                        onClick={() => setForm(f => ({ ...f, badge_url: '' }))}>
+                        {t('admin', 'removeBadge')}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button type="button" size="sm" variant="outline" disabled={uploadingBadge}
+                    onClick={() => badgeRef.current?.click()}>
+                    {uploadingBadge
+                      ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('admin', 'uploading')}</>
+                      : <><Upload className="w-3.5 h-3.5 mr-1.5" /> {t('admin', 'uploadBadge')}</>}
+                  </Button>
+                )}
               </div>
 
               {/* Description */}

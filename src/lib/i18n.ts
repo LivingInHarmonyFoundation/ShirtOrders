@@ -155,6 +155,8 @@ export const translations: Record<Lang, {
       companyOrderSub: 'Fill out the form to order shirts for',
       preFilledLabel: 'Pre-filled',
       requiredField: 'required',
+      campaignNotFound: 'Campaign not found',
+      campaignNotFoundDesc: 'This campaign link is invalid or no longer exists.',
     },
     checkout: {
       title: 'Review & Pay',
@@ -774,6 +776,13 @@ export const translations: Record<Lang, {
       outOfStock: 'Out of stock',
       inStock: 'In stock',
       lowStock: 'Low stock',
+      // Campaign pages
+      campaignSlugLabel: 'Page URL Slug',
+      campaignSlugHelper: 'The URL path for this campaign\'s order page',
+      campaignBannerLabel: 'Campaign Banner Image',
+      campaignBannerDesc: 'Shown at the top of the campaign\'s order page',
+      campaignBadgeLabel: 'Campaign Badge/Logo',
+      campaignBadgeDesc: 'Replaces the default logo on the campaign page',
     },
   },
   es: {
@@ -896,6 +905,8 @@ export const translations: Record<Lang, {
       companyOrderSub: 'Completa el formulario para ordenar camisas para',
       preFilledLabel: 'Completado automáticamente',
       requiredField: 'requerido',
+      campaignNotFound: 'Campaña no encontrada',
+      campaignNotFoundDesc: 'Este enlace de campaña no es válido o ya no existe.',
     },
     checkout: {
       title: 'Revisar y Pagar',
@@ -1515,6 +1526,13 @@ export const translations: Record<Lang, {
       outOfStock: 'Sin stock',
       inStock: 'En stock',
       lowStock: 'Stock bajo',
+      // Campaign pages
+      campaignSlugLabel: 'Slug de Página',
+      campaignSlugHelper: 'La ruta URL para la página de pedidos de esta campaña',
+      campaignBannerLabel: 'Imagen de Encabezado',
+      campaignBannerDesc: 'Se muestra en la parte superior de la página de pedidos',
+      campaignBadgeLabel: 'Insignia/Logo de Campaña',
+      campaignBadgeDesc: 'Reemplaza el logo predeterminado en la página de campaña',
     },
   },
 }

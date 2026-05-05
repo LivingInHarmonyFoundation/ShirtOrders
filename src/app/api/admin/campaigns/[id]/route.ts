@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const admin = await createAdminClient()
   const body = await request.json()
 
-  const allowed = ['name', 'description', 'start_date', 'end_date', 'ended_message', 'is_active', 'is_recurring']
+  const allowed = ['name', 'description', 'start_date', 'end_date', 'ended_message', 'is_active', 'is_recurring', 'slug', 'banner_url', 'badge_url']
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]
