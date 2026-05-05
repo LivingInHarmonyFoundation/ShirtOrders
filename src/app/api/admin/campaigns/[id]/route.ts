@@ -39,9 +39,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (key in body) updates[key] = body[key]
   }
 
+  // Normalize empty strings to null for nullable columns so PostgreSQL doesn't
+  // reject empty string for date/text columns with constraints
+  for (const key of ['start_date', 'end_date', 'slug', 'banner_url', 'badge_url', 'description']) {
+    if (key in updates && updates[key] === '') updates[key] = null
+  }
+
   // ─── Update & Fetch ──────────────────────────────────────────
   const { error } = await admin.from('campaigns').update(updates).eq('id', id)
-  if (error) return NextResponse.json({ error: 'Failed to update campaign' }, { status: 500 })
+  if (error) {
+    console.error('Campaign PATCH error:', error)
+    return NextResponse.json({ error: error.message || 'Failed to update campaign' }, { status: 500 })
+  }
 
   // Fetch updated record separately to get the refreshed row with order count
   const { data, error: fetchErr } = await admin
