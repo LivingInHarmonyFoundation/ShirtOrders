@@ -5,7 +5,7 @@ export async function GET() {
   const admin = await createAdminClient()
   const { data, error } = await admin
     .from('shirt_catalog')
-    .select('id, name, description, image_url, display_order')
+    .select('id, name, description, image_url, back_image_url, display_order')
     .eq('is_active', true)
     .order('display_order', { ascending: true })
     .order('created_at', { ascending: true })
