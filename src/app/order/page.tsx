@@ -159,7 +159,7 @@ export default function OrderPage() {
 
   const onSubmit = async (data: FormData) => {
     if (catalog.length > 1 && !selectedCatalogItem) {
-      toast.error('Please select a shirt style before adding to cart')
+      toast.error(t('order', 'selectShirtFirst'))
       return
     }
     setIsAdding(true)
@@ -200,7 +200,7 @@ export default function OrderPage() {
       setValue('quantity', 1, { shouldValidate: false })
       if (catalog.length > 1) setSelectedCatalogItem(null)
 
-      toast.success(`Added ${data.quantity}× ${data.shirt_size} to cart`)
+      toast.success(`${data.quantity}× ${data.shirt_size} ${t('order', 'addedToCartSuffix')}`)
       openCart()
     } finally {
       setIsAdding(false)
@@ -666,7 +666,7 @@ export default function OrderPage() {
                       ))}
                     </select>
                   ) : (
-                    <Input id="organization_name" {...register('organization_name')} placeholder="Department of Education" className="mt-1" />
+                    <Input id="organization_name" {...register('organization_name')} placeholder={t('order', 'govOrgInputPlaceholder')} className="mt-1" />
                   )}
                   {errors.organization_name && <p className="text-red-500 text-xs mt-1">{errors.organization_name.message}</p>}
                 </div>
@@ -718,7 +718,7 @@ export default function OrderPage() {
                       ))}
                     </select>
                   ) : (
-                    <Input id="company_name" {...register('company_name')} placeholder="Acme Corporation" className="mt-1" />
+                    <Input id="company_name" {...register('company_name')} placeholder={t('order', 'companyInputPlaceholder')} className="mt-1" />
                   )}
                   {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
                 </div>
@@ -750,7 +750,7 @@ export default function OrderPage() {
                   <Input
                     id="delivery_street"
                     {...register('delivery_street')}
-                    placeholder="House/Unit No., Street Name"
+                    placeholder={t('order', 'streetAddressPlaceholder')}
                     className="mt-1"
                   />
                   {errors.delivery_street && <p className="text-red-500 text-xs mt-1">{errors.delivery_street.message}</p>}
@@ -879,7 +879,7 @@ export default function OrderPage() {
           {watchedSize && watchedQty > 0 && (
             <Card className="border-0 shadow-sm" style={{ backgroundColor: '#E5F2F0' }}>
               <CardContent className="p-5">
-                <h3 className="font-heading font-semibold text-base mb-3" style={{ color: '#00352F' }}>This Item</h3>
+                <h3 className="font-heading font-semibold text-base mb-3" style={{ color: '#00352F' }}>{t('order', 'thisItem')}</h3>
                 <div className="space-y-1 text-sm">
                   {selectedCatalogItem && (
                     <div className="flex justify-between text-gray-600">
@@ -888,8 +888,8 @@ export default function OrderPage() {
                     </div>
                   )}
                   <div className="flex justify-between text-gray-600">
-                    <span>Size {watchedSize} × {watchedQty}</span>
-                    <span>{formatCurrency(unitPrice)} each</span>
+                    <span>{t('order', 'sizeRow')} {watchedSize} × {watchedQty}</span>
+                    <span>{formatCurrency(unitPrice)} {t('order', 'each')}</span>
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold text-gray-900">

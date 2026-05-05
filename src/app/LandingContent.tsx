@@ -194,8 +194,8 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                               {campaign.start_date && campaign.end_date
                                 ? `${campaign.start_date} – ${campaign.end_date}`
                                 : campaign.end_date
-                                  ? `Ends ${campaign.end_date}`
-                                  : `From ${campaign.start_date}`}
+                                  ? `${t('landing', 'ends')} ${campaign.end_date}`
+                                  : `${t('landing', 'from')} ${campaign.start_date}`}
                             </p>
                           )}
                         </div>

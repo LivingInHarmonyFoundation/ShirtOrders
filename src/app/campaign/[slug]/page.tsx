@@ -314,7 +314,7 @@ export default function CampaignShowcasePage({
             {/* Section heading */}
             <div className="flex items-center gap-3 mb-5">
               <h2 className="font-heading text-base font-semibold text-gray-700 whitespace-nowrap">
-                Your Shirt
+                {t('landing', 'yourShirt')}
               </h2>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
@@ -332,7 +332,7 @@ export default function CampaignShowcasePage({
                 </div>
                 <div className="mt-4 text-center">
                   <p className="font-semibold text-gray-900">{displayItem.name}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(shirtPrice)} each</p>
+                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(shirtPrice)} {t('order', 'each')}</p>
                 </div>
               </div>
             )}
@@ -353,7 +353,7 @@ export default function CampaignShowcasePage({
                 {/* Selected item name + price */}
                 <div className="text-center">
                   <p className="font-semibold text-gray-900">{displayItem.name}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(shirtPrice)} each</p>
+                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(shirtPrice)} {t('order', 'each')}</p>
                 </div>
 
                 {/* Thumbnail scroll row */}
