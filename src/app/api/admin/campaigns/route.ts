@@ -81,6 +81,10 @@ export async function POST(request: NextRequest) {
   const { name, description, start_date, end_date, ended_message, is_recurring, slug, banner_url, badge_url } = body
   if (!name?.trim()) return NextResponse.json({ error: 'Campaign name is required' }, { status: 400 })
 
+  // Auto-generate slug from name when not provided so every campaign gets a dedicated page
+  const finalSlug = (slug?.trim() || name.trim())
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
   // ─── Insert ──────────────────────────────────────────────────
   // New campaigns are always created with is_active: false; activation is a separate PATCH
   const { data, error } = await admin
@@ -93,7 +97,7 @@ export async function POST(request: NextRequest) {
       ended_message: ended_message?.trim() || 'This campaign has ended. Thank you for your participation.',
       is_active: false,
       is_recurring: !!is_recurring,
-      slug: slug?.trim() || null,
+      slug: finalSlug,
       banner_url: banner_url || null,
       badge_url: badge_url || null,
     })

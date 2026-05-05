@@ -1,10 +1,14 @@
 /**
  * @file LandingContent.tsx
- * @description Client component for the public landing page. Renders the hero,
- * trust strip, mission section, shirt catalog preview, "Who Can Order" grid,
- * "How It Works" timeline, final CTA, and footer. Receives catalog items and
- * optional image URLs as props from the server component in page.tsx.
- * No authentication required — this is a fully public page.
+ * @description Client component for the public landing page.
+ *
+ * When active campaigns exist, the page becomes a campaign selector — customers
+ * see only the campaign cards and choose which one to order from. Each campaign
+ * links to its own branded page at /campaign/[slug].
+ *
+ * When no campaigns are active, the full landing page is shown (hero, trust
+ * strip, mission section, shirt catalog preview, "Who Can Order" grid,
+ * "How It Works" timeline, and footer) — completely unchanged from before.
  */
 
 'use client'
@@ -28,74 +32,211 @@ interface LandingContentProps {
   campaigns: Campaign[]
 }
 
-/**
- * LandingContent — full public landing page body.
- *
- * @param catalog - Active shirt catalog items fetched server-side; drives the
- *   catalog preview section (hidden when empty).
- * @param missionBannerUrl - Optional custom mission banner image URL from
- *   app_settings. When set, replaces the default text version entirely.
- * @param badgeUrl - Optional custom badge image URL. Falls back to /badge.jpeg
- *   when null.
- */
 export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, campaigns }: LandingContentProps) {
   const t = useT()
   const badgeSrc = badgeUrl || '/badge.jpeg'
 
-  const campaignsWithSlug = campaigns.filter(c => c.slug)
-  const primaryOrderHref = campaignsWithSlug.length === 1 ? `/campaign/${campaignsWithSlug[0].slug}` : '/order'
+  // ─── Shared layout elements ───────────────────────────────────
+
+  const accentBar = (
+    <div
+      className="h-[3px] w-full flex-shrink-0"
+      style={{ background: 'linear-gradient(90deg, #00352F 0%, #CEDC00 60%, #00352F 100%)' }}
+    />
+  )
+
+  const header = (
+    <header
+      className="sticky top-0 z-50 border-b"
+      style={{
+        backgroundColor: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden p-0.5">
+            <Image src="/logo.png" alt="LIH" width={32} height={32} className="object-contain" />
+          </div>
+          <div>
+            <p className="font-semibold leading-none" style={{ color: '#00352F', fontSize: '13px' }}>
+              <span className="hidden sm:inline">{t('common', 'orgName')}</span>
+              <span className="sm:hidden">LIH Foundation</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <LanguageSelector />
+          <Link href="/admin/login">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs border-gray-200 text-gray-500 hover:text-[#00352F] hover:border-[#00352F] hover:bg-[#E5F2F0] transition-all duration-200 rounded-lg h-8"
+            >
+              {t('common', 'adminLogin')}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </header>
+  )
+
+  const footer = (
+    <footer
+      className="relative py-7 px-4 sm:px-6 overflow-hidden"
+      style={{
+        backgroundImage: 'url(/ellipsis-bg.jpeg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: 'rgba(4,12,20,0.62)' }} />
+      <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <Image
+            src="/ellipsis-cl.png"
+            alt="Ellipsis Technology Consultants"
+            width={140}
+            height={60}
+            className="object-contain"
+            style={{ maxHeight: 44, width: 'auto', filter: 'invert(1) hue-rotate(170deg)', mixBlendMode: 'screen' }}
+          />
+        </div>
+        <div className="flex flex-col items-center sm:items-end gap-0.5">
+          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
+            &copy; 2025 Copyright Ellipsis. All Rights Reserved.
+          </p>
+          <p style={{ fontSize: '10px', color: 'rgba(28,200,212,0.65)', fontStyle: 'italic' }}>
+            Driven by innovation. Defined by trust. Delivered with precision.
+          </p>
+        </div>
+      </div>
+    </footer>
+  )
+
+  // ─── Campaign selector view ───────────────────────────────────
+  // Shown when any campaign is active — replaces the full landing page.
+
+  if (campaigns.length > 0) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F5F4F0' }}>
+        {accentBar}
+        {header}
+
+        <main className="flex-1 py-14 sm:py-20 px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto">
+
+            {/* Title */}
+            <div className="text-center mb-10">
+              <div
+                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 mb-4 font-bold uppercase tracking-wider"
+                style={{
+                  backgroundColor: '#E5F2F0',
+                  color: '#00352F',
+                  border: '1px solid rgba(206,220,0,0.35)',
+                  fontSize: '10px',
+                }}
+              >
+                {t('landing', 'heroTag')}
+              </div>
+              <h1 className="font-heading text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+                {t('landing', 'chooseCampaign')}
+              </h1>
+              <p className="text-gray-500" style={{ fontSize: '15px' }}>
+                {t('landing', 'chooseCampaignSub')}
+              </p>
+            </div>
+
+            {/* Campaign cards */}
+            <div className={`grid gap-5 sm:gap-6 ${campaigns.length === 1 ? 'max-w-md mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
+              {campaigns.map(campaign => {
+                const href = campaign.slug ? `/campaign/${campaign.slug}` : '/order'
+                return (
+                  <div
+                    key={campaign.id}
+                    className="bg-white rounded-2xl border-2 overflow-hidden transition-all duration-200 hover:border-[#00352F]/40 hover:shadow-lg group"
+                    style={{ borderColor: 'rgba(206,220,0,0.4)' }}
+                  >
+                    {/* Banner */}
+                    {campaign.banner_url ? (
+                      <div className="relative w-full h-40 overflow-hidden">
+                        <Image
+                          src={campaign.banner_url}
+                          alt={campaign.name}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="w-full h-2"
+                        style={{ background: 'linear-gradient(90deg, #00352F 0%, #CEDC00 100%)' }}
+                      />
+                    )}
+
+                    {/* Body */}
+                    <div className="p-5">
+                      <div className="flex items-start gap-3 mb-4">
+                        {campaign.badge_url && (
+                          <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0 shadow-sm">
+                            <Image src={campaign.badge_url} alt={campaign.name} fill className="object-cover" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h2 className="font-heading font-bold text-gray-900 text-lg leading-tight">{campaign.name}</h2>
+                          {campaign.description && (
+                            <p className="text-gray-500 text-sm mt-1 leading-snug line-clamp-2">{campaign.description}</p>
+                          )}
+                          {(campaign.start_date || campaign.end_date) && (
+                            <p className="text-xs mt-1.5 font-medium" style={{ color: '#00352F' }}>
+                              {campaign.start_date && campaign.end_date
+                                ? `${campaign.start_date} – ${campaign.end_date}`
+                                : campaign.end_date
+                                  ? `Ends ${campaign.end_date}`
+                                  : `From ${campaign.start_date}`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <Link href={href} className="block">
+                        <Button
+                          size="sm"
+                          className="w-full text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
+                          style={{ backgroundColor: '#00352F' }}
+                        >
+                          {t('landing', 'orderNow')} <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </main>
+
+        {footer}
+      </div>
+    )
+  }
+
+  // ─── Full landing page (no active campaigns) ──────────────────
+
+  const primaryOrderHref = '/order'
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F5F4F0' }}>
 
-      {/* ── Brand accent bar ────────────────────────────────── */}
-      <div
-        className="h-[3px] w-full flex-shrink-0"
-        style={{ background: 'linear-gradient(90deg, #00352F 0%, #CEDC00 60%, #00352F 100%)' }}
-      />
-
-      {/* ── Header ─────────────────────────────────────────── */}
-      <header
-        className="sticky top-0 z-50 border-b"
-        style={{
-          backgroundColor: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-          borderBottomColor: 'rgba(0,0,0,0.05)',
-        }}
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden p-0.5">
-              <Image src="/logo.png" alt="LIH" width={32} height={32} className="object-contain" />
-            </div>
-            <div>
-              <p className="font-semibold leading-none" style={{ color: '#00352F', fontSize: '13px' }}>
-                <span className="hidden sm:inline">{t('common', 'orgName')}</span>
-                <span className="sm:hidden">LIH Foundation</span>
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <LanguageSelector />
-            <Link href="/admin/login">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs border-gray-200 text-gray-500 hover:text-[#00352F] hover:border-[#00352F] hover:bg-[#E5F2F0] transition-all duration-200 rounded-lg h-8"
-              >
-                {t('common', 'adminLogin')}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      {accentBar}
+      {header}
 
       <main className="flex-1">
 
         {/* ── Hero ───────────────────────────────────────────── */}
         <section className="relative py-12 sm:py-20 lg:py-28 px-4 sm:px-6 overflow-hidden">
-          {/* Layered gradient bg */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -110,9 +251,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
           <div className="max-w-5xl mx-auto relative">
             <div className="flex flex-col-reverse lg:flex-row items-center gap-10 lg:gap-20">
 
-              {/* ── Text (below badge on mobile, left on desktop) ── */}
               <div className="flex-1 text-center lg:text-left w-full">
-                {/* Pill */}
                 <div
                   className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 mb-5"
                   style={{
@@ -121,14 +260,8 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                     backdropFilter: 'blur(8px)',
                   }}
                 >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: '#CEDC00' }}
-                  />
-                  <span
-                    className="font-bold uppercase tracking-wider"
-                    style={{ color: '#00352F', fontSize: '10px' }}
-                  >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#CEDC00' }} />
+                  <span className="font-bold uppercase tracking-wider" style={{ color: '#00352F', fontSize: '10px' }}>
                     {t('landing', 'heroTag')}
                   </span>
                 </div>
@@ -152,7 +285,6 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                   {t('landing', 'heroSubtitle')}
                 </p>
 
-                {/* CTA — full-width on mobile */}
                 <Link href={primaryOrderHref} className="block sm:inline-block">
                   <Button
                     size="lg"
@@ -170,23 +302,16 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                 </p>
               </div>
 
-              {/* ── Badge (above text on mobile, right on desktop) ── */}
               <div className="flex-shrink-0 flex items-center justify-center">
                 <div className="relative">
-                  {/* Dashed outer ring */}
                   <div
                     className="absolute rounded-full border-2 border-dashed pointer-events-none"
-                    style={{
-                      inset: '-18px',
-                      borderColor: 'rgba(206,220,0,0.38)',
-                    }}
+                    style={{ inset: '-18px', borderColor: 'rgba(206,220,0,0.38)' }}
                   />
-                  {/* Glow */}
                   <div
                     className="absolute inset-[-4px] rounded-full pointer-events-none"
                     style={{ boxShadow: '0 0 48px 16px rgba(206,220,0,0.15)' }}
                   />
-                  {/* Image */}
                   <div
                     className="relative rounded-full overflow-hidden border-[5px] border-white"
                     style={{
@@ -229,87 +354,8 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
           </div>
         </section>
 
-        {/* ── Active Campaigns ────────────────────────────────── */}
-        {campaignsWithSlug.length > 0 && (
-          <section className="py-16 sm:py-20 px-4 sm:px-6" style={{ backgroundColor: '#F5F4F0' }}>
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-10">
-                <div
-                  className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 mb-4 font-bold uppercase tracking-wider"
-                  style={{
-                    backgroundColor: '#E5F2F0',
-                    color: '#00352F',
-                    border: '1px solid rgba(206,220,0,0.35)',
-                    fontSize: '10px',
-                  }}
-                >
-                  {t('landing', 'orderNow')}
-                </div>
-                <h2 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">
-                  {campaignsWithSlug.length === 1 ? campaignsWithSlug[0].name : t('landing', 'placeAnOrder')}
-                </h2>
-                {campaignsWithSlug.length === 1 && campaignsWithSlug[0].description && (
-                  <p className="text-gray-500 mt-2 mx-auto" style={{ maxWidth: '480px', fontSize: '14px' }}>
-                    {campaignsWithSlug[0].description}
-                  </p>
-                )}
-              </div>
-
-              <div className={`grid gap-4 sm:gap-6 ${campaignsWithSlug.length === 1 ? 'max-w-md mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
-                {campaignsWithSlug.map(campaign => (
-                  <div
-                    key={campaign.id}
-                    className="bg-white rounded-2xl border-2 overflow-hidden transition-all duration-200 hover:border-[#00352F]/30 hover:shadow-lg"
-                    style={{ borderColor: 'rgba(206,220,0,0.35)' }}
-                  >
-                    {campaign.banner_url && (
-                      <div className="relative w-full h-32 overflow-hidden">
-                        <Image src={campaign.banner_url} alt={campaign.name} fill className="object-cover" />
-                      </div>
-                    )}
-                    <div className="p-5 flex items-start gap-4">
-                      {campaign.badge_url && (
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0">
-                          <Image src={campaign.badge_url} alt={campaign.name} fill className="object-cover" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-heading font-bold text-gray-900 text-lg leading-tight">{campaign.name}</h3>
-                        {campaign.description && (
-                          <p className="text-gray-500 text-sm mt-1 leading-snug line-clamp-2">{campaign.description}</p>
-                        )}
-                        {(campaign.start_date || campaign.end_date) && (
-                          <p className="text-xs mt-2" style={{ color: '#00352F' }}>
-                            {campaign.start_date && campaign.end_date
-                              ? `${campaign.start_date} – ${campaign.end_date}`
-                              : campaign.end_date
-                                ? `Ends ${campaign.end_date}`
-                                : `From ${campaign.start_date}`}
-                          </p>
-                        )}
-                        <div className="mt-4">
-                          <Link href={`/campaign/${campaign.slug}`}>
-                            <Button
-                              size="sm"
-                              className="text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
-                              style={{ backgroundColor: '#00352F' }}
-                            >
-                              {t('landing', 'orderNow')} →
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* ── Mission ─────────────────────────────────────────── */}
         {missionBannerUrl ? (
-          /* Custom banner image — natural aspect ratio, never cropped */
           <section className="w-full">
             <Image
               src={missionBannerUrl}
@@ -322,7 +368,6 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
             />
           </section>
         ) : (
-          /* Default text version */
           <section
             className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden"
             style={{ backgroundColor: '#00352F' }}
@@ -335,7 +380,6 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
               className="absolute left-[-8%] bottom-[-30%] w-[340px] h-[340px] rounded-full pointer-events-none"
               style={{ background: 'radial-gradient(circle, rgba(206,220,0,0.07) 0%, transparent 65%)' }}
             />
-
             <div className="max-w-3xl mx-auto text-center relative">
               <div className="flex justify-center mb-5">
                 <div
@@ -426,7 +470,6 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">{t('landing', 'whoCanOrder')}</h2>
               <p className="text-gray-500 mt-2" style={{ fontSize: '14px' }}>{t('landing', 'whoSub')}</p>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {[
                 { icon: School,    titleKey: 'schools',        descKey: 'schoolsSub' },
@@ -462,18 +505,11 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">{t('landing', 'howItWorks')}</h2>
               <p className="text-gray-500 mt-2" style={{ fontSize: '14px' }}>{t('landing', 'howSub')}</p>
             </div>
-
-            {/* Timeline */}
             <div className="relative">
-              {/* Connecting line */}
               <div
                 className="absolute top-5 bottom-5 w-px"
-                style={{
-                  left: '19px',
-                  background: 'linear-gradient(to bottom, #00352F 0%, #CEDC00 100%)',
-                }}
+                style={{ left: '19px', background: 'linear-gradient(to bottom, #00352F 0%, #CEDC00 100%)' }}
               />
-
               <div className="space-y-3">
                 {[
                   { n: '1', titleKey: 'step1Title', descKey: 'step1Desc' },
@@ -488,10 +524,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                       {n}
                     </div>
                     <div className="flex-1 pb-4">
-                      <div
-                        className="bg-white border rounded-2xl p-4 shadow-sm"
-                        style={{ borderColor: 'rgba(0,0,0,0.06)' }}
-                      >
+                      <div className="bg-white border rounded-2xl p-4 shadow-sm" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <h3 className="font-semibold text-gray-900" style={{ fontSize: '14px' }}>{t('landing', titleKey)}</h3>
@@ -536,11 +569,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
               <Button
                 size="lg"
                 className="w-full sm:w-auto h-12 px-10 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5"
-                style={{
-                  backgroundColor: 'white',
-                  color: '#00352F',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
-                }}
+                style={{ backgroundColor: 'white', color: '#00352F', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}
               >
                 {t('landing', 'orderYourShirts')}
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -551,39 +580,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
 
       </main>
 
-      {/* ── Footer ──────────────────────────────────────────── */}
-      <footer
-        className="relative py-7 px-4 sm:px-6 overflow-hidden"
-        style={{
-          backgroundImage: 'url(/ellipsis-bg.jpeg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        {/* Dark overlay so text stays readable */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: 'rgba(4,12,20,0.62)' }} />
-
-        <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <Image
-              src="/ellipsis-cl.png"
-              alt="Ellipsis Technology Consultants"
-              width={140}
-              height={60}
-              className="object-contain"
-              style={{ maxHeight: 44, width: 'auto', filter: 'invert(1) hue-rotate(170deg)', mixBlendMode: 'screen' }}
-            />
-          </div>
-          <div className="flex flex-col items-center sm:items-end gap-0.5">
-            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
-              &copy; 2025 Copyright Ellipsis. All Rights Reserved.
-            </p>
-            <p style={{ fontSize: '10px', color: 'rgba(28,200,212,0.65)', fontStyle: 'italic' }}>
-              Driven by innovation. Defined by trust. Delivered with precision.
-            </p>
-          </div>
-        </div>
-      </footer>
+      {footer}
     </div>
   )
 }
