@@ -27,7 +27,7 @@ export async function GET() {
   const admin = await createAdminClient()
   const { data, error } = await admin
     .from('campaigns')
-    .select('id, name, description, start_date, end_date, is_active, is_recurring, ended_message')
+    .select('id, name, description, start_date, end_date, is_active, is_recurring, ended_message, slug, banner_url, badge_url')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
 

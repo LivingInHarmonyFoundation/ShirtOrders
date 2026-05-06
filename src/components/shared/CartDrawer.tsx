@@ -1,27 +1,15 @@
-/**
- * @file CartDrawer.tsx
- * @description Slide-in cart drawer for the public order flow. Displays all CartContext
- * items with quantity controls and a checkout button. On checkout, the component POST's
- * a combined payload (checkoutPayload + cart items) to /api/orders, then redirects to
- * the checkout page with the returned order_id.
- *
- * Requires checkoutPayload to be non-null before checkout is allowed — this is the
- * customer's contact/institution fields filled in on the order form. An optional
- * onCheckoutValidate callback can trigger form validation before proceeding.
- *
- * UX: Escape key closes the drawer; body scroll is locked while the drawer is open.
- */
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Loader2, Minus, Plus, Trash2, X, ShoppingBag } from 'lucide-react'
+import { Loader2, Minus, Plus, Trash2, X, ShoppingBag, Megaphone, ArrowRight } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
 import { formatCurrency } from '@/lib/utils'
-import type { CartItem } from '@/types'
+import type { CartItem, Campaign } from '@/types'
 
 interface CheckoutPayload {
   full_name: string
@@ -47,29 +35,19 @@ interface CartDrawerProps {
   onCheckoutValidate?: () => Promise<boolean>
 }
 
-/**
- * CartItemRow — renders a single cart item with thumbnail, size/price info,
- * and +/- quantity controls backed by CartContext.updateQuantity / removeItem.
- */
 function CartItemRow({ item }: { item: CartItem }) {
   const { updateQuantity, removeItem } = useCart()
   const t = useT()
 
   return (
     <div className="flex gap-3 py-3 border-b border-gray-100 last:border-0">
-      {/* Image */}
       <div
         className="w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100"
         style={{ backgroundColor: '#E5F2F0' }}
       >
         {item.catalog_item_image ? (
           <div className="relative w-full h-full">
-            <Image
-              src={item.catalog_item_image}
-              alt={item.catalog_item_name}
-              fill
-              className="object-cover"
-            />
+            <Image src={item.catalog_item_image} alt={item.catalog_item_name} fill className="object-cover" />
           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -78,7 +56,6 @@ function CartItemRow({ item }: { item: CartItem }) {
         )}
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900 truncate">{item.catalog_item_name}</p>
         <p className="text-xs text-gray-500 mt-0.5">{t('cart', 'size')}: <span className="font-medium text-gray-700">{item.shirt_size}</span></p>
@@ -88,7 +65,6 @@ function CartItemRow({ item }: { item: CartItem }) {
         </p>
       </div>
 
-      {/* Controls */}
       <div className="flex flex-col items-end justify-between flex-shrink-0">
         <button
           onClick={() => removeItem(item.id)}
@@ -119,42 +95,43 @@ function CartItemRow({ item }: { item: CartItem }) {
   )
 }
 
-/**
- * CartDrawer — animated slide-in panel showing current cart items and checkout CTA.
- * checkoutPayload must be non-null (customer info complete) for checkout to proceed.
- * onCheckoutValidate, if provided, is awaited before the POST; returning false
- * closes the drawer and shows an error toast prompting the user to fill their info.
- */
 export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: CartDrawerProps) {
   const { items, totalItems, totalAmount, isOpen, closeCart, clearCart } = useCart()
   const router = useRouter()
   const t = useT()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [otherCampaigns, setOtherCampaigns] = useState<Campaign[]>([])
   const drawerRef = useRef<HTMLDivElement>(null)
 
-  // Close on Escape key
+  // Close on Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) closeCart()
-    }
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape' && isOpen) closeCart() }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [isOpen, closeCart])
 
-  // Prevent body scroll when open
+  // Lock body scroll
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    document.body.style.overflow = isOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
+
+  // Fetch other active campaigns whenever the drawer opens
+  useEffect(() => {
+    if (!isOpen) return
+    fetch('/api/campaigns/active')
+      .then(r => r.json())
+      .then(({ campaigns }: { campaigns: Campaign[] }) => {
+        if (!campaigns) return
+        const currentId = checkoutPayload?.campaign_id
+        setOtherCampaigns(campaigns.filter(c => c.slug && c.id !== currentId))
+      })
+      .catch(() => {})
+  }, [isOpen, checkoutPayload?.campaign_id])
 
   const handleCheckout = async () => {
     if (items.length === 0) return
 
-    // Validate the form if a validator is provided
     if (onCheckoutValidate) {
       const valid = await onCheckoutValidate()
       if (!valid) {
@@ -237,7 +214,6 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
           style={{ backgroundColor: '#00352F' }}
         >
           <div className="flex items-center gap-3">
-            {/* Cart hanger icon in header */}
             <svg width="22" height="22" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M13 2C11.34 2 10 3.34 10 5C10 5.55 10.45 6 11 6C11.55 6 12 5.55 12 5C12 4.45 12.45 4 13 4C13.55 4 14 4.45 14 5V7.18" stroke="#CEDC00" strokeWidth="1.6" strokeLinecap="round" />
               <path d="M2 13L13 7.5L24 13" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -283,11 +259,81 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
               </p>
             </div>
           ) : (
-            <div>
-              {items.map(item => (
-                <CartItemRow key={item.id} item={item} />
-              ))}
-            </div>
+            <>
+              {/* Cart items */}
+              <div>
+                {items.map(item => (
+                  <CartItemRow key={item.id} item={item} />
+                ))}
+              </div>
+
+              {/* Cross-sell: other active campaigns */}
+              {otherCampaigns.length > 0 && (
+                <div className="mt-5 pt-4 border-t border-dashed border-gray-200">
+                  <p
+                    className="text-[10px] font-bold uppercase tracking-widest mb-3"
+                    style={{ color: '#00352F' }}
+                  >
+                    {t('cart', 'alsoOrderFrom')}
+                  </p>
+                  <div className="space-y-2">
+                    {otherCampaigns.map(campaign => (
+                      <Link
+                        key={campaign.id}
+                        href={`/campaign/${campaign.slug}`}
+                        onClick={closeCart}
+                        className="flex items-center gap-3 p-3 rounded-xl border-2 transition-all group"
+                        style={{ borderColor: 'rgba(206,220,0,0.4)', backgroundColor: '#FAFDF0' }}
+                      >
+                        {/* Badge / icon */}
+                        <div
+                          className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100 flex items-center justify-center"
+                          style={{ backgroundColor: '#E5F2F0' }}
+                        >
+                          {campaign.badge_url ? (
+                            <Image
+                              src={campaign.badge_url}
+                              alt={campaign.name}
+                              width={40}
+                              height={40}
+                              className="object-cover w-full h-full"
+                            />
+                          ) : campaign.banner_url ? (
+                            <Image
+                              src={campaign.banner_url}
+                              alt={campaign.name}
+                              width={40}
+                              height={40}
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <Megaphone className="w-5 h-5" style={{ color: '#00352F' }} />
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
+                            {campaign.name}
+                          </p>
+                          {campaign.description && (
+                            <p className="text-xs text-gray-500 truncate mt-0.5 leading-tight">
+                              {campaign.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Arrow */}
+                        <ArrowRight
+                          className="w-4 h-4 flex-shrink-0 transition-transform group-hover:translate-x-0.5"
+                          style={{ color: '#CEDC00' }}
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -297,7 +343,6 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
             className="flex-shrink-0 border-t px-5 pt-4 pb-5 space-y-3"
             style={{ borderTopColor: 'rgba(0,0,0,0.06)' }}
           >
-            {/* Total */}
             <div className="flex items-center justify-between">
               <span className="font-semibold text-gray-700 text-sm">{t('cart', 'total')}</span>
               <span className="font-bold text-xl" style={{ color: '#00352F' }}>
@@ -305,14 +350,12 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
               </span>
             </div>
 
-            {/* Info when no payload yet */}
             {!checkoutPayload && (
               <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
                 {t('cart', 'fillInfoFirst')}
               </p>
             )}
 
-            {/* CTA buttons */}
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={closeCart}

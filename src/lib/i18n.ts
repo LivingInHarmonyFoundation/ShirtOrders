@@ -253,6 +253,8 @@ export const translations: Record<Lang, {
       viewCart: 'View Cart →',
       inCart: 'in cart',
       size: 'Size',
+      alsoOrderFrom: 'Also order from another campaign',
+      viewCampaign: 'View Campaign',
     },
     errors: {
       ordersNotOpen: 'Orders are not currently open. Please check back later.',
@@ -1016,6 +1018,8 @@ export const translations: Record<Lang, {
       viewCart: 'Ver Carrito →',
       inCart: 'en carrito',
       size: 'Talla',
+      alsoOrderFrom: 'También ordena de otra campaña',
+      viewCampaign: 'Ver Campaña',
     },
     errors: {
       ordersNotOpen: 'Los pedidos no están abiertos actualmente. Por favor vuelva más tarde.',
