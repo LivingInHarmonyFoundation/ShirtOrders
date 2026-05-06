@@ -295,6 +295,8 @@ export interface ShirtCatalogItem {
   back_image_url: string | null
   display_order: number
   is_active: boolean
+  price?: number | null
+  available_sizes?: string[] | null
   created_at: string
   updated_at: string
 }

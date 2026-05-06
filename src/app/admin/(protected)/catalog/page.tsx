@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ImagePlus, Trash2, Plus, Upload, X, Eye, EyeOff, Shirt, RotateCcw } from 'lucide-react'
+import { ImagePlus, Trash2, Plus, Upload, X, Eye, EyeOff, Shirt, RotateCcw, Pencil } from 'lucide-react'
 import Image from 'next/image'
 import type { ShirtCatalogItem } from '@/types'
 
@@ -55,6 +55,8 @@ export default function CatalogPage() {
   // New item form
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [newPrice, setNewPrice] = useState('')
+  const [newSizes, setNewSizes] = useState<string[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [backImageFile, setBackImageFile] = useState<File | null>(null)
@@ -63,6 +65,53 @@ export default function CatalogPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const backFileRef = useRef<HTMLInputElement>(null)
   const backUploadRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  // Inline edit per item
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', available_sizes: [] as string[] })
+  const [savingEdit, setSavingEdit] = useState(false)
+
+  const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+
+  const openEdit = (item: ShirtCatalogItem) => {
+    setEditingItemId(item.id)
+    setEditForm({
+      name: item.name,
+      description: item.description ?? '',
+      price: item.price != null ? String(item.price) : '',
+      available_sizes: item.available_sizes ?? [],
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingItemId || !editForm.name.trim()) return
+    setSavingEdit(true)
+    try {
+      const res = await fetch(`/api/admin/catalog/${editingItemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.name.trim(),
+          description: editForm.description.trim() || null,
+          price: editForm.price !== '' ? Number(editForm.price) : null,
+          available_sizes: editForm.available_sizes.length > 0 ? editForm.available_sizes : null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) { toast.error(json.error || 'Failed to save'); return }
+      setItems(prev => prev.map(i => i.id === editingItemId ? json.item : i))
+      toast.success('Item updated')
+      setEditingItemId(null)
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const toggleSize = (size: string, sizes: string[], setter: (s: string[]) => void) => {
+    setter(sizes.includes(size) ? sizes.filter(s => s !== size) : [...sizes, size])
+  }
 
   const fetchItems = async () => {
     try {
@@ -124,14 +173,22 @@ export default function CatalogPage() {
       const res = await fetch('/api/admin/catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), description: description.trim() || null, image_url, back_image_url, display_order: items.length }),
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || null,
+          image_url,
+          back_image_url,
+          display_order: items.length,
+          price: newPrice !== '' ? Number(newPrice) : null,
+          available_sizes: newSizes.length > 0 ? newSizes : null,
+        }),
       })
       const json = await res.json()
       if (!res.ok) { toast.error(json.error || 'Failed to add item'); return }
 
       toast.success(`"${name}" added to catalog`)
       setItems(prev => [...prev, json.item])
-      setName(''); setDescription(''); clearImage(); clearBackImage()
+      setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); clearImage(); clearBackImage()
       setAdding(false)
     } catch {
       toast.error('Something went wrong')
@@ -300,11 +357,52 @@ export default function CatalogPage() {
                 </div>
               </div>
 
+              {/* Price */}
+              <div className="max-w-[180px]">
+                <Label htmlFor="item-price">Price <span className="text-gray-400 font-normal">(optional — uses global if blank)</span></Label>
+                <div className="relative mt-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                  <Input
+                    id="item-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="15.00"
+                    value={newPrice}
+                    onChange={e => setNewPrice(e.target.value)}
+                    className="pl-7"
+                    disabled={uploading}
+                  />
+                </div>
+              </div>
+
+              {/* Available sizes */}
+              <div>
+                <Label>Available Sizes <span className="text-gray-400 font-normal">(optional — uses global if none selected)</span></Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {PRESET_SIZES.map(size => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => toggleSize(size, newSizes, setNewSizes)}
+                      disabled={uploading}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium border-2 transition-colors ${
+                        newSizes.includes(size)
+                          ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F]'
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <Button type="submit" disabled={uploading || !name.trim()} className="text-white" style={{ backgroundColor: '#00352F' }}>
                   {uploading ? t('admin', 'addingShirt') : t('admin', 'addToCatalog')}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => { setAdding(false); setName(''); setDescription(''); clearImage(); clearBackImage() }} disabled={uploading}>
+                <Button type="button" variant="outline" onClick={() => { setAdding(false); setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); clearImage(); clearBackImage() }} disabled={uploading}>
                   {t('admin', 'cancelAction')}
                 </Button>
               </div>
@@ -419,6 +517,13 @@ export default function CatalogPage() {
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
                       <button
+                        onClick={() => editingItemId === item.id ? setEditingItemId(null) : openEdit(item)}
+                        title="Edit item"
+                        className={`p-1.5 rounded-lg transition-colors ${editingItemId === item.id ? 'bg-[#E5F2F0] text-[#00352F]' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}`}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleToggle(item)}
                         disabled={togglingId === item.id}
                         title={item.is_active ? t('admin', 'hideFromHome') : t('admin', 'showOnHome')}
@@ -436,8 +541,74 @@ export default function CatalogPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Price + sizes summary */}
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {item.price != null && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#E5F2F0', color: '#00352F' }}>
+                        ${item.price.toFixed(2)}
+                      </span>
+                    )}
+                    {item.available_sizes && item.available_sizes.length > 0 && item.available_sizes.map(s => (
+                      <span key={s} className="text-[10px] font-medium px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+
                   {item.description && (
-                    <p className="text-xs text-gray-500 line-clamp-2">{item.description}</p>
+                    <p className="text-xs text-gray-500 line-clamp-2 mt-1">{item.description}</p>
+                  )}
+
+                  {/* Inline edit panel */}
+                  {editingItemId === item.id && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+                      <div>
+                        <Label className="text-xs">Name</Label>
+                        <Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1 h-8 text-sm" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Description <span className="text-gray-400 font-normal">(optional)</span></Label>
+                        <Textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} className="mt-1 text-sm resize-none" rows={2} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Price <span className="text-gray-400 font-normal">(optional)</span></Label>
+                        <div className="relative mt-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                          <Input
+                            type="number" min="0" step="0.01" placeholder="15.00"
+                            value={editForm.price}
+                            onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
+                            className="pl-6 h-8 text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Sizes <span className="text-gray-400 font-normal">(optional)</span></Label>
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {PRESET_SIZES.map(size => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => toggleSize(size, editForm.available_sizes, s => setEditForm(f => ({ ...f, available_sizes: s })))}
+                              className={`px-2.5 py-0.5 rounded text-xs font-medium border-2 transition-colors ${
+                                editForm.available_sizes.includes(size)
+                                  ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F]'
+                                  : 'border-gray-200 text-gray-500'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleSaveEdit} disabled={savingEdit || !editForm.name.trim()} className="text-white text-xs h-7" style={{ backgroundColor: '#00352F' }}>
+                          {savingEdit ? 'Saving…' : 'Save'}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingItemId(null)} className="text-xs h-7">Cancel</Button>
+                      </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>

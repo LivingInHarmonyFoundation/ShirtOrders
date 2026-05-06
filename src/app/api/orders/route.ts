@@ -167,9 +167,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No items provided' }, { status: 400 })
     }
 
-    // Validate all sizes
+    // Fetch catalog items for per-item price and size validation
+    const catalogItemIds = [...new Set(cartItems.map(i => i.catalog_item_id).filter(Boolean))]
+    const catalogMap: Record<string, { price: number | null; available_sizes: string[] | null }> = {}
+    if (catalogItemIds.length > 0) {
+      const { data: catalogRows } = await supabase
+        .from('shirt_catalog')
+        .select('id, price, available_sizes')
+        .in('id', catalogItemIds)
+      for (const row of catalogRows ?? []) catalogMap[row.id] = row
+    }
+
+    // Validate sizes — use per-item sizes when set, fall back to global
     for (const item of cartItems) {
-      if (!settings.available_sizes.includes(item.shirt_size)) {
+      const catalogItem = item.catalog_item_id ? catalogMap[item.catalog_item_id] : null
+      const allowedSizes = catalogItem?.available_sizes ?? settings.available_sizes
+      if (!allowedSizes.includes(item.shirt_size)) {
         return NextResponse.json(
           { error: `Shirt size "${item.shirt_size}" is not available` },
           { status: 400 }
@@ -231,11 +244,17 @@ export async function POST(request: NextRequest) {
       orderAllowedPaymentMethods = orderAllowedPaymentMethods.filter(m => m !== 'cash')
     }
 
-    const unit_price = settings.shirt_price
+    // Resolve per-item price (fallback to global if item has no price set)
+    const resolvePrice = (catalogItemId: string | null | undefined) => {
+      const catalogItem = catalogItemId ? catalogMap[catalogItemId] : null
+      return catalogItem?.price ?? settings.shirt_price
+    }
 
-    // Compute totals from cart items
+    const unit_price = resolvePrice(cartItems[0]?.catalog_item_id)
+
+    // Compute totals from cart items using per-item prices
     const total_quantity = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-    const subtotal = cartItems.reduce((sum, item) => sum + item.quantity * unit_price, 0)
+    const subtotal = cartItems.reduce((sum, item) => sum + item.quantity * resolvePrice(item.catalog_item_id), 0)
 
     // Apply each configured fee against the subtotal (not cumulative).
     // A fee with applies_to null or [] applies to every institution type;
@@ -301,15 +320,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Bulk-insert into order_items
-    const orderItemsPayload = cartItems.map(item => ({
-      order_id: order.id,
-      catalog_item_id: item.catalog_item_id || null,
-      catalog_item_name: item.catalog_item_name,
-      shirt_size: item.shirt_size,
-      quantity: item.quantity,
-      unit_price,
-      subtotal: item.quantity * unit_price,
-    }))
+    const orderItemsPayload = cartItems.map(item => {
+      const itemPrice = resolvePrice(item.catalog_item_id)
+      return {
+        order_id: order.id,
+        catalog_item_id: item.catalog_item_id || null,
+        catalog_item_name: item.catalog_item_name,
+        shirt_size: item.shirt_size,
+        quantity: item.quantity,
+        unit_price: itemPrice,
+        subtotal: item.quantity * itemPrice,
+      }
+    })
 
     const { error: itemsError } = await supabase
       .from('order_items')

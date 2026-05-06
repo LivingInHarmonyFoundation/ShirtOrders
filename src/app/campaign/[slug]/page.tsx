@@ -125,7 +125,8 @@ export default function CampaignShowcasePage({
   const effectiveBannerUrl = campaign?.banner_url || fallbackSettings.banner_url || null
   const effectiveBadgeUrl = campaign?.badge_url || fallbackSettings.badge_url || null
   const logoSrc = effectiveBadgeUrl || '/logo.png'
-  const shirtPrice = appSettings?.shirt_price ?? 15
+  const globalPrice = appSettings?.shirt_price ?? 15
+  const itemPrice = (item: ShirtCatalogItem) => item.price ?? globalPrice
 
   // ─── Loading ─────────────────────────────────────────────────
 
@@ -326,7 +327,7 @@ export default function CampaignShowcasePage({
                 </div>
                 <div className="mt-4 text-center">
                   <p className="font-semibold text-gray-900">{displayItem.name}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(shirtPrice)} {t('order', 'each')}</p>
+                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(itemPrice(displayItem))} {t('order', 'each')}</p>
                 </div>
               </div>
             )}
@@ -347,7 +348,7 @@ export default function CampaignShowcasePage({
                 {/* Selected item name + price */}
                 <div className="text-center">
                   <p className="font-semibold text-gray-900">{displayItem.name}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(shirtPrice)} {t('order', 'each')}</p>
+                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(itemPrice(displayItem))} {t('order', 'each')}</p>
                 </div>
 
                 {/* Thumbnail scroll row */}

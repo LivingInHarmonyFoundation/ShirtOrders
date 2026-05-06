@@ -119,7 +119,8 @@ export default function OrderPage() {
 
   const watchedSize = watch('shirt_size')
   const watchedQty = watch('quantity')
-  const unitPrice = settings?.shirt_price || 15
+  const unitPrice = selectedCatalogItem?.price ?? settings?.shirt_price ?? 15
+  const sizes: string[] = selectedCatalogItem?.available_sizes ?? settings?.available_sizes ?? ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -250,7 +251,6 @@ export default function OrderPage() {
   // ─── Campaign Gate ────────────────────────────────────────────
   const campaignClosed = activeCampaigns !== null && activeCampaigns.length === 0
 
-  const sizes: string[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const showCatalogPicker = catalog.length > 1
   const showCampaignPicker = activeCampaigns !== null && activeCampaigns.length > 1
   // base step number for institution type card (campaign picker + catalog picker contribute 1 each when shown)

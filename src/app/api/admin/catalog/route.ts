@@ -50,11 +50,10 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   // ─── Input Validation ────────────────────────────────────────
-  const { name, description, image_url, back_image_url, display_order } = await request.json()
+  const { name, description, image_url, back_image_url, display_order, price, available_sizes } = await request.json()
   if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
   // ─── Insert ──────────────────────────────────────────────────
-  // createAdminClient() bypasses RLS — required to write catalog rows
   const admin = await createAdminClient()
   const { data, error } = await admin
     .from('shirt_catalog')
@@ -64,6 +63,8 @@ export async function POST(request: NextRequest) {
       image_url: image_url || null,
       back_image_url: back_image_url || null,
       display_order: display_order ?? 0,
+      price: price != null ? Number(price) : null,
+      available_sizes: available_sizes?.length > 0 ? available_sizes : null,
     })
     .select()
     .single()

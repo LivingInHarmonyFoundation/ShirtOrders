@@ -124,7 +124,8 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
 
   const watchedSize = watch('shirt_size')
   const watchedQty = watch('quantity')
-  const unitPrice = settings?.shirt_price || 15
+  const unitPrice = selectedCatalogItem?.price ?? settings?.shirt_price ?? 15
+  const sizes: string[] = selectedCatalogItem?.available_sizes ?? settings?.available_sizes ?? ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
   useEffect(() => {
     fetch(`/api/campaigns/${slug}`)
@@ -345,8 +346,6 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
       </div>
     )
   }
-
-  const sizes: string[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5F4F0' }}>
