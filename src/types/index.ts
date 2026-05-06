@@ -194,6 +194,9 @@ export interface AppSettings {
   private_company_orders_enabled: boolean
   manual_payment_enabled: boolean
   cash_enabled: boolean
+  cash_enabled_school: boolean
+  cash_enabled_government: boolean
+  cash_enabled_private_company: boolean
   personal_allowed_payment_methods: string[] | null
   confirmation_message: string
   qr_tagline: string

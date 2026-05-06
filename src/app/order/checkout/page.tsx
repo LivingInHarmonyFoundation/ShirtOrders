@@ -193,7 +193,12 @@ function CheckoutContent() {
   const paypalEnabled = !hasRestrictions || allowedMethods.includes('paypal')
   const venmoEnabled = !hasRestrictions || allowedMethods.includes('venmo')
   const cardEnabled = !hasRestrictions || allowedMethods.includes('card')
-  const cashAllowed = (!hasRestrictions || allowedMethods.includes('cash')) && !!settings?.cash_enabled
+  const cashEnabledForType =
+    order.institution_type === 'school' ? !!settings?.cash_enabled_school
+    : order.institution_type === 'government' ? !!settings?.cash_enabled_government
+    : order.institution_type === 'private_company' ? !!settings?.cash_enabled_private_company
+    : true // personal: cash availability is fully controlled by order_allowed_payment_methods
+  const cashAllowed = (!hasRestrictions || allowedMethods.includes('cash')) && cashEnabledForType
 
   const enableFundingParts: string[] = []
   if (venmoEnabled) enableFundingParts.push('venmo')

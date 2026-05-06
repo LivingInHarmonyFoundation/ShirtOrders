@@ -56,6 +56,9 @@ export default function SettingsPage() {
   const [personalEnabled, setPersonalEnabled] = useState(true)
   const [privateCompanyEnabled, setPrivateCompanyEnabled] = useState(true)
   const [cashEnabled, setCashEnabled] = useState(false)
+  const [cashEnabledSchool, setCashEnabledSchool] = useState(false)
+  const [cashEnabledGovernment, setCashEnabledGovernment] = useState(false)
+  const [cashEnabledPrivateCompany, setCashEnabledPrivateCompany] = useState(false)
   const [personalAllowedPaymentMethods, setPersonalAllowedPaymentMethods] = useState<string[] | null>(null)
   const [confirmationMessage, setConfirmationMessage] = useState('')
   const [adminPhone, setAdminPhone] = useState('')
@@ -92,6 +95,9 @@ export default function SettingsPage() {
           setPersonalEnabled(settings.personal_orders_enabled ?? true)
           setPrivateCompanyEnabled(settings.private_company_orders_enabled ?? true)
           setCashEnabled(settings.cash_enabled ?? false)
+          setCashEnabledSchool(settings.cash_enabled_school ?? false)
+          setCashEnabledGovernment(settings.cash_enabled_government ?? false)
+          setCashEnabledPrivateCompany(settings.cash_enabled_private_company ?? false)
           setPersonalAllowedPaymentMethods(settings.personal_allowed_payment_methods ?? null)
           setConfirmationMessage(settings.confirmation_message || '')
           setAdminPhone(settings.admin_phone || '')
@@ -261,6 +267,9 @@ export default function SettingsPage() {
           personal_orders_enabled: personalEnabled,
           private_company_orders_enabled: privateCompanyEnabled,
           cash_enabled: cashEnabled,
+          cash_enabled_school: cashEnabledSchool,
+          cash_enabled_government: cashEnabledGovernment,
+          cash_enabled_private_company: cashEnabledPrivateCompany,
           personal_allowed_payment_methods: personalAllowedPaymentMethods,
           confirmation_message: confirmationMessage,
           admin_phone: adminPhone || null,
@@ -798,16 +807,22 @@ export default function SettingsPage() {
             </p>
           </div>
           <Separator />
-          {/* Cash toggle */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          {/* Per-institution cash toggles */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
               <Banknote className="w-4 h-4 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'cashPaymentLabel')}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'cashPaymentDesc')}</p>
-              </div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'cashPaymentLabel')}</p>
             </div>
-            <Switch checked={cashEnabled} onCheckedChange={setCashEnabled} />
+            {[
+              { label: t('admin', 'institutionSchool'), checked: cashEnabledSchool, onChange: setCashEnabledSchool },
+              { label: t('admin', 'institutionGovernment'), checked: cashEnabledGovernment, onChange: setCashEnabledGovernment },
+              { label: t('admin', 'institutionPrivateCompany'), checked: cashEnabledPrivateCompany, onChange: setCashEnabledPrivateCompany },
+            ].map(({ label, checked, onChange }) => (
+              <div key={label} className="flex items-center justify-between pl-6">
+                <p className="text-sm text-gray-700 dark:text-gray-300">{label}</p>
+                <Switch checked={checked} onCheckedChange={onChange} />
+              </div>
+            ))}
           </div>
           <Separator />
           {/* Personal orders payment methods */}
