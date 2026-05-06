@@ -23,10 +23,10 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Plus, Pencil, Trash2, Play, Square, Megaphone,
-  Calendar, ShoppingBag, X, RefreshCw, RepeatIcon, Upload, Loader2, ExternalLink,
+  Calendar, ShoppingBag, X, RefreshCw, RepeatIcon, Upload, Loader2, ExternalLink, Shirt, Check,
 } from 'lucide-react'
 import Image from 'next/image'
-import type { Campaign } from '@/types'
+import type { Campaign, ShirtCatalogItem } from '@/types'
 import { useT } from '@/contexts/LanguageContext'
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -128,6 +128,13 @@ export default function CampaignsPage() {
   const [uploadingBadge, setUploadingBadge] = useState(false)
   const bannerRef = useRef<HTMLInputElement>(null)
   const badgeRef = useRef<HTMLInputElement>(null)
+
+  // Item assignment panel
+  const [managingItemsCampaignId, setManagingItemsCampaignId] = useState<string | null>(null)
+  const [allCatalogItems, setAllCatalogItems] = useState<ShirtCatalogItem[]>([])
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
+  const [loadingItems, setLoadingItems] = useState(false)
+  const [savingItems, setSavingItems] = useState(false)
 
   // ── Data ──
 
@@ -268,6 +275,55 @@ export default function CampaignsPage() {
       toast.error(t('admin', 'campaignDeleteError'))
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  // ── Item assignment ──
+
+  const openItemsPanel = async (campaign: Campaign) => {
+    setManagingItemsCampaignId(campaign.id)
+    setLoadingItems(true)
+    try {
+      const res = await fetch(`/api/admin/campaigns/${campaign.id}/catalog`)
+      const json = await res.json()
+      setAllCatalogItems(json.all_items || [])
+      setSelectedItemIds(json.assigned_ids || [])
+    } catch {
+      toast.error('Failed to load catalog items')
+    } finally {
+      setLoadingItems(false)
+    }
+  }
+
+  const closeItemsPanel = () => {
+    setManagingItemsCampaignId(null)
+    setAllCatalogItems([])
+    setSelectedItemIds([])
+  }
+
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItemIds(prev =>
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+    )
+  }
+
+  const handleSaveItems = async (campaignId: string) => {
+    setSavingItems(true)
+    try {
+      const res = await fetch(`/api/admin/campaigns/${campaignId}/catalog`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ catalog_item_ids: selectedItemIds }),
+      })
+      if (!res.ok) { toast.error('Failed to save items'); return }
+      toast.success(selectedItemIds.length === 0
+        ? 'Items cleared — campaign will show all items'
+        : `${selectedItemIds.length} item${selectedItemIds.length !== 1 ? 's' : ''} assigned`)
+      closeItemsPanel()
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setSavingItems(false)
     }
   }
 
@@ -680,6 +736,17 @@ export default function CampaignsPage() {
                   {/* Actions */}
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
+                      onClick={() => managingItemsCampaignId === campaign.id ? closeItemsPanel() : openItemsPanel(campaign)}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        managingItemsCampaignId === campaign.id
+                          ? 'bg-[#E5F2F0] text-[#00352F]'
+                          : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+                      }`}
+                      title="Manage items for this campaign"
+                    >
+                      <Shirt className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => handleToggleActive(campaign)}
                       disabled={togglingId === campaign.id}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -709,6 +776,86 @@ export default function CampaignsPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Inline items panel */}
+                {managingItemsCampaignId === campaign.id && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Items for this campaign</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {selectedItemIds.length === 0
+                            ? 'No items selected — all active items will be shown (default)'
+                            : `${selectedItemIds.length} item${selectedItemIds.length !== 1 ? 's' : ''} selected`}
+                        </p>
+                      </div>
+                      <button onClick={closeItemsPanel} className="p-1 rounded text-gray-400 hover:text-gray-600">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {loadingItems ? (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {[1,2,3,4].map(i => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+                      </div>
+                    ) : allCatalogItems.length === 0 ? (
+                      <p className="text-sm text-gray-400 py-4 text-center">No catalog items yet. Add items in the Catalog section first.</p>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {allCatalogItems.map(item => {
+                          const isSelected = selectedItemIds.includes(item.id)
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => toggleItemSelection(item.id)}
+                              className={`relative rounded-xl border-2 overflow-hidden text-left transition-all ${
+                                isSelected
+                                  ? 'border-[#00352F] shadow-sm'
+                                  : 'border-gray-200 hover:border-gray-300 opacity-60 hover:opacity-100'
+                              } ${!item.is_active ? 'opacity-40' : ''}`}
+                            >
+                              <div className="aspect-square bg-gray-50 relative">
+                                {item.image_url ? (
+                                  <Image src={item.image_url} alt={item.name} fill className="object-cover" />
+                                ) : (
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <Shirt className="w-8 h-8 text-gray-300" />
+                                  </div>
+                                )}
+                                {isSelected && (
+                                  <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                                    style={{ backgroundColor: '#00352F' }}>
+                                    <Check className="w-3 h-3 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-1.5">
+                                <p className="text-[11px] font-medium text-gray-800 truncate leading-tight">{item.name}</p>
+                                {!item.is_active && <p className="text-[10px] text-gray-400">Hidden</p>}
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        onClick={() => handleSaveItems(campaign.id)}
+                        disabled={savingItems || loadingItems}
+                        className="text-white text-xs"
+                        style={{ backgroundColor: '#00352F' }}
+                      >
+                        {savingItems ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Saving…</> : 'Save Items'}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={closeItemsPanel} className="text-xs">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}

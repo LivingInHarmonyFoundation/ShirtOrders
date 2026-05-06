@@ -347,6 +347,7 @@ export interface Campaign {
   created_at: string
   updated_at: string
   order_count?: number
+  catalog_items?: ShirtCatalogItem[]
 }
 
 export interface ShirtInventoryItem {

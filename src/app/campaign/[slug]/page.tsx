@@ -106,6 +106,10 @@ export default function CampaignShowcasePage({
         if (!json) return
         setCampaign(json.campaign)
         setFallbackSettings(json.settings)
+        if (json.catalog_items?.length > 0) {
+          setCatalog(json.catalog_items)
+          setHeroItem(json.catalog_items[0])
+        }
         setLoadState('ready')
       })
       .catch(() => setLoadState('notfound'))
@@ -113,16 +117,6 @@ export default function CampaignShowcasePage({
     fetch('/api/admin/settings')
       .then(r => r.json())
       .then(({ settings: s }) => { if (s) setAppSettings(s) })
-      .catch(() => {})
-
-    fetch('/api/catalog')
-      .then(r => r.json())
-      .then(({ items }) => {
-        if (items?.length > 0) {
-          setCatalog(items)
-          setHeroItem(items[0])
-        }
-      })
       .catch(() => {})
   }, [slug])
 

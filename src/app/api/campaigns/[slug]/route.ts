@@ -31,5 +31,25 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     badge_url: settingsRow?.badge_url ?? null,
   }
 
-  return NextResponse.json({ campaign, settings })
+  // Fetch catalog items assigned to this campaign; fall back to all active items if none assigned
+  const { data: assignedRows } = await admin
+    .from('campaign_catalog_items')
+    .select('shirt_catalog(id, name, description, image_url, back_image_url, display_order)')
+    .eq('campaign_id', campaign.id)
+
+  let catalog_items = (assignedRows ?? [])
+    .map((r: { shirt_catalog: unknown }) => r.shirt_catalog)
+    .filter(Boolean)
+
+  if (catalog_items.length === 0) {
+    const { data: all } = await admin
+      .from('shirt_catalog')
+      .select('id, name, description, image_url, back_image_url, display_order')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: true })
+    catalog_items = all ?? []
+  }
+
+  return NextResponse.json({ campaign, settings, catalog_items })
 }

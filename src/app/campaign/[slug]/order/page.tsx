@@ -136,6 +136,7 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
         if (!json) return
         setCampaign(json.campaign)
         setFallbackSettings(json.settings)
+        if (json.catalog_items?.length > 0) setCatalog(json.catalog_items)
         setLoadState('ready')
       })
       .catch(() => setLoadState('notfound'))
@@ -143,11 +144,6 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
     fetch('/api/admin/settings')
       .then(r => r.json())
       .then(({ settings: s }) => { if (s) setSettings(s) })
-      .catch(() => {})
-
-    fetch('/api/catalog')
-      .then(r => r.json())
-      .then(({ items }) => { if (items?.length > 0) setCatalog(items) })
       .catch(() => {})
 
     fetch('/api/government-orgs')
