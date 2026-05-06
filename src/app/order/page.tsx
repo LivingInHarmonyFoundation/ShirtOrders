@@ -83,7 +83,7 @@ type FormData = z.infer<typeof schema>
 
 export default function OrderPage() {
   const t = useT()
-  const { addItem, openCart, items: cartItems, totalItems } = useCart()
+  const { addItem, openCart, items: cartItems, totalItems, savedCheckoutInfo, saveCheckoutInfo } = useCart()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
@@ -155,6 +155,16 @@ export default function OrderPage() {
     if (catalog.length === 1) setSelectedCatalogItem(catalog[0])
   }, [catalog])
 
+  // Pre-fill personal info if the customer already added to cart on another campaign
+  useEffect(() => {
+    if (!savedCheckoutInfo) return
+    reset({ ...savedCheckoutInfo, quantity: 1 } as FormData)
+    if (savedCheckoutInfo.institution_type) {
+      setInstitutionType(savedCheckoutInfo.institution_type as InstitutionType)
+      setValue('institution_type', savedCheckoutInfo.institution_type as InstitutionType)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Form Handlers ───────────────────────────────────────────
 
   const onSubmit = async (data: FormData) => {
@@ -186,6 +196,7 @@ export default function OrderPage() {
         campaign_id: selectedCampaign?.id ?? activeCampaigns?.[0]?.id,
       }
       setCheckoutPayload(payload)
+      saveCheckoutInfo({ ...data })
 
       addItem({
         catalog_item_id: selectedCatalogItem?.id ?? null,

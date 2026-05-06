@@ -18,17 +18,33 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import type { CartItem } from '@/types'
 
-// ─── Storage Key ──────────────────────────────────────────────
+// ─── Storage Keys ─────────────────────────────────────────────
 
-/** localStorage key used to persist the cart across page loads. */
 const STORAGE_KEY = 'lih_cart'
+const CHECKOUT_INFO_KEY = 'lih_checkout_info'
 
-// ─── Context Type ─────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────
 
-/**
- * CartContextType — the full shape of the cart context value exposed to
- * consumers via useCart().
- */
+export interface SavedCheckoutInfo {
+  full_name?: string
+  email?: string
+  phone?: string
+  institution_type?: string
+  school_name?: string
+  grade?: string
+  classroom?: string
+  organization_name?: string
+  department_office?: string
+  company_name?: string
+  company_department?: string
+  delivery_street?: string
+  delivery_street2?: string
+  delivery_city?: string
+  delivery_state?: string
+  delivery_zip?: string
+  notes?: string
+}
+
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'id'>) => void
@@ -40,6 +56,8 @@ interface CartContextType {
   isOpen: boolean
   openCart: () => void
   closeCart: () => void
+  savedCheckoutInfo: SavedCheckoutInfo | null
+  saveCheckoutInfo: (info: SavedCheckoutInfo) => void
 }
 
 const CartContext = createContext<CartContextType | null>(null)
@@ -54,9 +72,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [hydrated, setHydrated] = useState(false)
+  const [savedCheckoutInfo, setSavedCheckoutInfo] = useState<SavedCheckoutInfo | null>(null)
 
   // ─── LocalStorage Hydration ────────────────────────────────
-  // Load from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
@@ -64,6 +82,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed)) setItems(parsed)
       }
+    } catch {
+      // ignore malformed storage
+    }
+    try {
+      const storedInfo = localStorage.getItem(CHECKOUT_INFO_KEY)
+      if (storedInfo) setSavedCheckoutInfo(JSON.parse(storedInfo))
     } catch {
       // ignore malformed storage
     }
@@ -124,8 +148,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  /** clearCart — empties the entire cart. Called after a successful checkout. */
-  const clearCart = useCallback(() => setItems([]), [])
+  const saveCheckoutInfo = useCallback((info: SavedCheckoutInfo) => {
+    setSavedCheckoutInfo(info)
+    try { localStorage.setItem(CHECKOUT_INFO_KEY, JSON.stringify(info)) } catch {}
+  }, [])
+
+  /** clearCart — empties the entire cart and clears saved checkout info. */
+  const clearCart = useCallback(() => {
+    setItems([])
+    setSavedCheckoutInfo(null)
+    try { localStorage.removeItem(CHECKOUT_INFO_KEY) } catch {}
+  }, [])
 
   // ─── Drawer State ──────────────────────────────────────────
 
@@ -153,6 +186,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       openCart,
       closeCart,
+      savedCheckoutInfo,
+      saveCheckoutInfo,
     }}>
       {children}
     </CartContext.Provider>

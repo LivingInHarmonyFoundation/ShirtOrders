@@ -88,7 +88,7 @@ function isEffectivelyActive(campaign: Campaign, now = new Date()): boolean {
 export default function CampaignSlugPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const t = useT()
-  const { addItem, openCart, items: cartItems, totalItems } = useCart()
+  const { addItem, openCart, items: cartItems, totalItems, savedCheckoutInfo, saveCheckoutInfo } = useCart()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [fallbackSettings, setFallbackSettings] = useState<{ banner_url: string | null; badge_url: string | null }>({ banner_url: null, badge_url: null })
   const [loadState, setLoadState] = useState<'loading' | 'notfound' | 'ready'>('loading')
@@ -117,7 +117,7 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
     campaign_id?: string
   }>(null)
 
-  const { register, handleSubmit, setValue, watch, trigger, getValues, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, reset, trigger, getValues, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { quantity: 1 },
   })
@@ -165,6 +165,16 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
     if (catalog.length === 1) setSelectedCatalogItem(catalog[0])
   }, [catalog])
 
+  // Pre-fill personal info if the customer already added to cart on another campaign
+  useEffect(() => {
+    if (!savedCheckoutInfo) return
+    reset({ ...savedCheckoutInfo, quantity: 1 } as FormData)
+    if (savedCheckoutInfo.institution_type) {
+      setInstitutionType(savedCheckoutInfo.institution_type as InstitutionType)
+      setValue('institution_type', savedCheckoutInfo.institution_type as InstitutionType)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSubmit = async (data: FormData) => {
     if (catalog.length > 1 && !selectedCatalogItem) {
       toast.error(t('order', 'selectShirtFirst'))
@@ -194,6 +204,7 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
         campaign_id: campaign?.id,
       }
       setCheckoutPayload(payload)
+      saveCheckoutInfo({ ...data })
 
       addItem({
         catalog_item_id: selectedCatalogItem?.id ?? null,
