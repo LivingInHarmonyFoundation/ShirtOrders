@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   ShoppingBag, DollarSign, CreditCard, Package,
-  TrendingUp, Users, Truck, Clock, Settings2, Megaphone, X, Shirt, AlertTriangle
+  TrendingUp, Users, Truck, Clock, Settings2, Megaphone, X, Shirt, AlertTriangle, Banknote, ChevronDown, ChevronUp
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import type { DashboardStats, Campaign, ShirtInventoryItem } from '@/types'
@@ -83,6 +83,9 @@ export default function DashboardPage() {
 
   // Low-stock inventory widget — separate fetch, own state
   const [lowStockItems, setLowStockItems] = useState<ShirtInventoryItem[]>([])
+
+  // Cash breakdown agency table toggle
+  const [showCashAgencies, setShowCashAgencies] = useState(false)
 
   // ── Effects ──
 
@@ -173,6 +176,7 @@ export default function DashboardPage() {
     { id: 'chart_sizes',       label: t('admin', 'chartSizesLabel') },
     { id: 'chart_institution', label: t('admin', 'chartInstitutionLabel') },
     { id: 'chart_payment',     label: t('admin', 'chartPaymentLabel') },
+    { id: 'cash_payments',     label: t('admin', 'cashPaymentsWidget') },
   ]
 
   const show = (id: string) => !hiddenWidgets.has(id)
@@ -380,6 +384,104 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cash Payments widget */}
+      {show('cash_payments') && (loading || (stats && (stats.cash_collected > 0 || stats.cash_pending > 0))) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-[#E5F2F0] rounded-lg flex items-center justify-center">
+                <Banknote className="w-4 h-4 text-[#00352F]" />
+              </div>
+              <CardTitle className="text-sm font-semibold">{t('admin', 'cashPaymentsWidget')}</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-40 w-full" />
+            ) : stats ? (
+              <div className="space-y-4">
+                {/* Collected / Pending pills */}
+                <div className="flex gap-3 flex-wrap">
+                  <div className="flex-1 min-w-[140px] rounded-xl bg-emerald-50 border border-emerald-100 p-3">
+                    <p className="text-xs text-emerald-700 font-medium">{t('admin', 'cashCollected')}</p>
+                    <p className="text-xl font-bold text-emerald-800 mt-0.5">{formatCurrency(stats.cash_collected)}</p>
+                  </div>
+                  <div className="flex-1 min-w-[140px] rounded-xl bg-amber-50 border border-amber-100 p-3">
+                    <p className="text-xs text-amber-700 font-medium">{t('admin', 'cashPending')}</p>
+                    <p className="text-xl font-bold text-amber-800 mt-0.5">{formatCurrency(stats.cash_pending)}</p>
+                  </div>
+                </div>
+
+                {/* By institution table */}
+                {stats.cash_by_institution.length > 0 && (
+                  <div className="rounded-xl border overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50 border-b">
+                          <th className="text-left px-3 py-2 font-semibold text-gray-600">{t('admin', 'institutionTypeLabel')}</th>
+                          <th className="text-right px-3 py-2 font-semibold text-emerald-700">{t('admin', 'cashCollected')}</th>
+                          <th className="text-right px-3 py-2 font-semibold text-amber-700">{t('admin', 'cashPending')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.cash_by_institution.map(row => (
+                          <tr key={row.institution_type} className="border-b last:border-0 hover:bg-gray-50">
+                            <td className="px-3 py-2 capitalize font-medium text-gray-700">
+                              {row.institution_type === 'private_company' ? 'Private Company' : row.institution_type.charAt(0).toUpperCase() + row.institution_type.slice(1)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-semibold text-emerald-700">{formatCurrency(row.collected)}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-amber-700">{formatCurrency(row.pending)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* By agency toggle */}
+                {stats.cash_by_agency.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => setShowCashAgencies(v => !v)}
+                      className="flex items-center gap-1 text-xs font-medium text-[#00352F] hover:underline"
+                    >
+                      {showCashAgencies ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      {t('admin', 'cashByAgency')} ({stats.cash_by_agency.length})
+                    </button>
+                    {showCashAgencies && (
+                      <div className="mt-2 rounded-xl border overflow-hidden">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-gray-50 border-b">
+                              <th className="text-left px-3 py-2 font-semibold text-gray-600">{t('admin', 'agencyLabel')}</th>
+                              <th className="text-left px-3 py-2 font-semibold text-gray-600">{t('admin', 'tableInstitution')}</th>
+                              <th className="text-right px-3 py-2 font-semibold text-emerald-700">{t('admin', 'cashCollected')}</th>
+                              <th className="text-right px-3 py-2 font-semibold text-amber-700">{t('admin', 'cashPending')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {stats.cash_by_agency.map((row, i) => (
+                              <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                                <td className="px-3 py-2 font-medium text-gray-800">{row.name}</td>
+                                <td className="px-3 py-2 text-gray-500 capitalize">
+                                  {row.institution_type === 'private_company' ? 'Private Co.' : row.institution_type}
+                                </td>
+                                <td className="px-3 py-2 text-right font-semibold text-emerald-700">{formatCurrency(row.collected)}</td>
+                                <td className="px-3 py-2 text-right font-semibold text-amber-700">{formatCurrency(row.pending)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       )}

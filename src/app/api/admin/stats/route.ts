@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
   let query = adminSupabase
     .from('orders')
-    .select('quantity, total_amount, payment_status, delivery_status, institution_type, shirt_size, created_at, catalog_item_name')
+    .select('quantity, total_amount, payment_status, delivery_status, institution_type, shirt_size, created_at, catalog_item_name, payment_method, school_name, organization_name, company_name')
 
   // 'all' is the UI sentinel for "no campaign filter" — treat it as unfiltered
   if (campaign_id && campaign_id !== 'all') {
@@ -130,6 +130,55 @@ export async function GET(request: NextRequest) {
   const has_catalog_breakdown = orders_by_catalog_item.length > 1 ||
     (orders_by_catalog_item.length === 1 && orders_by_catalog_item[0].name !== 'Unspecified')
 
+  // ─── Cash breakdown ───────────────────────────────────────────
+
+  const cashOrders = orders.filter(o => o.payment_method === 'cash')
+
+  const cash_collected = cashOrders
+    .filter(o => o.payment_status === 'paid' || o.payment_status === 'manual')
+    .reduce((sum, o) => sum + Number(o.total_amount), 0)
+
+  const cash_pending = cashOrders
+    .filter(o => o.payment_status === 'pending')
+    .reduce((sum, o) => sum + Number(o.total_amount), 0)
+
+  // Per-institution cash breakdown
+  const cashInstitutionMap = new Map<string, { collected: number; pending: number }>()
+  cashOrders.forEach(o => {
+    const existing = cashInstitutionMap.get(o.institution_type) || { collected: 0, pending: 0 }
+    const isPaid = o.payment_status === 'paid' || o.payment_status === 'manual'
+    cashInstitutionMap.set(o.institution_type, {
+      collected: existing.collected + (isPaid ? Number(o.total_amount) : 0),
+      pending: existing.pending + (o.payment_status === 'pending' ? Number(o.total_amount) : 0),
+    })
+  })
+  const cash_by_institution = Array.from(cashInstitutionMap.entries())
+    .map(([institution_type, v]) => ({ institution_type, ...v }))
+    .sort((a, b) => a.institution_type.localeCompare(b.institution_type))
+
+  // Per-agency cash breakdown
+  const resolveAgencyName = (o: { institution_type: string; school_name: string | null; organization_name: string | null; company_name: string | null }) => {
+    if (o.institution_type === 'school') return o.school_name || 'Unknown School'
+    if (o.institution_type === 'government') return o.organization_name || 'Unknown Agency'
+    if (o.institution_type === 'private_company') return o.company_name || 'Unknown Company'
+    return 'Personal'
+  }
+  const cashAgencyMap = new Map<string, { institution_type: string; collected: number; pending: number }>()
+  cashOrders.forEach(o => {
+    const agencyName = resolveAgencyName(o)
+    const key = `${o.institution_type}::${agencyName}`
+    const existing = cashAgencyMap.get(key) || { institution_type: o.institution_type, collected: 0, pending: 0 }
+    const isPaid = o.payment_status === 'paid' || o.payment_status === 'manual'
+    cashAgencyMap.set(key, {
+      institution_type: o.institution_type,
+      collected: existing.collected + (isPaid ? Number(o.total_amount) : 0),
+      pending: existing.pending + (o.payment_status === 'pending' ? Number(o.total_amount) : 0),
+    })
+  })
+  const cash_by_agency = Array.from(cashAgencyMap.entries())
+    .map(([key, v]) => ({ name: key.split('::')[1], ...v }))
+    .sort((a, b) => a.institution_type.localeCompare(b.institution_type) || a.name.localeCompare(b.name))
+
   return NextResponse.json({
     total_orders,
     total_shirts,
@@ -143,5 +192,9 @@ export async function GET(request: NextRequest) {
     revenue_by_date,
     orders_by_catalog_item,
     has_catalog_breakdown,
+    cash_collected,
+    cash_pending,
+    cash_by_institution,
+    cash_by_agency,
   })
 }

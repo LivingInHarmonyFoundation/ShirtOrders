@@ -24,7 +24,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Download, FileText, Printer, Filter, Shirt, Megaphone } from 'lucide-react'
+import { Download, FileText, Printer, Filter, Shirt, Megaphone, Banknote, ChevronDown, ChevronUp } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Order, DashboardStats, GovOrg, SchoolLink, PrivateCompany, Campaign } from '@/types'
@@ -47,6 +47,7 @@ export default function ReportsPage() {
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [catalogBreakdown, setCatalogBreakdown] = useState<DashboardStats['orders_by_catalog_item']>([])
   const [hasCatalog, setHasCatalog] = useState(false)
+  const [showCashAgencies, setShowCashAgencies] = useState(false)
 
   // Filters
   const [institutionType, setInstitutionType] = useState('')
@@ -135,6 +136,7 @@ export default function ReportsPage() {
       const breakdown = Array.from(cmap.entries()).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.shirts - a.shirts)
       setCatalogBreakdown(breakdown)
       setHasCatalog(breakdown.length > 0)
+      setShowCashAgencies(false)
     } catch {
       toast.error('Failed to generate report')
     } finally {
@@ -153,6 +155,65 @@ export default function ReportsPage() {
   }
 
   const handlePrint = () => window.print()
+
+  // ── Cash breakdown (client-side from fetched orders) ──
+
+  const cashOrders = orders.filter(o => o.payment_method === 'cash')
+
+  const cashCollected = cashOrders
+    .filter(o => o.payment_status === 'paid' || o.payment_status === 'manual')
+    .reduce((sum, o) => sum + Number(o.total_amount), 0)
+
+  const cashPending = cashOrders
+    .filter(o => o.payment_status === 'pending')
+    .reduce((sum, o) => sum + Number(o.total_amount), 0)
+
+  const resolveAgencyName = (o: Order) => {
+    if (o.institution_type === 'school') return o.school_name || 'Unknown School'
+    if (o.institution_type === 'government') return o.organization_name || 'Unknown Agency'
+    if (o.institution_type === 'private_company') return o.company_name || 'Unknown Company'
+    return 'Personal'
+  }
+
+  const cashByInstitution = (() => {
+    const map = new Map<string, { collected: number; pending: number; count: number }>()
+    cashOrders.forEach(o => {
+      const ex = map.get(o.institution_type) || { collected: 0, pending: 0, count: 0 }
+      const isPaid = o.payment_status === 'paid' || o.payment_status === 'manual'
+      map.set(o.institution_type, {
+        collected: ex.collected + (isPaid ? Number(o.total_amount) : 0),
+        pending: ex.pending + (o.payment_status === 'pending' ? Number(o.total_amount) : 0),
+        count: ex.count + 1,
+      })
+    })
+    return Array.from(map.entries())
+      .map(([institution_type, v]) => ({ institution_type, ...v }))
+      .sort((a, b) => a.institution_type.localeCompare(b.institution_type))
+  })()
+
+  const cashByAgency = (() => {
+    const map = new Map<string, { institution_type: string; collected: number; pending: number; count: number }>()
+    cashOrders.forEach(o => {
+      const name = resolveAgencyName(o)
+      const key = `${o.institution_type}::${name}`
+      const ex = map.get(key) || { institution_type: o.institution_type, collected: 0, pending: 0, count: 0 }
+      const isPaid = o.payment_status === 'paid' || o.payment_status === 'manual'
+      map.set(key, {
+        institution_type: o.institution_type,
+        collected: ex.collected + (isPaid ? Number(o.total_amount) : 0),
+        pending: ex.pending + (o.payment_status === 'pending' ? Number(o.total_amount) : 0),
+        count: ex.count + 1,
+      })
+    })
+    return Array.from(map.entries())
+      .map(([key, v]) => ({ name: key.split('::')[1], ...v }))
+      .sort((a, b) => a.institution_type.localeCompare(b.institution_type) || a.name.localeCompare(b.name))
+  })()
+
+  const institutionLabel = (type: string) => {
+    if (type === 'private_company') return 'Private Company'
+    return type.charAt(0).toUpperCase() + type.slice(1)
+  }
 
   // ── Render ──
   return (
@@ -419,6 +480,90 @@ export default function ReportsPage() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cash breakdown */}
+      {cashOrders.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-[#E5F2F0] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Banknote className="w-4 h-4 text-[#00352F]" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-semibold">Cash Breakdown</CardTitle>
+                <CardDescription className="text-xs">
+                  {cashOrders.length} cash order{cashOrders.length !== 1 ? 's' : ''} · Collected: <span className="font-semibold text-emerald-700">{formatCurrency(cashCollected)}</span> · Pending: <span className="font-semibold text-amber-700">{formatCurrency(cashPending)}</span>
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* By institution */}
+            <div className="rounded-xl border overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b">
+                    <th className="text-left px-3 py-2 font-semibold text-gray-600">Institution</th>
+                    <th className="text-right px-3 py-2 font-semibold text-gray-600">Orders</th>
+                    <th className="text-right px-3 py-2 font-semibold text-emerald-700">Collected</th>
+                    <th className="text-right px-3 py-2 font-semibold text-amber-700">Pending</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cashByInstitution.map(row => (
+                    <tr key={row.institution_type} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-800">{institutionLabel(row.institution_type)}</td>
+                      <td className="px-3 py-2 text-right text-gray-500">{row.count}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-emerald-700">{formatCurrency(row.collected)}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-amber-700">{formatCurrency(row.pending)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* By agency toggle */}
+            {cashByAgency.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setShowCashAgencies(v => !v)}
+                  className="flex items-center gap-1 text-xs font-medium hover:underline"
+                  style={{ color: '#00352F' }}
+                >
+                  {showCashAgencies ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  By Specific Agency ({cashByAgency.length})
+                </button>
+                {showCashAgencies && (
+                  <div className="mt-2 rounded-xl border overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50 border-b">
+                          <th className="text-left px-3 py-2 font-semibold text-gray-600">Agency / School / Company</th>
+                          <th className="text-left px-3 py-2 font-semibold text-gray-600">Type</th>
+                          <th className="text-right px-3 py-2 font-semibold text-gray-600">Orders</th>
+                          <th className="text-right px-3 py-2 font-semibold text-emerald-700">Collected</th>
+                          <th className="text-right px-3 py-2 font-semibold text-amber-700">Pending</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cashByAgency.map((row, i) => (
+                          <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                            <td className="px-3 py-2 font-medium text-gray-800">{row.name}</td>
+                            <td className="px-3 py-2 text-gray-500">{institutionLabel(row.institution_type)}</td>
+                            <td className="px-3 py-2 text-right text-gray-500">{row.count}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-emerald-700">{formatCurrency(row.collected)}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-amber-700">{formatCurrency(row.pending)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

@@ -241,6 +241,10 @@ export interface DashboardStats {
   revenue_by_date: { date: string; revenue: number }[]
   orders_by_catalog_item: { name: string; orders: number; shirts: number }[]
   has_catalog_breakdown: boolean
+  cash_collected: number
+  cash_pending: number
+  cash_by_institution: { institution_type: string; collected: number; pending: number }[]
+  cash_by_agency: { name: string; institution_type: string; collected: number; pending: number }[]
 }
 
 /**
