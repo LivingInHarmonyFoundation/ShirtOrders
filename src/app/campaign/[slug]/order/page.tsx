@@ -95,6 +95,7 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<ShirtCatalogItem | null>(null)
+  const [inventoryRows, setInventoryRows] = useState<{ catalog_item_id: string | null; shirt_size: string; quantity: number }[]>([])
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [selectedGovOrg, setSelectedGovOrg] = useState<GovOrg | null>(null)
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
@@ -125,7 +126,24 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
   const watchedSize = watch('shirt_size')
   const watchedQty = watch('quantity')
   const unitPrice = selectedCatalogItem?.price ?? settings?.shirt_price ?? 15
-  const sizes: string[] = selectedCatalogItem?.available_sizes ?? settings?.available_sizes ?? ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  // All sizes defined for this item (or global fallback)
+  const allSizes: string[] = selectedCatalogItem?.available_sizes ?? settings?.available_sizes ?? ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  // Filter out sizes with confirmed zero stock. If there are no inventory rows at
+  // all for this item we show all sizes (inventory tracking may not be set up).
+  const itemInventory = inventoryRows.filter(r =>
+    selectedCatalogItem
+      ? r.catalog_item_id === selectedCatalogItem.id || r.catalog_item_id === null
+      : r.catalog_item_id === null
+  )
+  const sizes = itemInventory.length > 0
+    ? allSizes.filter(s => {
+        // Prefer catalog-specific row; fall back to general row
+        const specific = itemInventory.find(r => r.catalog_item_id !== null && r.shirt_size === s)
+        const general  = itemInventory.find(r => r.catalog_item_id === null  && r.shirt_size === s)
+        const row = specific ?? general
+        return !row || row.quantity > 0
+      })
+    : allSizes
 
   useEffect(() => {
     fetch(`/api/campaigns/${slug}`)
@@ -155,6 +173,11 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
     fetch('/api/private-companies')
       .then(r => r.json())
       .then(({ companies }) => { if (companies?.length > 0) setPrivateCompanies(companies) })
+      .catch(() => {})
+
+    fetch('/api/inventory')
+      .then(r => r.json())
+      .then(({ rows }) => { if (rows) setInventoryRows(rows) })
       .catch(() => {})
   }, [slug])
 

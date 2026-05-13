@@ -190,6 +190,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Inventory pre-check — verify stock exists for every cart item before we
+    // touch the orders table. This is an optimistic guard; the real atomic
+    // decrement (with race protection) happens after the order is created.
+    for (const item of cartItems) {
+      const { data: invCheck } = await supabase
+        .from('shirt_inventory')
+        .select('quantity')
+        .eq('shirt_size', item.shirt_size)
+        .or(
+          item.catalog_item_id
+            ? `catalog_item_id.eq.${item.catalog_item_id},catalog_item_id.is.null`
+            : 'catalog_item_id.is.null'
+        )
+        .order('catalog_item_id', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (invCheck && invCheck.quantity < item.quantity) {
+        return NextResponse.json(
+          { error: `Sorry, only ${invCheck.quantity} unit(s) of size "${item.shirt_size}" are left in stock.` },
+          { status: 400 }
+        )
+      }
+    }
+
     // Duplicate-submission guard: rejects if the same email + first-item size + qty
     // was submitted within the last 10 minutes to prevent accidental double-orders.
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
@@ -342,42 +367,56 @@ export async function POST(request: NextRequest) {
       console.error('Error inserting order_items:', itemsError)
     }
 
-    // Decrement inventory for each cart item (non-fatal)
-    try {
-      for (const item of cartItems) {
-        // Try catalog-item-specific inventory first, then fall back to general (null catalog_item_id)
-        const { data: invRow } = await supabase
-          .from('shirt_inventory')
-          .select('id, quantity, low_stock_threshold')
-          .eq('shirt_size', item.shirt_size)
-          .or(
-            item.catalog_item_id
-              ? `catalog_item_id.eq.${item.catalog_item_id},catalog_item_id.is.null`
-              : 'catalog_item_id.is.null'
-          )
-          .order('catalog_item_id', { ascending: false, nullsFirst: false }) // prefer specific over general
-          .limit(1)
-          .maybeSingle()
+    // Atomically decrement inventory for each cart item via RPC.
+    // If the decrement fails due to a race (another order grabbed the last stock),
+    // we mark the order as out-of-stock and return an error so the customer can retry.
+    for (const item of cartItems) {
+      // Find the best matching inventory row (catalog-specific first, then general)
+      const { data: invRow } = await supabase
+        .from('shirt_inventory')
+        .select('id, quantity, low_stock_threshold')
+        .eq('shirt_size', item.shirt_size)
+        .or(
+          item.catalog_item_id
+            ? `catalog_item_id.eq.${item.catalog_item_id},catalog_item_id.is.null`
+            : 'catalog_item_id.is.null'
+        )
+        .order('catalog_item_id', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle()
 
-        if (invRow) {
-          const newQty = invRow.quantity - item.quantity
-          await supabase
-            .from('shirt_inventory')
-            .update({ quantity: newQty, updated_at: new Date().toISOString() })
-            .eq('id', invRow.id)
+      if (!invRow) continue // no inventory row tracked for this item — allow it through
 
-          // Check if low stock threshold just crossed (not already below before this order)
-          if (newQty <= invRow.low_stock_threshold && newQty > invRow.low_stock_threshold - item.quantity) {
-            // Just crossed the threshold — send notification (fire and forget)
-            sendLowInventoryNotification(
-              [{ size: item.shirt_size, catalogItemName: item.catalog_item_name ?? null, quantity: newQty, threshold: invRow.low_stock_threshold }],
-              settings
-            ).catch(e => console.error('Low inventory notification error:', e))
-          }
-        }
+      const { data: newQty, error: rpcError } = await supabase
+        .rpc('decrement_shirt_inventory', {
+          p_inventory_id: invRow.id,
+          p_quantity: item.quantity,
+        })
+
+      if (rpcError) {
+        console.error('Inventory RPC error:', rpcError)
+        // Non-fatal: stock tracking failure shouldn't block the order
+        continue
       }
-    } catch (e) {
-      console.error('Inventory deduction error:', e)
+
+      if (newQty === -1) {
+        // Race condition — stock was taken between our pre-check and here.
+        // Delete the newly-created order row to keep data clean, then surface the error.
+        await supabase.from('orders').delete().eq('id', order.id)
+        return NextResponse.json(
+          { error: `Sorry, size "${item.shirt_size}" just sold out. Please choose a different size.` },
+          { status: 409 }
+        )
+      }
+
+      // Check if this decrement just crossed the low-stock threshold
+      const prevQty = invRow.quantity
+      if (newQty <= invRow.low_stock_threshold && prevQty > invRow.low_stock_threshold) {
+        sendLowInventoryNotification(
+          [{ size: item.shirt_size, catalogItemName: item.catalog_item_name ?? null, quantity: newQty, threshold: invRow.low_stock_threshold }],
+          settings
+        ).catch(e => console.error('Low inventory notification error:', e))
+      }
     }
 
     sendOrderNotifications(order, settings).catch(e => console.error('Notification error:', e))

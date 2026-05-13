@@ -93,6 +93,7 @@ export default function OrderPage() {
   // null = loading; [] = none active; [one] = single (no picker); [two+] = picker shown
   const [activeCampaigns, setActiveCampaigns] = useState<Campaign[] | null>(null)
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  const [inventoryRows, setInventoryRows] = useState<{ catalog_item_id: string | null; shirt_size: string; quantity: number }[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [institutionType, setInstitutionType] = useState<InstitutionType | ''>('')
   const [checkoutPayload, setCheckoutPayload] = useState<null | {
@@ -120,7 +121,20 @@ export default function OrderPage() {
   const watchedSize = watch('shirt_size')
   const watchedQty = watch('quantity')
   const unitPrice = selectedCatalogItem?.price ?? settings?.shirt_price ?? 15
-  const sizes: string[] = selectedCatalogItem?.available_sizes ?? settings?.available_sizes ?? ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  const allSizes: string[] = selectedCatalogItem?.available_sizes ?? settings?.available_sizes ?? ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  const itemInventory = inventoryRows.filter(r =>
+    selectedCatalogItem
+      ? r.catalog_item_id === selectedCatalogItem.id || r.catalog_item_id === null
+      : r.catalog_item_id === null
+  )
+  const sizes = itemInventory.length > 0
+    ? allSizes.filter(s => {
+        const specific = itemInventory.find(r => r.catalog_item_id !== null && r.shirt_size === s)
+        const general  = itemInventory.find(r => r.catalog_item_id === null  && r.shirt_size === s)
+        const row = specific ?? general
+        return !row || row.quantity > 0
+      })
+    : allSizes
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -149,6 +163,11 @@ export default function OrderPage() {
       .then(r => r.json())
       .then(({ campaigns }) => setActiveCampaigns(campaigns ?? []))
       .catch(() => setActiveCampaigns([]))
+
+    fetch('/api/inventory')
+      .then(r => r.json())
+      .then(({ rows }) => { if (rows) setInventoryRows(rows) })
+      .catch(() => {})
   }, [])
 
   // Auto-select if only one shirt
