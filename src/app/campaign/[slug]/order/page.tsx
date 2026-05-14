@@ -545,13 +545,12 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
-                {institutionOptions.map(({ value, labelKey, icon: Icon, enabled }) => {
+                {institutionOptions.filter(o => o.enabled).map(({ value, labelKey, icon: Icon }) => {
                   const active = institutionType === value
                   return (
                     <button
                       key={value}
                       type="button"
-                      disabled={!enabled}
                       onClick={() => {
                         setInstitutionType(value)
                         setValue('institution_type', value, { shouldValidate: true })
@@ -561,8 +560,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                         'relative flex flex-col items-center gap-3 py-5 px-3 rounded-2xl border-2 transition-all duration-150 overflow-hidden',
                         active
                           ? 'border-[#00352F] bg-[#E5F2F0] shadow-md'
-                          : 'border-gray-200 bg-white hover:border-[#CEDC00]/50 hover:bg-[#F9FCF7]',
-                        !enabled && 'opacity-40 cursor-not-allowed'
+                          : 'border-gray-200 bg-white hover:border-[#CEDC00]/50 hover:bg-[#F9FCF7]'
                       )}
                     >
                       {active && (
