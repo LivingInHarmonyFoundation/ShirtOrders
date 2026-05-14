@@ -81,6 +81,9 @@ export default function DiscountCodesPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [schools, setSchools] = useState<string[]>([])
+  const [govOrgs, setGovOrgs] = useState<string[]>([])
+  const [companies, setCompanies] = useState<string[]>([])
 
   // ── Fetch ──────────────────────────────────────────────────
 
@@ -90,6 +93,16 @@ export default function DiscountCodesPage() {
       .then(data => setCodes(data.discountCodes || []))
       .catch(() => toast.error(t('admin', 'discountCodeError')))
       .finally(() => setLoading(false))
+
+    Promise.all([
+      fetch('/api/admin/schools').then(r => r.json()),
+      fetch('/api/admin/government-orgs').then(r => r.json()),
+      fetch('/api/admin/private-companies').then(r => r.json()),
+    ]).then(([s, g, c]) => {
+      setSchools((s.schools ?? []).map((x: { school_name: string }) => x.school_name).sort())
+      setGovOrgs((g.orgs ?? []).map((x: { name: string }) => x.name).sort())
+      setCompanies((c.companies ?? []).map((x: { name: string }) => x.name).sort())
+    }).catch(() => {})
   }, [t])
 
   // ── Handlers ──────────────────────────────────────────────
@@ -294,20 +307,29 @@ export default function DiscountCodesPage() {
                 </select>
               </div>
 
-              {form.restricted_to_type && form.restricted_to_type !== 'personal' && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="dc-restrict-name">
-                    Specific {form.restricted_to_type === 'school' ? 'school' : form.restricted_to_type === 'government' ? 'agency' : 'company'} name{' '}
-                    <span className="text-gray-400 font-normal text-xs">(optional)</span>
-                  </Label>
-                  <Input
-                    id="dc-restrict-name"
-                    value={form.restricted_to_name}
-                    onChange={e => setForm(f => ({ ...f, restricted_to_name: e.target.value }))}
-                    placeholder={`e.g. ${form.restricted_to_type === 'school' ? 'Lincoln High School' : form.restricted_to_type === 'government' ? 'City Hall' : 'Acme Corp'}`}
-                  />
-                </div>
-              )}
+              {form.restricted_to_type && form.restricted_to_type !== 'personal' && (() => {
+                const typeLabel = form.restricted_to_type === 'school' ? 'school' : form.restricted_to_type === 'government' ? 'agency' : 'company'
+                const options = form.restricted_to_type === 'school' ? schools : form.restricted_to_type === 'government' ? govOrgs : companies
+                return (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="dc-restrict-name">
+                      Specific {typeLabel} name{' '}
+                      <span className="text-gray-400 font-normal text-xs">(optional)</span>
+                    </Label>
+                    <select
+                      id="dc-restrict-name"
+                      value={form.restricted_to_name}
+                      onChange={e => setForm(f => ({ ...f, restricted_to_name: e.target.value }))}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="">Any {typeLabel}</option>
+                      {options.map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )
+              })()}
 
               {/* Enabled */}
               <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border">
