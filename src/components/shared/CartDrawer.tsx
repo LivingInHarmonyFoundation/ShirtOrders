@@ -96,13 +96,23 @@ function CartItemRow({ item }: { item: CartItem }) {
 }
 
 /**
- * getCampaignOrderHref — returns the order page URL for a campaign, preserving
- * any `institution` lock param that was on the current page so cross-sell links
- * maintain the same institution context.
+ * getCampaignOrderHref — returns the order URL for a cross-sell campaign.
+ * When the user arrived via a school or company link, passes the institution
+ * IDs as query params so the campaign order page stays locked to that context.
  */
-function getCampaignOrderHref(slug: string, lockedInstitution?: string): string {
+function getCampaignOrderHref(slug: string, payload: CheckoutPayload | null): string {
   const base = `/campaign/${slug}/order`
-  return lockedInstitution ? `${base}?institution=${lockedInstitution}` : base
+  if (!payload) return base
+  const params = new URLSearchParams()
+  if (payload.school_link_id) {
+    params.set('school_link_id', payload.school_link_id)
+    if (payload.school_name) params.set('school_name', payload.school_name)
+  } else if (payload.company_link_id) {
+    params.set('company_link_id', payload.company_link_id)
+    if (payload.company_name) params.set('company_name', payload.company_name)
+  }
+  const qs = params.toString()
+  return qs ? `${base}?${qs}` : base
 }
 
 export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: CartDrawerProps) {
@@ -290,7 +300,7 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
                     {otherCampaigns.map(campaign => (
                       <Link
                         key={campaign.id}
-                        href={getCampaignOrderHref(campaign.slug!, checkoutPayload?.institution_type)}
+                        href={getCampaignOrderHref(campaign.slug!, checkoutPayload ?? null)}
                         onClick={closeCart}
                         className="flex items-center gap-3 p-3 rounded-xl border-2 transition-all group"
                         style={{ borderColor: 'rgba(206,220,0,0.4)', backgroundColor: '#FAFDF0' }}

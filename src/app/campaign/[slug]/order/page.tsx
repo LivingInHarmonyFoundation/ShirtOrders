@@ -89,9 +89,15 @@ function isEffectivelyActive(campaign: Campaign, now = new Date()): boolean {
 function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const searchParams = useSearchParams()
-  // If a specific institution type is locked via ?institution=school (etc.), the
-  // selector is hidden and only that institution type is available.
-  const lockedInstitution = searchParams.get('institution') as InstitutionType | null
+  // Institution lock — carried from school/company links via query params
+  const lockedSchoolLinkId  = searchParams.get('school_link_id')
+  const lockedSchoolName    = searchParams.get('school_name')
+  const lockedCompanyLinkId = searchParams.get('company_link_id')
+  const lockedCompanyName   = searchParams.get('company_name')
+  const lockedInstitution: InstitutionType | null =
+    lockedSchoolLinkId  ? 'school' :
+    lockedCompanyLinkId ? 'private_company' :
+    (searchParams.get('institution') as InstitutionType | null)
   const t = useT()
   const { addItem, openCart, items: cartItems, totalItems, savedCheckoutInfo, saveCheckoutInfo } = useCart()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
@@ -120,6 +126,8 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
     company_department?: string
     delivery_address?: string
     notes?: string
+    school_link_id?: string
+    company_link_id?: string
     campaign_id?: string
   }>(null)
 
@@ -190,10 +198,12 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
     if (catalog.length === 1) setSelectedCatalogItem(catalog[0])
   }, [catalog])
 
-  // Lock the institution type from the URL param on mount.
+  // Lock institution type and pre-fill entity name when arriving from an institution link.
   useEffect(() => {
     if (!lockedInstitution) return
     setValue('institution_type', lockedInstitution, { shouldValidate: false })
+    if (lockedSchoolName)   setValue('school_name',   lockedSchoolName,   { shouldValidate: false })
+    if (lockedCompanyName)  setValue('company_name',  lockedCompanyName,  { shouldValidate: false })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-fill personal info if the customer already added to cart on another campaign
@@ -235,6 +245,8 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
         delivery_address,
         notes: data.notes,
         campaign_id: campaign?.id,
+        school_link_id: lockedSchoolLinkId ?? undefined,
+        company_link_id: lockedCompanyLinkId ?? undefined,
       }
       setCheckoutPayload(payload)
       saveCheckoutInfo({ ...data })
@@ -283,6 +295,8 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
       delivery_address,
       notes: data.notes,
       campaign_id: campaign?.id,
+      school_link_id: lockedSchoolLinkId ?? undefined,
+      company_link_id: lockedCompanyLinkId ?? undefined,
     })
     return true
   }
@@ -634,9 +648,19 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="school_name">{t('order', 'schoolName')} *</Label>
-                  <Input id="school_name" {...register('school_name')} placeholder={t('order', 'schoolNamePlaceholder')} className="mt-1" />
-                  {errors.school_name && <p className="text-red-500 text-xs mt-1">{errors.school_name.message}</p>}
+                  <Label>{t('order', 'schoolName')}</Label>
+                  {lockedSchoolName ? (
+                    <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-[#E5F2F0] border border-[#CEDC00]/30 rounded-lg">
+                      <School className="w-4 h-4 text-[#00352F] flex-shrink-0" />
+                      <span className="text-sm text-[#00352F] font-semibold">{lockedSchoolName}</span>
+                      <span className="ml-auto text-xs text-[#00352F]/50 bg-[#CEDC00]/20 px-2 py-0.5 rounded">{t('order', 'preFilledLabel')}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Input id="school_name" {...register('school_name')} placeholder={t('order', 'schoolNamePlaceholder')} className="mt-1" />
+                      {errors.school_name && <p className="text-red-500 text-xs mt-1">{errors.school_name.message}</p>}
+                    </>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -726,7 +750,13 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="company_name">{t('order', 'companyName')} *</Label>
-                  {privateCompanies.length > 0 ? (
+                  {lockedCompanyName ? (
+                    <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-[#E5F2F0] border border-[#CEDC00]/30 rounded-lg">
+                      <Briefcase className="w-4 h-4 text-[#00352F] flex-shrink-0" />
+                      <span className="text-sm text-[#00352F] font-semibold">{lockedCompanyName}</span>
+                      <span className="ml-auto text-xs text-[#00352F]/50 bg-[#CEDC00]/20 px-2 py-0.5 rounded">{t('order', 'preFilledLabel')}</span>
+                    </div>
+                  ) : privateCompanies.length > 0 ? (
                     <select
                       id="company_name"
                       {...register('company_name')}
@@ -740,7 +770,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                   ) : (
                     <Input id="company_name" {...register('company_name')} placeholder={t('order', 'companyInputPlaceholder')} className="mt-1" />
                   )}
-                  {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
+                  {!lockedCompanyName && errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="company_department">{t('order', 'companyDept')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
