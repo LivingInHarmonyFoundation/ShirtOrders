@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .select('id', { count: 'exact', head: true })
       .eq('discount_code', discountCode.code)
-      .in('payment_status', ['paid', 'manual'])
+      .not('payment_status', 'in', '("failed","refunded")')
 
     if ((count ?? 0) >= discountCode.max_uses) {
       return NextResponse.json({ error: 'This code has reached its usage limit' }, { status: 400 })

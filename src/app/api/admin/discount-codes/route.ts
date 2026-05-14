@@ -36,12 +36,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch discount codes' }, { status: 500 })
   }
 
-  // Attach usage counts by joining against paid/manual orders
+  // Attach usage counts — include pending orders so the count matches what the limit check sees
   const { data: usedOrders } = await admin
     .from('orders')
     .select('discount_code')
     .not('discount_code', 'is', null)
-    .in('payment_status', ['paid', 'manual'])
+    .not('payment_status', 'in', '("failed","refunded")')
 
   const usageMap: Record<string, number> = {}
   for (const o of usedOrders ?? []) {
