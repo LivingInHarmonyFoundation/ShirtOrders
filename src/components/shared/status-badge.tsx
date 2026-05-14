@@ -50,6 +50,7 @@ const institutionConfig: Record<InstitutionType, { label: string; className: str
   government:      { label: 'Government',      className: 'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-400' },
   personal:        { label: 'Personal',        className: 'bg-blue-50 text-blue-700 border-blue-200' },
   private_company: { label: 'Private Company', className: 'bg-orange-50 text-orange-700 border-orange-200' },
+  staff:           { label: 'Staff',           className: 'bg-purple-50 text-purple-700 border-purple-200' },
 }
 
 /** InstitutionBadge — colored badge for school / government / personal / private_company. */

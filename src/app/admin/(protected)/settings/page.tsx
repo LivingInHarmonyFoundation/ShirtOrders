@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, DollarSign, School, Building2, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2, CreditCard, Banknote, Plus, Percent } from 'lucide-react'
+import { Save, Loader2, DollarSign, School, Building2, MessageSquare, User, Briefcase, ImagePlus, Upload, Trash2, CreditCard, Banknote, Plus, Percent, Users } from 'lucide-react'
 import Image from 'next/image'
 import type { AppSettings } from '@/types'
 import { useRole } from '@/components/admin/role-provider'
@@ -55,6 +55,7 @@ export default function SettingsPage() {
   const [govEnabled, setGovEnabled] = useState(true)
   const [personalEnabled, setPersonalEnabled] = useState(true)
   const [privateCompanyEnabled, setPrivateCompanyEnabled] = useState(true)
+  const [staffEnabled, setStaffEnabled] = useState(false)
   const [cashEnabled, setCashEnabled] = useState(false)
   const [cashEnabledSchool, setCashEnabledSchool] = useState(false)
   const [cashEnabledGovernment, setCashEnabledGovernment] = useState(false)
@@ -94,6 +95,7 @@ export default function SettingsPage() {
           setGovEnabled(settings.government_orders_enabled ?? true)
           setPersonalEnabled(settings.personal_orders_enabled ?? true)
           setPrivateCompanyEnabled(settings.private_company_orders_enabled ?? true)
+          setStaffEnabled(settings.staff_orders_enabled ?? false)
           setCashEnabled(settings.cash_enabled ?? false)
           setCashEnabledSchool(settings.cash_enabled_school ?? false)
           setCashEnabledGovernment(settings.cash_enabled_government ?? false)
@@ -266,6 +268,7 @@ export default function SettingsPage() {
           government_orders_enabled: govEnabled,
           personal_orders_enabled: personalEnabled,
           private_company_orders_enabled: privateCompanyEnabled,
+          staff_orders_enabled: staffEnabled,
           cash_enabled: cashEnabled,
           cash_enabled_school: cashEnabledSchool,
           cash_enabled_government: cashEnabledGovernment,
@@ -786,6 +789,17 @@ export default function SettingsPage() {
               </div>
             </div>
             <Switch checked={privateCompanyEnabled} onCheckedChange={setPrivateCompanyEnabled} />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Users className="w-4 h-4 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'staffOrdersLabel')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'staffOrdersDesc')}</p>
+              </div>
+            </div>
+            <Switch checked={staffEnabled} onCheckedChange={setStaffEnabled} />
           </div>
         </CardContent>
       </Card>

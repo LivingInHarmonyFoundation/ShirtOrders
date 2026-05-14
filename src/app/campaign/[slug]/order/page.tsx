@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { School, Building2, Loader2, CheckCircle2, ShoppingBag, ShoppingCart } from 'lucide-react'
+import { School, Building2, Loader2, CheckCircle2, ShoppingBag, ShoppingCart, Users } from 'lucide-react'
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -31,7 +31,7 @@ const schema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Valid email is required'),
   phone: z.string().optional().refine(v => !v || v.replace(/\D/g, '').length === 10, { message: 'Enter a valid 10-digit phone number' }),
-  institution_type: z.enum(['school', 'government', 'personal', 'private_company'] as const),
+  institution_type: z.enum(['school', 'government', 'personal', 'private_company', 'staff'] as const),
   school_name: z.string().optional(),
   grade: z.string().optional(),
   classroom: z.string().optional(),
@@ -309,6 +309,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
     { value: 'government' as const,      labelKey: 'government' as const,      icon: Building2, enabled: settings?.government_orders_enabled !== false },
     { value: 'personal' as const,        labelKey: 'personal' as const,        icon: User,      enabled: settings?.personal_orders_enabled !== false },
     { value: 'private_company' as const, labelKey: 'privateCompany' as const,  icon: Briefcase, enabled: settings?.private_company_orders_enabled !== false },
+    { value: 'staff' as const,           labelKey: 'staff' as const,           icon: Users,     enabled: settings?.staff_orders_enabled === true },
   ]
 
   const effectiveBannerUrl = campaign?.banner_url || fallbackSettings.banner_url || null

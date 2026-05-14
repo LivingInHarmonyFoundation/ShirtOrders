@@ -12,8 +12,8 @@
 
 // ─── Enum-style String Unions ─────────────────────────────────
 
-/** InstitutionType — the four order categories supported by the ordering form. */
-export type InstitutionType = 'school' | 'government' | 'personal' | 'private_company'
+/** InstitutionType — the order categories supported by the ordering form. */
+export type InstitutionType = 'school' | 'government' | 'personal' | 'private_company' | 'staff'
 
 /** ShirtSize — available shirt size options. */
 export type ShirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL'
@@ -196,6 +196,7 @@ export interface AppSettings {
   government_orders_enabled: boolean
   personal_orders_enabled: boolean
   private_company_orders_enabled: boolean
+  staff_orders_enabled: boolean
   manual_payment_enabled: boolean
   cash_enabled: boolean
   cash_enabled_school: boolean
