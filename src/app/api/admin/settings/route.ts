@@ -19,7 +19,7 @@ import { requirePermission } from '@/lib/supabase/require-role'
 const PUBLIC_FIELDS = [
   'id', 'app_name', 'logo_url', 'mission_banner_url', 'badge_url', 'shirt_price', 'available_sizes',
   'school_orders_enabled', 'government_orders_enabled',
-  'personal_orders_enabled', 'private_company_orders_enabled',
+  'personal_orders_enabled', 'private_company_orders_enabled', 'staff_orders_enabled',
   'manual_payment_enabled', 'cash_enabled',
   'cash_enabled_school', 'cash_enabled_government', 'cash_enabled_private_company',
   'personal_allowed_payment_methods', 'confirmation_message',
@@ -80,7 +80,7 @@ export async function PATCH(request: NextRequest) {
   const allowedFields = [
     'app_name', 'logo_url', 'mission_banner_url', 'badge_url', 'shirt_price', 'available_sizes',
     'school_orders_enabled', 'government_orders_enabled',
-    'personal_orders_enabled', 'private_company_orders_enabled',
+    'personal_orders_enabled', 'private_company_orders_enabled', 'staff_orders_enabled',
     'manual_payment_enabled', 'cash_enabled',
     'cash_enabled_school', 'cash_enabled_government', 'cash_enabled_private_company',
     'personal_allowed_payment_methods', 'confirmation_message',
