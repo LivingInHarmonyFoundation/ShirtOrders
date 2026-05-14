@@ -23,6 +23,10 @@ import type { CartItem } from '@/types'
 const STORAGE_KEY = 'lih_cart'
 const CHECKOUT_INFO_KEY = 'lih_checkout_info'
 
+// Use sessionStorage so each browser tab has an independent cart.
+// Falls back to null during SSR when window is not available.
+const storage = typeof window !== 'undefined' ? window.sessionStorage : null
+
 // ─── Types ────────────────────────────────────────────────────
 
 export interface SavedCheckoutInfo {
@@ -74,10 +78,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false)
   const [savedCheckoutInfo, setSavedCheckoutInfo] = useState<SavedCheckoutInfo | null>(null)
 
-  // ─── LocalStorage Hydration ────────────────────────────────
+  // ─── SessionStorage Hydration ──────────────────────────────
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
+      const stored = storage?.getItem(STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed)) setItems(parsed)
@@ -86,7 +90,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // ignore malformed storage
     }
     try {
-      const storedInfo = localStorage.getItem(CHECKOUT_INFO_KEY)
+      const storedInfo = storage?.getItem(CHECKOUT_INFO_KEY)
       if (storedInfo) setSavedCheckoutInfo(JSON.parse(storedInfo))
     } catch {
       // ignore malformed storage
@@ -94,12 +98,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true)
   }, [])
 
-  // ─── LocalStorage Persistence ──────────────────────────────
-  // Persist to localStorage whenever items change (after hydration)
+  // ─── SessionStorage Persistence ────────────────────────────
+  // Persist to sessionStorage whenever items change (after hydration).
+  // sessionStorage is tab-scoped, so concurrent users on different devices
+  // or tabs cannot see each other's carts.
   useEffect(() => {
     if (!hydrated) return
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+      storage?.setItem(STORAGE_KEY, JSON.stringify(items))
     } catch {
       // ignore storage errors
     }
@@ -150,14 +156,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const saveCheckoutInfo = useCallback((info: SavedCheckoutInfo) => {
     setSavedCheckoutInfo(info)
-    try { localStorage.setItem(CHECKOUT_INFO_KEY, JSON.stringify(info)) } catch {}
+    try { storage?.setItem(CHECKOUT_INFO_KEY, JSON.stringify(info)) } catch {}
   }, [])
 
   /** clearCart — empties the entire cart and clears saved checkout info. */
   const clearCart = useCallback(() => {
     setItems([])
     setSavedCheckoutInfo(null)
-    try { localStorage.removeItem(CHECKOUT_INFO_KEY) } catch {}
+    try { storage?.removeItem(CHECKOUT_INFO_KEY) } catch {}
   }, [])
 
   // ─── Drawer State ──────────────────────────────────────────

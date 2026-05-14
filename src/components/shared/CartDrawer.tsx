@@ -95,6 +95,16 @@ function CartItemRow({ item }: { item: CartItem }) {
   )
 }
 
+/**
+ * getCampaignOrderHref — returns the order page URL for a campaign, preserving
+ * any `institution` lock param that was on the current page so cross-sell links
+ * maintain the same institution context.
+ */
+function getCampaignOrderHref(slug: string, lockedInstitution?: string): string {
+  const base = `/campaign/${slug}/order`
+  return lockedInstitution ? `${base}?institution=${lockedInstitution}` : base
+}
+
 export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: CartDrawerProps) {
   const { items, totalItems, totalAmount, isOpen, closeCart, clearCart } = useCart()
   const router = useRouter()
@@ -280,7 +290,7 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
                     {otherCampaigns.map(campaign => (
                       <Link
                         key={campaign.id}
-                        href={`/campaign/${campaign.slug}`}
+                        href={getCampaignOrderHref(campaign.slug!, checkoutPayload?.institution_type)}
                         onClick={closeCart}
                         className="flex items-center gap-3 p-3 rounded-xl border-2 transition-all group"
                         style={{ borderColor: 'rgba(206,220,0,0.4)', backgroundColor: '#FAFDF0' }}

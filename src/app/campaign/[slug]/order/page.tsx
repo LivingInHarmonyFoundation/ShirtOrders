@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -85,8 +86,12 @@ function isEffectivelyActive(campaign: Campaign, now = new Date()): boolean {
   return true
 }
 
-export default function CampaignSlugPage({ params }: { params: Promise<{ slug: string }> }) {
+function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
+  const searchParams = useSearchParams()
+  // If a specific institution type is locked via ?institution=school (etc.), the
+  // selector is hidden and only that institution type is available.
+  const lockedInstitution = searchParams.get('institution') as InstitutionType | null
   const t = useT()
   const { addItem, openCart, items: cartItems, totalItems, savedCheckoutInfo, saveCheckoutInfo } = useCart()
   const [campaign, setCampaign] = useState<Campaign | null>(null)
@@ -100,7 +105,7 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
   const [selectedGovOrg, setSelectedGovOrg] = useState<GovOrg | null>(null)
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
   const [isAdding, setIsAdding] = useState(false)
-  const [institutionType, setInstitutionType] = useState<InstitutionType | ''>('')
+  const [institutionType, setInstitutionType] = useState<InstitutionType | ''>(lockedInstitution ?? '')
   const [checkoutPayload, setCheckoutPayload] = useState<null | {
     full_name: string
     email: string
@@ -185,13 +190,21 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
     if (catalog.length === 1) setSelectedCatalogItem(catalog[0])
   }, [catalog])
 
+  // Lock the institution type from the URL param on mount.
+  useEffect(() => {
+    if (!lockedInstitution) return
+    setValue('institution_type', lockedInstitution, { shouldValidate: false })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Pre-fill personal info if the customer already added to cart on another campaign
   useEffect(() => {
     if (!savedCheckoutInfo) return
-    reset({ ...savedCheckoutInfo, quantity: 1 } as FormData)
-    if (savedCheckoutInfo.institution_type) {
-      setInstitutionType(savedCheckoutInfo.institution_type as InstitutionType)
-      setValue('institution_type', savedCheckoutInfo.institution_type as InstitutionType)
+    // Don't override a URL-locked institution with saved info.
+    const effectiveType = lockedInstitution ?? (savedCheckoutInfo.institution_type as InstitutionType | undefined)
+    reset({ ...savedCheckoutInfo, institution_type: effectiveType, quantity: 1 } as FormData)
+    if (effectiveType) {
+      setInstitutionType(effectiveType)
+      setValue('institution_type', effectiveType)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -499,8 +512,8 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
             </Card>
           )}
 
-          {/* Institution Type */}
-          <Card className="border-0 shadow-sm">
+          {/* Institution Type — hidden when locked via ?institution= param */}
+          {!lockedInstitution && <Card className="border-0 shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <div
@@ -563,7 +576,7 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
                 <p className="text-red-500 text-xs mt-2">{errors.institution_type.message}</p>
               )}
             </CardContent>
-          </Card>
+          </Card>}
 
           {/* Personal Info */}
           <Card className="border-0 shadow-sm">
@@ -922,5 +935,17 @@ export default function CampaignSlugPage({ params }: { params: Promise<{ slug: s
         onCheckoutValidate={handleCheckoutValidate}
       />
     </div>
+  )
+}
+
+export default function CampaignSlugPage({ params }: { params: Promise<{ slug: string }> }) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F4F0' }}>
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#00352F' }} />
+      </div>
+    }>
+      <CampaignOrderInner params={params} />
+    </Suspense>
   )
 }
