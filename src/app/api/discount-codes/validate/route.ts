@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
   const { data: discountCode, error } = await admin
     .from('discount_codes')
-    .select('id, code, type, value, expires_at, enabled')
+    .select('id, code, type, value, expires_at, enabled, max_uses, restricted_to_type, restricted_to_name')
     .ilike('code', code.trim())
     .maybeSingle()
 
@@ -54,6 +54,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Code has expired' }, { status: 400 })
   }
 
+  if (discountCode.max_uses != null) {
+    const { count } = await admin
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('discount_code', discountCode.code)
+      .in('payment_status', ['paid', 'manual'])
+
+    if ((count ?? 0) >= discountCode.max_uses) {
+      return NextResponse.json({ error: 'This code has reached its usage limit' }, { status: 400 })
+    }
+  }
+
   return NextResponse.json({
     discount: {
       id: discountCode.id,
@@ -61,6 +73,8 @@ export async function POST(request: NextRequest) {
       type: discountCode.type,
       value: discountCode.value,
       expires_at: discountCode.expires_at,
+      restricted_to_type: discountCode.restricted_to_type,
+      restricted_to_name: discountCode.restricted_to_name,
     },
   })
 }

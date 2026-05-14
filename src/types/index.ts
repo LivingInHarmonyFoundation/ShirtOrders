@@ -166,8 +166,12 @@ export interface DiscountCode {
   value: number
   expires_at: string | null
   enabled: boolean
+  max_uses: number | null
+  restricted_to_type: string | null
+  restricted_to_name: string | null
   created_at: string
   updated_at: string
+  times_used?: number
 }
 
 // ─── Application Settings ─────────────────────────────────────

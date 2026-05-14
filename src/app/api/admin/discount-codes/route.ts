@@ -36,7 +36,24 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch discount codes' }, { status: 500 })
   }
 
-  return NextResponse.json({ discountCodes: discountCodes || [] })
+  // Attach usage counts by joining against paid/manual orders
+  const { data: usedOrders } = await admin
+    .from('orders')
+    .select('discount_code')
+    .not('discount_code', 'is', null)
+    .in('payment_status', ['paid', 'manual'])
+
+  const usageMap: Record<string, number> = {}
+  for (const o of usedOrders ?? []) {
+    if (o.discount_code) usageMap[o.discount_code] = (usageMap[o.discount_code] ?? 0) + 1
+  }
+
+  const codesWithUsage = (discountCodes ?? []).map(c => ({
+    ...c,
+    times_used: usageMap[c.code] ?? 0,
+  }))
+
+  return NextResponse.json({ discountCodes: codesWithUsage })
 }
 
 // ─── POST /api/admin/discount-codes ──────────────────────────
@@ -57,7 +74,7 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   const body = await request.json()
-  const { code, type, value, expires_at, enabled } = body
+  const { code, type, value, expires_at, enabled, max_uses, restricted_to_type, restricted_to_name } = body
 
   // ─── Validation ───────────────────────────────────────────
   if (!code || typeof code !== 'string' || !code.trim()) {
@@ -71,6 +88,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Value must be greater than 0' }, { status: 400 })
   }
 
+  const parsedMaxUses = max_uses != null && max_uses !== '' ? Math.max(1, parseInt(String(max_uses), 10)) : null
+  const parsedRestrictedType = restricted_to_type && String(restricted_to_type).trim() ? String(restricted_to_type).trim() : null
+  const parsedRestrictedName = restricted_to_name && String(restricted_to_name).trim() ? String(restricted_to_name).trim() : null
+
   const admin = await createAdminClient()
   const { data: discountCode, error } = await admin
     .from('discount_codes')
@@ -80,6 +101,9 @@ export async function POST(request: NextRequest) {
       value: numValue,
       expires_at: expires_at || null,
       enabled: enabled !== false,
+      max_uses: parsedMaxUses,
+      restricted_to_type: parsedRestrictedType,
+      restricted_to_name: parsedRestrictedName,
     })
     .select()
     .single()

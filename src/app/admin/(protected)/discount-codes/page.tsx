@@ -33,6 +33,9 @@ const EMPTY_FORM = {
   value: '',
   expires_at: '',
   enabled: true,
+  max_uses: '',
+  restricted_to_type: '',
+  restricted_to_name: '',
 }
 
 /**
@@ -105,6 +108,9 @@ export default function DiscountCodesPage() {
           value: parseFloat(form.value),
           expires_at: form.expires_at || null,
           enabled: form.enabled,
+          max_uses: form.max_uses ? parseInt(form.max_uses, 10) : null,
+          restricted_to_type: form.restricted_to_type || null,
+          restricted_to_name: form.restricted_to_name.trim() || null,
         }),
       })
       const data = await res.json()
@@ -251,6 +257,58 @@ export default function DiscountCodesPage() {
                 />
               </div>
 
+              {/* Max Uses */}
+              <div className="space-y-1.5">
+                <Label htmlFor="dc-max-uses">
+                  Max Uses{' '}
+                  <span className="text-gray-400 font-normal text-xs">(leave blank for unlimited)</span>
+                </Label>
+                <Input
+                  id="dc-max-uses"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={form.max_uses}
+                  onChange={e => setForm(f => ({ ...f, max_uses: e.target.value }))}
+                  placeholder="Unlimited"
+                />
+              </div>
+
+              {/* Restriction */}
+              <div className="space-y-1.5">
+                <Label htmlFor="dc-restrict-type">
+                  Restrict to Institution Type{' '}
+                  <span className="text-gray-400 font-normal text-xs">(optional)</span>
+                </Label>
+                <select
+                  id="dc-restrict-type"
+                  value={form.restricted_to_type}
+                  onChange={e => setForm(f => ({ ...f, restricted_to_type: e.target.value, restricted_to_name: '' }))}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">No restriction</option>
+                  <option value="school">School</option>
+                  <option value="government">Government Agency</option>
+                  <option value="private_company">Private Company</option>
+                  <option value="personal">Personal</option>
+                </select>
+              </div>
+
+              {form.restricted_to_type && form.restricted_to_type !== 'personal' && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="dc-restrict-name">
+                    Specific {form.restricted_to_type === 'school' ? 'school' : form.restricted_to_type === 'government' ? 'agency' : 'company'} name{' '}
+                    <span className="text-gray-400 font-normal text-xs">(optional)</span>
+                  </Label>
+                  <Input
+                    id="dc-restrict-name"
+                    value={form.restricted_to_name}
+                    onChange={e => setForm(f => ({ ...f, restricted_to_name: e.target.value }))}
+                    placeholder={`e.g. ${form.restricted_to_type === 'school' ? 'Lincoln High School' : form.restricted_to_type === 'government' ? 'City Hall' : 'Acme Corp'}`}
+                  />
+                </div>
+              )}
+
               {/* Enabled */}
               <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border">
                 <input
@@ -343,6 +401,12 @@ export default function DiscountCodesPage() {
                       {t('admin', 'discountExpiryCol')}
                     </th>
                     <th className="text-left px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">
+                      Uses
+                    </th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">
+                      Restriction
+                    </th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">
                       {t('admin', 'discountEnabledCol')}
                     </th>
                     <th className="text-right px-4 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">
@@ -384,6 +448,36 @@ export default function DiscountCodesPage() {
                             code,
                             t('admin', 'discountNeverExpires'),
                             t('admin', 'discountExpired')
+                          )}
+                        </td>
+
+                        {/* Uses */}
+                        <td className="px-4 py-3 text-sm">
+                          {code.max_uses == null ? (
+                            <span className="text-gray-400">∞</span>
+                          ) : (() => {
+                            const used = code.times_used ?? 0
+                            const exhausted = used >= code.max_uses
+                            const nearLimit = !exhausted && code.max_uses > 0 && used / code.max_uses >= 0.8
+                            return (
+                              <span className={`font-medium ${exhausted ? 'text-red-600' : nearLimit ? 'text-amber-600' : 'text-gray-700'}`}>
+                                {used} / {code.max_uses}
+                              </span>
+                            )
+                          })()}
+                        </td>
+
+                        {/* Restriction */}
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {code.restricted_to_type ? (
+                            <span className="inline-flex flex-col gap-0.5">
+                              <span className="capitalize font-medium text-[#00352F]">{code.restricted_to_type.replace('_', ' ')}</span>
+                              {code.restricted_to_name && (
+                                <span className="text-xs text-gray-500">{code.restricted_to_name}</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
                           )}
                         </td>
 

@@ -36,7 +36,7 @@ export async function PATCH(
   // Fetch current order
   const { data: order, error: orderError } = await admin
     .from('orders')
-    .select('id, payment_status, total_amount, discount_code, discount_amount, order_items(id, shirt_size, quantity, catalog_item_name, unit_price, subtotal, created_at)')
+    .select('id, payment_status, total_amount, discount_code, discount_amount, institution_type, school_name, organization_name, company_name, order_items(id, shirt_size, quantity, catalog_item_name, unit_price, subtotal, created_at)')
     .eq('id', id)
     .single()
 
@@ -77,7 +77,7 @@ export async function PATCH(
   // Validate the code
   const { data: discountCode, error: codeError } = await admin
     .from('discount_codes')
-    .select('id, code, type, value, expires_at, enabled')
+    .select('id, code, type, value, expires_at, enabled, max_uses, restricted_to_type, restricted_to_name')
     .ilike('code', String(discount_code).trim())
     .maybeSingle()
 
@@ -96,6 +96,50 @@ export async function PATCH(
 
   if (discountCode.expires_at && new Date(discountCode.expires_at) < new Date()) {
     return NextResponse.json({ error: 'Code has expired' }, { status: 400 })
+  }
+
+  // Usage limit check
+  if (discountCode.max_uses != null) {
+    const { count } = await admin
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('discount_code', discountCode.code)
+      .in('payment_status', ['paid', 'manual'])
+
+    if ((count ?? 0) >= discountCode.max_uses) {
+      return NextResponse.json({ error: 'This code has reached its usage limit' }, { status: 400 })
+    }
+  }
+
+  // Institution restriction check
+  if (discountCode.restricted_to_type) {
+    if (order.institution_type !== discountCode.restricted_to_type) {
+      const typeLabel: Record<string, string> = {
+        school: 'school',
+        government: 'government agency',
+        personal: 'personal',
+        private_company: 'company',
+      }
+      return NextResponse.json(
+        { error: `This code is restricted to ${typeLabel[discountCode.restricted_to_type] ?? discountCode.restricted_to_type} orders` },
+        { status: 400 }
+      )
+    }
+
+    if (discountCode.restricted_to_name && order.institution_type !== 'personal') {
+      const entityName: string | null =
+        order.institution_type === 'school'           ? order.school_name :
+        order.institution_type === 'government'       ? order.organization_name :
+        order.institution_type === 'private_company'  ? order.company_name :
+        null
+
+      if (!entityName || entityName.toLowerCase() !== discountCode.restricted_to_name.toLowerCase()) {
+        return NextResponse.json(
+          { error: `This code is restricted to: ${discountCode.restricted_to_name}` },
+          { status: 400 }
+        )
+      }
+    }
   }
 
   // If a discount was already applied, first restore the total before applying the new one

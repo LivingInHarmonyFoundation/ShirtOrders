@@ -65,6 +65,21 @@ export async function PATCH(
     updateData.enabled = Boolean(body.enabled)
   }
 
+  if ('max_uses' in body) {
+    const v = body.max_uses
+    updateData.max_uses = v != null && v !== '' ? Math.max(1, parseInt(String(v), 10)) : null
+  }
+
+  if ('restricted_to_type' in body) {
+    const v = body.restricted_to_type
+    updateData.restricted_to_type = v && String(v).trim() ? String(v).trim() : null
+  }
+
+  if ('restricted_to_name' in body) {
+    const v = body.restricted_to_name
+    updateData.restricted_to_name = v && String(v).trim() ? String(v).trim() : null
+  }
+
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
   }
