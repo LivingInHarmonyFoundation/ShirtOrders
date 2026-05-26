@@ -17,7 +17,7 @@ import { requirePermission } from '@/lib/supabase/require-role'
 
 // Fields returned to unauthenticated callers (order form, public pages).
 const PUBLIC_FIELDS = [
-  'id', 'app_name', 'logo_url', 'mission_banner_url', 'badge_url', 'shirt_price', 'available_sizes',
+  'id', 'app_name', 'logo_url', 'mission_banner_url', 'badge_url',
   'school_orders_enabled', 'government_orders_enabled',
   'personal_orders_enabled', 'private_company_orders_enabled', 'staff_orders_enabled',
   'manual_payment_enabled', 'cash_enabled',
@@ -78,7 +78,7 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json()
 
   const allowedFields = [
-    'app_name', 'logo_url', 'mission_banner_url', 'badge_url', 'shirt_price', 'available_sizes',
+    'app_name', 'logo_url', 'mission_banner_url', 'badge_url',
     'school_orders_enabled', 'government_orders_enabled',
     'personal_orders_enabled', 'private_company_orders_enabled', 'staff_orders_enabled',
     'manual_payment_enabled', 'cash_enabled',

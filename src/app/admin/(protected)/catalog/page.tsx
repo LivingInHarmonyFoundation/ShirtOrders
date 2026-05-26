@@ -57,6 +57,7 @@ export default function CatalogPage() {
   const [description, setDescription] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newSizes, setNewSizes] = useState<string[]>([])
+  const [newCustomSizeInput, setNewCustomSizeInput] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [backImageFile, setBackImageFile] = useState<File | null>(null)
@@ -69,12 +70,14 @@ export default function CatalogPage() {
   // Inline edit per item
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: '', description: '', price: '', available_sizes: [] as string[] })
+  const [editCustomSizeInput, setEditCustomSizeInput] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
 
   const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
   const openEdit = (item: ShirtCatalogItem) => {
     setEditingItemId(item.id)
+    setEditCustomSizeInput('')
     setEditForm({
       name: item.name,
       description: item.description ?? '',
@@ -188,7 +191,7 @@ export default function CatalogPage() {
 
       toast.success(`"${name}" added to catalog`)
       setItems(prev => [...prev, json.item])
-      setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); clearImage(); clearBackImage()
+      setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); setNewCustomSizeInput(''); clearImage(); clearBackImage()
       setAdding(false)
     } catch {
       toast.error('Something went wrong')
@@ -359,7 +362,7 @@ export default function CatalogPage() {
 
               {/* Price */}
               <div className="max-w-[180px]">
-                <Label htmlFor="item-price">Price <span className="text-gray-400 font-normal">(optional — uses global if blank)</span></Label>
+                <Label htmlFor="item-price">Price <span className="text-gray-400 font-normal">(optional)</span></Label>
                 <div className="relative mt-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
                   <Input
@@ -378,8 +381,8 @@ export default function CatalogPage() {
 
               {/* Available sizes */}
               <div>
-                <Label>Available Sizes <span className="text-gray-400 font-normal">(optional — uses global if none selected)</span></Label>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <Label>Available Sizes <span className="text-gray-400 font-normal">(optional)</span></Label>
+                <div className="flex flex-wrap gap-2 mt-2 mb-2">
                   {PRESET_SIZES.map(size => (
                     <button
                       key={size}
@@ -395,6 +398,48 @@ export default function CatalogPage() {
                       {size}
                     </button>
                   ))}
+                  {newSizes.filter(s => !PRESET_SIZES.includes(s)).map(size => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => toggleSize(size, newSizes, setNewSizes)}
+                      disabled={uploading}
+                      className="px-3 py-1 rounded-lg text-sm font-medium border-2 border-[#CEDC00] bg-[#CEDC00]/10 text-[#00352F] flex items-center gap-1"
+                    >
+                      {size} <span className="text-[10px] opacity-50">×</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2 max-w-xs">
+                  <Input
+                    placeholder='e.g. Youth M, 2XL'
+                    value={newCustomSizeInput}
+                    onChange={e => setNewCustomSizeInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const val = newCustomSizeInput.trim().toUpperCase()
+                        if (val && !newSizes.includes(val)) setNewSizes(prev => [...prev, val])
+                        setNewCustomSizeInput('')
+                      }
+                    }}
+                    className="h-8 text-sm"
+                    disabled={uploading}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!newCustomSizeInput.trim() || uploading}
+                    onClick={() => {
+                      const val = newCustomSizeInput.trim().toUpperCase()
+                      if (val && !newSizes.includes(val)) setNewSizes(prev => [...prev, val])
+                      setNewCustomSizeInput('')
+                    }}
+                    className="h-8 px-3 text-xs"
+                  >
+                    Add
+                  </Button>
                 </div>
               </div>
 
@@ -402,7 +447,7 @@ export default function CatalogPage() {
                 <Button type="submit" disabled={uploading || !name.trim()} className="text-white" style={{ backgroundColor: '#00352F' }}>
                   {uploading ? t('admin', 'addingShirt') : t('admin', 'addToCatalog')}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => { setAdding(false); setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); clearImage(); clearBackImage() }} disabled={uploading}>
+                <Button type="button" variant="outline" onClick={() => { setAdding(false); setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); setNewCustomSizeInput(''); clearImage(); clearBackImage() }} disabled={uploading}>
                   {t('admin', 'cancelAction')}
                 </Button>
               </div>
@@ -585,7 +630,7 @@ export default function CatalogPage() {
                       </div>
                       <div>
                         <Label className="text-xs">Sizes <span className="text-gray-400 font-normal">(optional)</span></Label>
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        <div className="flex flex-wrap gap-1.5 mt-1.5 mb-1.5">
                           {PRESET_SIZES.map(size => (
                             <button
                               key={size}
@@ -600,13 +645,55 @@ export default function CatalogPage() {
                               {size}
                             </button>
                           ))}
+                          {editForm.available_sizes.filter(s => !PRESET_SIZES.includes(s)).map(size => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => toggleSize(size, editForm.available_sizes, s => setEditForm(f => ({ ...f, available_sizes: s })))}
+                              className="px-2.5 py-0.5 rounded text-xs font-medium border-2 border-[#CEDC00] bg-[#CEDC00]/10 text-[#00352F] flex items-center gap-1"
+                            >
+                              {size} <span className="text-[9px] opacity-50">×</span>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex gap-2 max-w-[220px]">
+                          <Input
+                            placeholder='e.g. Youth M, 2XL'
+                            value={editCustomSizeInput}
+                            onChange={e => setEditCustomSizeInput(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                const val = editCustomSizeInput.trim().toUpperCase()
+                                if (val && !editForm.available_sizes.includes(val))
+                                  setEditForm(f => ({ ...f, available_sizes: [...f.available_sizes, val] }))
+                                setEditCustomSizeInput('')
+                              }
+                            }}
+                            className="h-7 text-xs"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={!editCustomSizeInput.trim()}
+                            onClick={() => {
+                              const val = editCustomSizeInput.trim().toUpperCase()
+                              if (val && !editForm.available_sizes.includes(val))
+                                setEditForm(f => ({ ...f, available_sizes: [...f.available_sizes, val] }))
+                              setEditCustomSizeInput('')
+                            }}
+                            className="h-7 px-2 text-xs"
+                          >
+                            Add
+                          </Button>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" onClick={handleSaveEdit} disabled={savingEdit || !editForm.name.trim()} className="text-white text-xs h-7" style={{ backgroundColor: '#00352F' }}>
                           {savingEdit ? 'Saving…' : 'Save'}
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setEditingItemId(null)} className="text-xs h-7">Cancel</Button>
+                        <Button size="sm" variant="outline" onClick={() => { setEditingItemId(null); setEditCustomSizeInput('') }} className="text-xs h-7">Cancel</Button>
                       </div>
                     </div>
                   )}

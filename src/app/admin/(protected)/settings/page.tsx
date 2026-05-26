@@ -25,12 +25,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, DollarSign, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users } from 'lucide-react'
+import { Save, Loader2, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users } from 'lucide-react'
 import type { AppSettings } from '@/types'
 import { useRole } from '@/components/admin/role-provider'
 import { useT } from '@/contexts/LanguageContext'
-
-const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 /**
  * SettingsPage — admin settings form. All fields (except image uploads, which save
@@ -39,7 +37,7 @@ const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
  */
 export default function SettingsPage() {
   const t = useT()
-  const { permissions } = useRole()
+  useRole()
 
   // ── State ──
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -47,9 +45,6 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
 
   // Form fields
-  const [shirtPrice, setShirtPrice] = useState('')
-  const [availableSizes, setAvailableSizes] = useState<string[]>([])
-  const [customSizeInput, setCustomSizeInput] = useState('')
   const [schoolEnabled, setSchoolEnabled] = useState(true)
   const [govEnabled, setGovEnabled] = useState(true)
   const [personalEnabled, setPersonalEnabled] = useState(true)
@@ -79,8 +74,6 @@ export default function SettingsPage() {
       .then(({ settings }) => {
         if (settings) {
           setSettings(settings)
-          setShirtPrice(String(settings.shirt_price || '15.00'))
-          setAvailableSizes(settings.available_sizes || PRESET_SIZES)
           setSchoolEnabled(settings.school_orders_enabled ?? true)
           setGovEnabled(settings.government_orders_enabled ?? true)
           setPersonalEnabled(settings.personal_orders_enabled ?? true)
@@ -102,19 +95,6 @@ export default function SettingsPage() {
   }, [])
 
   // ── Handlers ──
-
-  const toggleSize = (size: string) => {
-    setAvailableSizes(prev =>
-      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
-    )
-  }
-
-  const addCustomSize = () => {
-    const val = customSizeInput.trim().toUpperCase()
-    if (!val || availableSizes.includes(val)) { setCustomSizeInput(''); return }
-    setAvailableSizes(prev => [...prev, val])
-    setCustomSizeInput('')
-  }
 
   const addFee = () => {
     const val = parseFloat(newFeeValue)
@@ -144,24 +124,12 @@ export default function SettingsPage() {
   }
 
   const handleSave = async () => {
-    const price = parseFloat(shirtPrice)
-    if (isNaN(price) || price <= 0) {
-      toast.error('Shirt price must be a positive number')
-      return
-    }
-    if (availableSizes.length === 0) {
-      toast.error('At least one shirt size must be enabled')
-      return
-    }
-
     setSaving(true)
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          shirt_price: price,
-          available_sizes: availableSizes,
           school_orders_enabled: schoolEnabled,
           government_orders_enabled: govEnabled,
           personal_orders_enabled: personalEnabled,
@@ -209,87 +177,6 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin', 'settingsTitle')}</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{t('admin', 'settingsSubtitle')}</p>
       </div>
-
-      {/* Pricing */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <DollarSign className="w-4 h-4" /> {t('admin', 'pricingTitle')}
-          </CardTitle>
-          <CardDescription className="text-xs">{t('admin', 'pricingDesc')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="shirt_price">{t('admin', 'pricePerShirt')}</Label>
-            <div className="relative mt-1 max-w-[160px]">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-              <Input
-                id="shirt_price"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={shirtPrice}
-                onChange={e => setShirtPrice(e.target.value)}
-                className="pl-7"
-              />
-            </div>
-          </div>
-          <Separator />
-          <div>
-            <Label>{t('admin', 'availableSizesLabel')}</Label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-2">{t('admin', 'availableSizesDesc')}</p>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {PRESET_SIZES.map(size => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => toggleSize(size)}
-                  className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                    availableSizes.includes(size)
-                      ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F] dark:bg-[#00352F]/20 dark:text-green-300'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500'
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
-              {/* Custom sizes (non-preset) */}
-              {availableSizes.filter(s => !PRESET_SIZES.includes(s)).map(size => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => toggleSize(size)}
-                  className="px-4 py-2 rounded-lg border-2 border-[#CEDC00] bg-[#CEDC00]/10 text-[#00352F] text-sm font-medium transition-all flex items-center gap-1.5"
-                  title="Click to remove custom size"
-                >
-                  {size}
-                  <span className="text-xs text-[#00352F]/50 hover:text-red-500">×</span>
-                </button>
-              ))}
-            </div>
-            {/* Add custom size */}
-            <div className="flex gap-2 max-w-xs">
-              <Input
-                placeholder={t('admin', 'customSizePlaceholder')}
-                value={customSizeInput}
-                onChange={e => setCustomSizeInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomSize() } }}
-                className="h-9 text-sm"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={addCustomSize}
-                disabled={!customSizeInput.trim()}
-                className="h-9 px-3"
-              >
-                {t('admin', 'addSizeButton')}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Order Fees & Taxes */}
       <Card>
