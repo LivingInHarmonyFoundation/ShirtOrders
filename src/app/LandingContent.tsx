@@ -15,7 +15,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import {
   School, Building2, User, Briefcase,
   CheckCircle, Shield, CreditCard, FileText, ArrowRight,
@@ -69,14 +69,11 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
         </div>
         <div className="flex items-center gap-2">
           <LanguageSelector />
-          <Link href="/admin/login">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs border-gray-200 text-gray-500 hover:text-[#00352F] hover:border-[#00352F] hover:bg-[#E5F2F0] transition-all duration-200 rounded-lg h-8"
-            >
-              {t('common', 'adminLogin')}
-            </Button>
+          <Link
+            href="/admin/login"
+            className={buttonVariants({ variant: 'outline', size: 'sm', className: 'text-xs border-gray-200 text-gray-500 hover:text-[#00352F] hover:border-[#00352F] hover:bg-[#E5F2F0] transition-all duration-200 rounded-lg h-8' })}
+          >
+            {t('common', 'adminLogin')}
           </Link>
         </div>
       </div>
@@ -201,14 +198,12 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                         </div>
                       </div>
 
-                      <Link href={href} className="block">
-                        <Button
-                          size="sm"
-                          className="w-full text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
-                          style={{ backgroundColor: '#00352F' }}
-                        >
-                          {t('landing', 'orderNow')} <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                        </Button>
+                      <Link
+                        href={href}
+                        className={buttonVariants({ size: 'sm', className: 'w-full text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow' })}
+                        style={{ backgroundColor: '#00352F' }}
+                      >
+                        {t('landing', 'orderNow')} <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                       </Link>
                     </div>
                   </div>
@@ -285,15 +280,13 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                   {t('landing', 'heroSubtitle')}
                 </p>
 
-                <Link href={primaryOrderHref} className="block sm:inline-block">
-                  <Button
-                    size="lg"
-                    className="w-full sm:w-auto text-white h-12 px-8 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
-                    style={{ backgroundColor: '#00352F' }}
-                  >
-                    {t('landing', 'placeAnOrder')}
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                <Link
+                  href={primaryOrderHref}
+                  className={buttonVariants({ size: 'lg', className: 'w-full sm:w-auto text-white h-12 px-8 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow' })}
+                  style={{ backgroundColor: '#00352F' }}
+                >
+                  {t('landing', 'placeAnOrder')}
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
 
                 <p className="mt-4 flex items-center justify-center lg:justify-start gap-1.5 text-gray-400" style={{ fontSize: '11px' }}>
@@ -449,14 +442,12 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
               </div>
 
               <div className="text-center mt-12">
-                <Link href={primaryOrderHref} className="block sm:inline-block">
-                  <Button
-                    size="lg"
-                    className="w-full sm:w-auto text-white px-10 h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow"
-                    style={{ backgroundColor: '#00352F' }}
-                  >
-                    {t('landing', 'orderNow')} <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                <Link
+                  href={primaryOrderHref}
+                  className={buttonVariants({ size: 'lg', className: 'w-full sm:w-auto text-white px-10 h-12 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 btn-brand-shadow' })}
+                  style={{ backgroundColor: '#00352F' }}
+                >
+                  {t('landing', 'orderNow')} <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </div>
             </div>
@@ -565,15 +556,13 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
             <p className="mb-8 leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)', fontSize: '14px' }}>
               {t('landing', 'readySub')}
             </p>
-            <Link href={primaryOrderHref} className="block sm:inline-block">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto h-12 px-10 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5"
-                style={{ backgroundColor: 'white', color: '#00352F', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}
-              >
-                {t('landing', 'orderYourShirts')}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+            <Link
+              href={primaryOrderHref}
+              className={buttonVariants({ size: 'lg', className: 'w-full sm:w-auto h-12 px-10 text-base font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5' })}
+              style={{ backgroundColor: 'white', color: '#00352F', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}
+            >
+              {t('landing', 'orderYourShirts')}
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </div>
         </section>

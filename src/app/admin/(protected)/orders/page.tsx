@@ -586,10 +586,11 @@ export default function AdminOrdersPage() {
                     <TableCell><DeliveryStatusBadge status={order.delivery_status} /></TableCell>
                     <TableCell className="text-xs text-gray-400">{formatDate(order.created_at)}</TableCell>
                     <TableCell>
-                      <Link href={`/admin/orders/${order.id}`}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="inline-flex items-center justify-center h-8 w-8 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
                       </Link>
                     </TableCell>
                   </TableRow>
