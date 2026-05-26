@@ -168,21 +168,14 @@ function ConfirmationContent() {
               {/* Letterhead — visible on screen and in print */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#CEDC00]/30">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center p-0.5 border border-[#CEDC00]/40 shrink-0">
-                    <Image src="/logo.png" alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
+                  <div className="relative w-9 h-9 bg-white rounded-lg overflow-hidden border border-[#CEDC00]/40 shrink-0">
+                    <Image src="/logo.png" alt="Living in Harmony Foundation" fill className="object-cover" />
                   </div>
                   <div>
                     <p className="font-bold text-[#00352F] text-sm leading-tight">Living in Harmony Foundation</p>
                     <p className="text-xs text-gray-500">{t('confirmation', 'receiptTitle')}</p>
                   </div>
                 </div>
-                <Image
-                  src="/logo.png"
-                  alt="Living in Harmony Foundation"
-                  width={44}
-                  height={44}
-                  className="object-contain rounded-full shrink-0 border border-[#CEDC00]/40"
-                />
               </div>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base text-[#00352F]">{t('confirmation', 'orderReceipt')}</CardTitle>
@@ -331,8 +324,8 @@ function ConfirmationContent() {
         {/* Mission badge */}
         <div className="flex flex-col items-center gap-3 mt-10 mb-2 print:hidden">
 
-          <div className="relative w-24 h-24" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,53,47,0.2))' }}>
-            <Image src="/logo.png" alt="Living in Harmony Foundation" fill className="object-contain rounded-full" />
+          <div className="relative w-24 h-24 rounded-full overflow-hidden" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,53,47,0.2))' }}>
+            <Image src="/logo.png" alt="Living in Harmony Foundation" fill className="object-cover" />
           </div>
           <p className="text-xs text-gray-400 italic text-center max-w-xs">
             {t('confirmation', 'missionThanks')} <span className="text-[#00352F] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
