@@ -163,7 +163,7 @@ function ConfirmationContent() {
 
         {/* Receipt card */}
         <div ref={printRef}>
-          <Card className="border-[#CEDC00]/30 shadow-sm">
+          <Card className="ring-0 border border-[#CEDC00]/40 shadow-sm pt-0">
             <CardHeader className="bg-[#E5F2F0] rounded-t-xl border-b border-[#CEDC00]/20 space-y-0 pb-3">
               {/* Letterhead — visible on screen and in print */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#CEDC00]/30">
@@ -324,8 +324,8 @@ function ConfirmationContent() {
         {/* Mission badge */}
         <div className="flex flex-col items-center gap-3 mt-10 mb-2 print:hidden">
 
-          <div className="relative w-24 h-24 rounded-full overflow-hidden" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,53,47,0.2))' }}>
-            <Image src="/logo.png" alt="Living in Harmony Foundation" fill className="object-cover" />
+          <div className="relative w-24 h-24 rounded-full overflow-hidden bg-white" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,53,47,0.2))' }}>
+            <Image src="/logo.png" alt="Living in Harmony Foundation" fill className="object-contain" />
           </div>
           <p className="text-xs text-gray-400 italic text-center max-w-xs">
             {t('confirmation', 'missionThanks')} <span className="text-[#00352F] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
