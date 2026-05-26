@@ -39,7 +39,6 @@ function ConfirmationContent() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [confirmationMsg, setConfirmationMsg] = useState('')
-  const [badgeUrl, setBadgeUrl] = useState<string | null>(null)
 
   // ─── Data Fetching ────────────────────────────────────────────────────────
 
@@ -56,7 +55,6 @@ function ConfirmationContent() {
       .then(r => r.json())
       .then(({ settings }) => {
         if (settings?.confirmation_message) setConfirmationMsg(settings.confirmation_message)
-        if (settings?.badge_url) setBadgeUrl(settings.badge_url)
       })
       .catch(() => {})
   }, [orderId, router])
@@ -154,15 +152,13 @@ function ConfirmationContent() {
               <p className="text-sm text-gray-500">{t('confirmation', 'receiptTitle')}</p>
             </div>
           </div>
-          {(badgeUrl || '/badge.jpeg') && (
-            <Image
-              src={badgeUrl || '/badge.jpeg'}
-              alt="Campaign Badge"
+          <Image
+              src="/logo.png"
+              alt="Living in Harmony Foundation"
               width={72}
               height={72}
               className="object-contain rounded-full"
             />
-          )}
         </div>
 
         {/* Receipt card */}
@@ -181,8 +177,8 @@ function ConfirmationContent() {
                   </div>
                 </div>
                 <Image
-                  src={badgeUrl || '/badge.jpeg'}
-                  alt="Campaign Badge"
+                  src="/logo.png"
+                  alt="Living in Harmony Foundation"
                   width={44}
                   height={44}
                   className="object-contain rounded-full shrink-0 border border-[#CEDC00]/40"
@@ -336,7 +332,7 @@ function ConfirmationContent() {
         <div className="flex flex-col items-center gap-3 mt-10 mb-2 print:hidden">
 
           <div className="relative w-24 h-24" style={{ filter: 'drop-shadow(0 8px 20px rgba(0,53,47,0.2))' }}>
-            <Image src={badgeUrl || '/badge.jpeg'} alt="Que Nadie en PR Envejezca Solo" fill className="object-contain rounded-full" />
+            <Image src="/logo.png" alt="Living in Harmony Foundation" fill className="object-contain rounded-full" />
           </div>
           <p className="text-xs text-gray-400 italic text-center max-w-xs">
             {t('confirmation', 'missionThanks')} <span className="text-[#00352F] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
