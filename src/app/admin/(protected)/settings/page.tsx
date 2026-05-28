@@ -6,10 +6,7 @@
  *
  * Key non-obvious details:
  * - admin_phone is the ntfy.sh topic name, NOT a real phone number.
- * - Mission banner and badge image uploads reuse the catalog upload endpoint.
- * - Both image uploads enforce a 5 MB client-side size limit.
  * - personalAllowedPaymentMethods === null means "all methods" (default).
- * - Mission/badge image sections are gated behind canManageSettings permission.
  *
  * Auth: provided by the parent (protected) layout.
  */
@@ -26,7 +23,7 @@ import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { Save, Loader2, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users } from 'lucide-react'
-import type { AppSettings } from '@/types'
+import type { AppSettings, OrderFee, InstitutionType } from '@/types'
 import { useRole } from '@/components/admin/role-provider'
 import { useT } from '@/contexts/LanguageContext'
 
@@ -60,11 +57,11 @@ export default function SettingsPage() {
   const [smsNotifications, setSmsNotifications] = useState(false)
 
   // Order fees
-  const [orderFees, setOrderFees] = useState<import('@/types').OrderFee[]>([])
+  const [orderFees, setOrderFees] = useState<OrderFee[]>([])
   const [newFeeName, setNewFeeName] = useState('')
   const [newFeeType, setNewFeeType] = useState<'percentage' | 'fixed'>('percentage')
   const [newFeeValue, setNewFeeValue] = useState('')
-  const [newFeeAppliesTo, setNewFeeAppliesTo] = useState<import('@/types').InstitutionType[]>([])
+  const [newFeeAppliesTo, setNewFeeAppliesTo] = useState<InstitutionType[]>([])
 
   // ── Effects ──
 
@@ -259,7 +256,7 @@ export default function SettingsPage() {
                       : 'bg-white dark:bg-gray-900 text-gray-500 hover:bg-gray-50'
                   }`}
                 >
-                  % {t('admin', 'percentageType')}
+                  {t('admin', 'percentageType')}
                 </button>
                 <button
                   type="button"
@@ -270,7 +267,7 @@ export default function SettingsPage() {
                       : 'bg-white dark:bg-gray-900 text-gray-500 hover:bg-gray-50'
                   }`}
                 >
-                  $ {t('admin', 'fixedType')}
+                  {t('admin', 'fixedType')}
                 </button>
               </div>
               {/* Value input */}
