@@ -42,7 +42,7 @@ export default function LanguageSelector({ variant = 'light' }: { variant?: 'lig
           style={lang === l ? activeStyle : inactiveStyle}
           aria-pressed={lang === l}
         >
-          {l === 'en' ? 'EN' : 'ES'}
+          {l === 'en' ? '🇺🇸 EN' : '🇵🇷 ES'}
         </button>
       ))}
     </div>
