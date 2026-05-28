@@ -286,11 +286,11 @@ export default function InventoryPage() {
 
   // ── Render helpers ──
 
-  function renderSizeGrid(catalogItemId: string | null) {
+  function renderSizeGrid(catalogItemId: string | null, sizes: string[] = ALL_SIZES) {
     return (
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          {ALL_SIZES.map(size => (
+          {sizes.map(size => (
             <SizeChip
               key={size}
               size={size}
@@ -441,31 +441,13 @@ export default function InventoryPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="px-5 pb-5">
-                      {renderSizeGrid(catItem.id)}
+                      {renderSizeGrid(catItem.id, catItem.available_sizes?.length ? catItem.available_sizes : ALL_SIZES)}
                     </CardContent>
                   </Card>
                 ))}
               </div>
             </div>
           )}
-
-          {/* Section 2: General Inventory */}
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-              {t('admin', 'generalInventory')}
-            </h2>
-            <Card>
-              <CardHeader className="pb-2 pt-4 px-5">
-                <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-400" />
-                  {t('admin', 'generalInventory')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 pb-5">
-                {renderSizeGrid(null)}
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Empty state when nothing is set up at all */}
           {catalogItems.length === 0 && inventory.length === 0 && (
