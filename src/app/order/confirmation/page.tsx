@@ -323,7 +323,7 @@ function ConfirmationContent() {
 
         {/* Mission badge */}
         <div className="flex flex-col items-center gap-3 mt-10 mb-2 print:hidden">
-          <div className="relative w-24 h-24 rounded-full overflow-hidden bg-white border border-gray-100 shadow-md shrink-0">
+          <div className="relative w-24 h-24 rounded-full overflow-hidden bg-white shrink-0">
             <Image src="/logo.png" alt="Living in Harmony Foundation" fill className="object-contain p-1.5" />
           </div>
           <p className="text-xs text-gray-400 italic text-center max-w-xs">
