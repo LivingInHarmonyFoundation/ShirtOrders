@@ -194,7 +194,7 @@ export default function InventoryPage() {
   // ── Derived data ──
 
   const lowStockItems = inventory.filter(
-    row => row.quantity <= row.low_stock_threshold
+    row => row.catalog_item_id !== null && row.quantity <= row.low_stock_threshold
   )
 
   /** Returns the inventory row for a given catalog item + size, or undefined */
