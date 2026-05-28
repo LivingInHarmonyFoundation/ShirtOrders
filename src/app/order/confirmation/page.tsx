@@ -323,14 +323,9 @@ function ConfirmationContent() {
 
         {/* Mission badge */}
         <div className="flex flex-col items-center gap-3 mt-10 mb-2 print:hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="Living in Harmony Foundation"
-            width={96}
-            height={96}
-            style={{ filter: 'drop-shadow(0 4px 12px rgba(0,53,47,0.15))' }}
-          />
+          <div className="relative w-24 h-24 rounded-full overflow-hidden bg-white border border-gray-100 shadow-md shrink-0">
+            <Image src="/logo.png" alt="Living in Harmony Foundation" fill className="object-contain p-1.5" />
+          </div>
           <p className="text-xs text-gray-400 italic text-center max-w-xs">
             {t('confirmation', 'missionThanks')} <span className="text-[#00352F] font-medium">Únete a la lucha contra la soledad NO Deseada</span>
           </p>
