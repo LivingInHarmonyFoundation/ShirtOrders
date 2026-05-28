@@ -42,14 +42,6 @@ export default function LanguageSelector({ variant = 'light' }: { variant?: 'lig
           style={lang === l ? activeStyle : inactiveStyle}
           aria-pressed={lang === l}
         >
-          <img
-            src={l === 'en' ? 'https://flagcdn.com/20x15/us.png' : 'https://flagcdn.com/20x15/pr.png'}
-            width={20}
-            height={15}
-            alt={l === 'en' ? 'US' : 'PR'}
-            className="inline-block mr-1 rounded-sm"
-            style={{ verticalAlign: 'middle' }}
-          />
           {l === 'en' ? 'EN' : 'ES'}
         </button>
       ))}
