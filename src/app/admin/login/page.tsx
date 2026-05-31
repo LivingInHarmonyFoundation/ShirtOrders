@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Lock } from 'lucide-react'
@@ -97,6 +97,15 @@ export default function AdminLoginPage() {
 
 function AdminLoginContent() {
   const t = useT()
+  const [liveCampaigns, setLiveCampaigns] = useState<{ id: string; name: string; badge_url: string | null }[]>([])
+
+  useEffect(() => {
+    fetch('/api/campaigns/active')
+      .then(r => r.json())
+      .then(({ campaigns }) => { if (Array.isArray(campaigns)) setLiveCampaigns(campaigns) })
+      .catch(() => {})
+  }, [])
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
 
@@ -135,20 +144,22 @@ function AdminLoginContent() {
           </p>
         </div>
 
-        <div
-          className="flex items-center gap-4 pt-6 border-t"
-          style={{ borderTopColor: 'rgba(255,255,255,0.1)' }}
-        >
+        {liveCampaigns.filter(c => c.badge_url).length > 0 && (
           <div
-            className="relative w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border-2"
-            style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+            className="flex items-center gap-3 pt-6 border-t"
+            style={{ borderTopColor: 'rgba(255,255,255,0.1)' }}
           >
-            <Image src="/badge.jpeg" alt="LIH Badge" fill className="object-contain" />
+            {liveCampaigns.filter(c => c.badge_url).map(c => (
+              <div
+                key={c.id}
+                className="relative w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border-2"
+                style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+              >
+                <Image src={c.badge_url!} alt={c.name} fill className="object-contain" />
+              </div>
+            ))}
           </div>
-          <p className="italic leading-snug" style={{ color: 'rgba(255,255,255,0.38)', fontSize: '12px' }}>
-            &ldquo;Que Nadie en PR Envejezca Solo&rdquo;
-          </p>
-        </div>
+        )}
       </div>
 
       {/* ── Right form panel ────────────────────────────────── */}
@@ -178,9 +189,6 @@ function AdminLoginContent() {
             <h1 className="font-heading text-white text-xl font-bold leading-tight mb-1">
               Living in Harmony Foundation
             </h1>
-            <p className="font-heading italic" style={{ color: '#CEDC00', fontSize: '13px' }}>
-              &ldquo;Que Nadie en PR Envejezca Solo&rdquo;
-            </p>
           </div>
         </div>
 
