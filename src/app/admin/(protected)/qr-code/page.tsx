@@ -178,9 +178,9 @@ async function drawBrandedQR(
   // Push logo down so there is comfortable breathing room from the top edge
   const logoY    = topH * 0.18
 
-  // Logo image
+  // Logo image — transparent white version for clean rendering on any background
   try {
-    const logo = await loadImage('/logo.png')
+    const logo = await loadImage('/logo-transparent.png')
     ctx.drawImage(logo, logoX, logoY, logoSize, logoSize)
   } catch {
     ctx.save()
@@ -289,7 +289,7 @@ async function drawBrandedQR(
   ctx.restore()
 
   try {
-    const logo = await loadImage('/logo.png')
+    const logo = await loadImage('/logo-transparent.png')
     ctx.drawImage(logo, logoOverX, logoOverY, logoOverlaySize, logoOverlaySize)
   } catch {
     // QR still scannable without logo
