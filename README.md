@@ -28,11 +28,13 @@ cp .env.local.example .env.local
 Fill in `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://fsomozssvpnlkqfbjupy.supabase.co
+# Copy your real values from the Supabase & Stripe dashboards. DO NOT commit real keys.
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzb21venNzdnBubGtxZmJqdXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjkwMDksImV4cCI6MjA5MTM0NTAwOX0.zIdm7_BuOVi5RnX9NUmxRRZf0R52h_7h-EhQDqrPk9I
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzb21venNzdnBubGtxZmJqdXB5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTc2OTAwOSwiZXhwIjoyMDkxMzQ1MDA5fQ.SrO7T1XNASUgS2kTcbmkqZP9o2sTbi8UTsaQy5r8wYU
+# Server-only. Bypasses RLS — never expose to the client or commit to git.
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
