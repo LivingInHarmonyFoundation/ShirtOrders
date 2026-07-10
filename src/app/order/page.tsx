@@ -32,6 +32,7 @@ import CartIcon from '@/components/shared/CartIcon'
 import CartDrawer from '@/components/shared/CartDrawer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
+import PersonalInfoCard from '@/components/order/PersonalInfoCard'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
 import { Briefcase, User } from 'lucide-react'
@@ -624,47 +625,16 @@ export default function OrderPage() {
           </Card>
 
           {/* Personal Info */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
-                  style={{ backgroundColor: '#00352F' }}
-                >
-                  {String(baseStep + 1)}
-                </div>
-                <CardTitle className="text-base">{t('order', 'personalInfo')}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="full_name">{t('order', 'fullName')} *</Label>
-                <Input id="full_name" {...register('full_name')} aria-invalid={!!errors.full_name} placeholder={t('order', 'fullNamePlaceholder')} className="mt-1" />
-                {errors.full_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.full_name.message}</p>}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">{t('order', 'emailAddress')} *</Label>
-                  <Input id="email" type="email" {...register('email')} aria-invalid={!!errors.email} placeholder={t('order', 'emailPlaceholder')} className="mt-1" />
-                  {errors.email && <p role="alert" className="text-red-600 text-xs mt-1">{errors.email.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="phone">{t('order', 'phone')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    inputMode="numeric"
-                    {...register('phone')} aria-invalid={!!errors.phone}
-                    onChange={e => setValue('phone', formatPhone(e.target.value), { shouldValidate: true })}
-                    placeholder="(787) 555 - 1234"
-                    maxLength={16}
-                    className="mt-1"
-                  />
-                  {errors.phone && <p role="alert" className="text-red-600 text-xs mt-1">{errors.phone.message}</p>}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <PersonalInfoCard
+            stepNumber={String(baseStep + 1)}
+            fullNameReg={register('full_name')}
+            emailReg={register('email')}
+            phoneReg={register('phone')}
+            onPhoneChange={v => setValue('phone', formatPhone(v), { shouldValidate: true })}
+            fullNameError={errors.full_name?.message}
+            emailError={errors.email?.message}
+            phoneError={errors.phone?.message}
+          />
 
           {/* School fields */}
           {institutionType === 'school' && (
