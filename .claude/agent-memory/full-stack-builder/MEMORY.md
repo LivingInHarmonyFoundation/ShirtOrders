@@ -1,1 +1,0 @@
-- [Cart System Architecture](project_cart_system.md) — multi-item cart added April 2026: CartContext, CartDrawer, CartIcon, order_items table, updated orders API

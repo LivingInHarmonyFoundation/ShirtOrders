@@ -1,1 +1,0 @@
-- [Design System & Component Patterns](project_design_system.md) — Brand tokens, component library (base-ui), typography, layout conventions, Tailwind v4 setup, Next.js 16

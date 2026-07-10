@@ -42,3 +42,13 @@ next-env.d.ts
 
 # claude code worktrees
 .claude/worktrees/
+
+# claude agent memory — internal working notes (incl. security findings); not for a public repo
+.claude/agent-memory/
+
+# supabase CLI local state (project ref, pooler url) — not for a public repo
+supabase/.temp/
+
+# generated business docs (pricing quotes, etc.)
+/quote-*.html
+/quote-*.pdf

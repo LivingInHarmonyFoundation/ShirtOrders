@@ -71,6 +71,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
+    // Idempotency: if this order is already paid, do not re-process (avoids
+    // duplicate notifications / audit entries on a retried capture call).
+    if (currentOrder.payment_status === 'paid') {
+      return NextResponse.json({ success: true, paymentMethod: currentOrder.payment_method ?? paymentMethod })
+    }
+
+    // Bind the captured payment to THIS order. create-order set reference_id to
+    // the order_number and the amount to total_amount; verify both match before
+    // marking paid. Without this, a cheap-but-genuine PayPal capture could be
+    // replayed against a different, more expensive order (payment fraud).
+    const capturedUnit    = captureData.purchase_units?.[0]
+    const capturedRef     = capturedUnit?.reference_id
+    const capturedValue   = capturedUnit?.payments?.captures?.[0]?.amount?.value
+    const expectedValue   = Number(currentOrder.total_amount).toFixed(2)
+
+    if (capturedRef !== currentOrder.order_number || capturedValue !== expectedValue) {
+      console.error('PayPal capture/order mismatch', {
+        orderId,
+        capturedRef,
+        expectedRef: currentOrder.order_number,
+        capturedValue,
+        expectedValue,
+      })
+      return NextResponse.json({ error: 'Payment does not match this order' }, { status: 400 })
+    }
+
     // Mark order as paid
     await admin
       .from('orders')

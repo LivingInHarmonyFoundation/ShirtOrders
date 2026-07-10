@@ -9,8 +9,19 @@ const rateLimitStore = new Map<string, number[]>()
 const RATE_LIMITED_ROUTES: Record<string, { limit: number; windowMs: number }> = {
   '/api/orders':                       { limit: 8,  windowMs: 60_000 }, // 8 orders/min
   '/api/discount-codes/validate':      { limit: 15, windowMs: 60_000 }, // 15 checks/min
+  '/api/orders/[id]/discount':         { limit: 15, windowMs: 60_000 }, // 15 code applies/min (brute-force guard)
   '/api/paypal/create-order':          { limit: 10, windowMs: 60_000 }, // 10/min
   '/api/paypal/capture-order':         { limit: 10, windowMs: 60_000 }, // 10/min
+}
+
+/**
+ * Maps a concrete request path to its canonical rate-limit key. Dynamic segments
+ * are normalised so e.g. /api/orders/<uuid>/discount collapses to the [id] key.
+ */
+function rateLimitKeyForPath(pathname: string): string | null {
+  if (pathname in RATE_LIMITED_ROUTES) return pathname
+  if (/^\/api\/orders\/[^/]+\/discount$/.test(pathname)) return '/api/orders/[id]/discount'
+  return null
 }
 
 function isRateLimited(ip: string, route: string): boolean {
@@ -35,14 +46,15 @@ function isRateLimited(ip: string, route: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ─── Rate limiting (POST-only on sensitive public endpoints) ──
-  if (request.method === 'POST' && pathname in RATE_LIMITED_ROUTES) {
+  // ─── Rate limiting on sensitive public endpoints (POST + PATCH) ──
+  const rlKey = rateLimitKeyForPath(pathname)
+  if (rlKey && (request.method === 'POST' || request.method === 'PATCH')) {
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
       request.headers.get('x-real-ip') ??
       'unknown'
 
-    if (isRateLimited(ip, pathname)) {
+    if (isRateLimited(ip, rlKey)) {
       return NextResponse.json(
         { error: 'Too many requests. Please wait a moment and try again.' },
         { status: 429 }
@@ -98,6 +110,7 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/api/orders',
+    '/api/orders/:id/discount',
     '/api/discount-codes/validate',
     '/api/paypal/create-order',
     '/api/paypal/capture-order',

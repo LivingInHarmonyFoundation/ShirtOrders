@@ -22,6 +22,16 @@ const BULK_ORDER_ALLOWED_FIELDS = [
   'admin_notes', 'date_paid', 'date_delivered',
 ]
 
+/**
+ * Strips characters that have structural meaning inside a PostgREST `.or()` filter
+ * string ( , ( ) * \ ). Without this, a search value like `x),email.ilike.*` could
+ * inject or malform additional filter clauses. Applied to any user value that is
+ * interpolated into an `.or(...)` expression.
+ */
+function sanitizeFilterValue(v: string): string {
+  return v.replace(/[,()*\\]/g, '').trim()
+}
+
 // ─── GET /api/admin/orders ────────────────────────────────────
 
 /**
@@ -45,7 +55,7 @@ export async function GET(request: NextRequest) {
   const adminSupabase = await createAdminClient()
   const { searchParams } = request.nextUrl
 
-  const search = searchParams.get('search') || ''
+  const search = sanitizeFilterValue(searchParams.get('search') || '')
   const institution_type = searchParams.get('institution_type') || ''
   const payment_status = searchParams.get('payment_status') || ''
   const delivery_status = searchParams.get('delivery_status') || ''
@@ -54,7 +64,7 @@ export async function GET(request: NextRequest) {
   const date_to = searchParams.get('date_to') || ''
   const grade = searchParams.get('grade') || ''
   const classroom = searchParams.get('classroom') || ''
-  const department = searchParams.get('department') || ''
+  const department = sanitizeFilterValue(searchParams.get('department') || '')
   const organization_name = searchParams.get('organization_name') || ''
   const school_name = searchParams.get('school_name') || ''
   const company_name = searchParams.get('company_name') || ''

@@ -1,11 +1,12 @@
 /**
  * @file route.ts
  * @description Public and auth-gated order endpoints by ID.
- * - GET: public — any caller can read an order by ID (used by the confirmation page and
- *   customer status page). Uses the session client so RLS filters what is visible.
- * - PATCH: auth-gated — requires a valid session (admin); updates order fields and writes
- *   an audit log entry for each changed field. Uses `createAdminClient()` for writes to
- *   bypass RLS.
+ * - GET: public — reads a single order by its UUID (used by the confirmation page and
+ *   customer status page). The UUID acts as an unguessable capability token; the lookup
+ *   uses `createAdminClient()` because orders RLS is locked to service-role only. This
+ *   returns exactly one order by exact ID — it cannot be used to list or enumerate orders.
+ * - PATCH: auth-gated — requires a session AND the canManageOrders permission; updates
+ *   order fields and writes an audit log entry for each changed field.
  *
  * Key invariants:
  * - `order_items` rows from the DB are reshaped and surfaced as `items` in the response.
@@ -15,12 +16,14 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/supabase/require-role'
 
 // ─── GET /api/orders/[id] ─────────────────────────────────────
 
 /**
  * GET /api/orders/[id] — fetch a single order with its line items. Public endpoint.
- * RLS on the orders table controls visibility (session client used).
+ * The order UUID is the capability token; lookup is by exact ID via the service-role
+ * client (orders RLS denies anon/session reads). Cannot enumerate or list orders.
  * Response shape: { order: { ...orderRow, items: OrderItem[] } }
  * Note: order_items rows are surfaced under the `items` key (not `order_items`).
  */
@@ -29,7 +32,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   const { data: raw, error } = await supabase
     .from('orders')
@@ -63,11 +66,17 @@ export async function PATCH(
   const supabase = await createClient()
 
   // ─── Auth & Permission Checks ────────────────────────────────
-  // Verify admin
+  // Verify a valid session AND the canManageOrders permission. Without the
+  // permission check, any authenticated user — including a deactivated staff
+  // member with a still-valid session — could edit any order's PII and payment
+  // fields through this route (it is the one the admin order-detail page uses).
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const auth = await requirePermission(user.id, 'canManageOrders')
+  if (auth instanceof NextResponse) return auth
 
   const adminSupabase = await createAdminClient()
   const body = await request.json()

@@ -1,8 +1,9 @@
 /**
  * @file route.ts
- * @description Shirt catalog collection endpoint. GET is public (no auth required) and
- * returns all catalog items ordered by display_order then created_at. POST creates a new
- * catalog item and requires authentication plus the `canManageSettings` permission.
+ * @description Shirt catalog collection endpoint. GET returns ALL catalog items (including
+ * inactive/draft ones) and therefore requires authentication plus `canManageSettings` — the
+ * public order form uses /api/catalog, which filters to active items only. POST creates a
+ * new catalog item and requires the same permission.
  * Uses `createAdminClient()` (bypasses RLS) for all DB reads and writes.
  */
 import { NextRequest, NextResponse } from 'next/server'
@@ -12,15 +13,22 @@ import { requirePermission } from '@/lib/supabase/require-role'
 // ─── GET /api/admin/catalog ───────────────────────────────────
 
 /**
- * GET /api/admin/catalog — return all shirt catalog items ordered by display_order (asc),
- * then created_at (asc) as a tiebreaker.
- * Public endpoint — no authentication required.
- * Uses createAdminClient() (bypasses RLS) to guarantee visibility of all rows.
+ * GET /api/admin/catalog — return all shirt catalog items (active and inactive) ordered by
+ * display_order (asc), then created_at (asc) as a tiebreaker.
+ * Requires authentication and the `canManageSettings` permission — this exposes draft/
+ * unpublished designs and pricing, so it must not be public.
  * Response: { items: CatalogItem[] }
  */
 export async function GET() {
+  // ─── Auth & Permission Checks ────────────────────────────────
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const auth = await requirePermission(user.id, 'canManageSettings')
+  if (auth instanceof NextResponse) return auth
+
   // ─── Query & Data Fetching ───────────────────────────────────
-  // createAdminClient() bypasses RLS — catalog reads must work even without a session
   const admin = await createAdminClient()
   const { data, error } = await admin
     .from('shirt_catalog')
