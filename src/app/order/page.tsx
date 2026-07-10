@@ -33,6 +33,7 @@ import CartDrawer from '@/components/shared/CartDrawer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import PersonalInfoCard from '@/components/order/PersonalInfoCard'
+import ShirtDetailsCard, { OrderItemSummary } from '@/components/order/ShirtDetailsCard'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
 import { Briefcase, User } from 'lucide-react'
@@ -836,107 +837,26 @@ export default function OrderPage() {
           )}
 
           {/* Shirt Details */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
-                  style={{ backgroundColor: '#00352F' }}
-                >
-                  {institutionType ? String(baseStep + 3) : String(baseStep + 2)}
-                </div>
-                <CardTitle className="text-base">{t('order', 'shirtDetails')}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Show selected shirt summary if only 1 in catalog */}
-              {catalog.length === 1 && selectedCatalogItem && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#E5F2F0] border border-[#CEDC00]/30">
-                  {selectedCatalogItem.image_url ? (
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                      <Image src={selectedCatalogItem.image_url} alt={selectedCatalogItem.name} fill className="object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-                      <ShoppingBag className="w-6 h-6 text-[#00352F]/40" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-xs text-gray-500">{t('order', 'selectedShirt')}</p>
-                    <p className="font-semibold text-[#00352F] text-sm">{selectedCatalogItem.name}</p>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <Label>{t('order', 'shirtSize')} *</Label>
-                <div className="flex flex-wrap gap-2 mt-2" role="radiogroup" aria-label={t('order', 'shirtSize')}>
-                  {sizes.map(size => (
-                    <button
-                      key={size}
-                      type="button"
-                      role="radio"
-                      aria-checked={watchedSize === size}
-                      onClick={() => setValue('shirt_size', size, { shouldValidate: true })}
-                      className={cn(
-                        'min-w-[52px] px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150',
-                        watchedSize === size
-                          ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F] shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-[#00352F]/30 hover:bg-[#F5F4F0] text-gray-600'
-                      )}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-                {errors.shirt_size && <p role="alert" className="text-red-600 text-xs mt-1">{errors.shirt_size.message}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="quantity">{t('order', 'quantity')} *</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  max="999"
-                  {...register('quantity', { valueAsNumber: true })}
-                  className="mt-1 max-w-[140px]"
-                />
-                {errors.quantity && <p role="alert" className="text-red-600 text-xs mt-1">{errors.quantity.message}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="notes">{t('order', 'notes')}</Label>
-                <Textarea id="notes" {...register('notes')} aria-invalid={!!errors.notes} placeholder={t('order', 'notesPlaceholder')} className="mt-1" rows={3} />
-              </div>
-            </CardContent>
-          </Card>
+          <ShirtDetailsCard
+            stepNumber={institutionType ? String(baseStep + 3) : String(baseStep + 2)}
+            selectedCatalogItem={selectedCatalogItem}
+            showSelectedShirtSummary={catalog.length === 1 && !!selectedCatalogItem}
+            sizes={sizes}
+            selectedSize={watchedSize}
+            onSelectSize={size => setValue('shirt_size', size, { shouldValidate: true })}
+            sizeError={errors.shirt_size?.message}
+            quantityReg={register('quantity', { valueAsNumber: true })}
+            quantityError={errors.quantity?.message}
+            notesReg={register('notes')}
+          />
 
           {/* Order Summary */}
-          {watchedSize && watchedQty > 0 && (
-            <Card className="border-0 shadow-sm" style={{ backgroundColor: '#E5F2F0' }}>
-              <CardContent className="p-5">
-                <h3 className="font-heading font-semibold text-base mb-3" style={{ color: '#00352F' }}>{t('order', 'thisItem')}</h3>
-                <div className="space-y-1 text-sm">
-                  {selectedCatalogItem && (
-                    <div className="flex justify-between text-gray-600">
-                      <span>{t('order', 'style')}</span>
-                      <span className="font-medium text-gray-800">{selectedCatalogItem.name}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-gray-600">
-                    <span>{t('order', 'sizeRow')} {watchedSize} × {watchedQty}</span>
-                    <span>{formatCurrency(unitPrice)} {t('order', 'each')}</span>
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-bold text-gray-900">
-                    <span>{t('order', 'subtotal')}</span>
-                    <span className="text-[#00352F]">{formatCurrency(unitPrice * (watchedQty || 0))}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <OrderItemSummary
+            catalogItemName={selectedCatalogItem?.name}
+            size={watchedSize}
+            quantity={watchedQty}
+            unitPrice={unitPrice}
+          />
 
           {/* Cart summary strip (when cart has items) */}
           {cartItems.length > 0 && (
