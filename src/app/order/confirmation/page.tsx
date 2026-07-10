@@ -112,6 +112,16 @@ function ConfirmationContent() {
     }
   })()
 
+  // Translated institution-type label — avoids showing the raw enum (e.g. "Private_company")
+  const institutionTypeLabels: Record<string, string> = {
+    school: t('order', 'school'),
+    government: t('order', 'government'),
+    personal: t('order', 'personal'),
+    private_company: t('order', 'privateCompany'),
+    staff: t('order', 'staff'),
+  }
+  const institutionLabel = institutionTypeLabels[order.institution_type] ?? order.institution_type
+
   return (
     <div className="min-h-screen bg-[#F5F4F0]">
       {/* Header */}
@@ -202,7 +212,7 @@ function ConfirmationContent() {
                 )}
                 <div>
                   <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'institution')}</p>
-                  <p className="font-medium text-gray-900 capitalize mt-0.5">{order.institution_type}</p>
+                  <p className="font-medium text-gray-900 mt-0.5">{institutionLabel}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'details')}</p>

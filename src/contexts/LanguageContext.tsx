@@ -44,6 +44,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (stored === 'en' || stored === 'es') setLangState(stored)
   }, [])
 
+  // Keep the document's lang attribute in sync so screen readers announce the
+  // page in the correct language (WCAG 3.1.1). The root layout renders lang="en"
+  // for SSR; this updates it once the stored/selected locale is known.
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
+
   const setLang = (l: Lang) => {
     setLangState(l)
     localStorage.setItem('lih_lang', l)

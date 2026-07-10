@@ -544,13 +544,15 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('order', 'orderType')}>
                 {institutionOptions.filter(o => o.enabled).map(({ value, labelKey, icon: Icon }) => {
                   const active = institutionType === value
                   return (
                     <button
                       key={value}
                       type="button"
+                      role="radio"
+                      aria-checked={active}
                       onClick={() => {
                         setInstitutionType(value)
                         setValue('institution_type', value, { shouldValidate: true })
@@ -586,7 +588,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                 })}
               </div>
               {errors.institution_type && (
-                <p className="text-red-500 text-xs mt-2">{errors.institution_type.message}</p>
+                <p role="alert" className="text-red-600 text-xs mt-2">{errors.institution_type.message}</p>
               )}
             </CardContent>
           </Card>}
@@ -607,14 +609,14 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="full_name">{t('order', 'fullName')} *</Label>
-                <Input id="full_name" {...register('full_name')} placeholder={t('order', 'fullNamePlaceholder')} className="mt-1" />
-                {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
+                <Input id="full_name" {...register('full_name')} aria-invalid={!!errors.full_name} placeholder={t('order', 'fullNamePlaceholder')} className="mt-1" />
+                {errors.full_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.full_name.message}</p>}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="email">{t('order', 'emailAddress')} *</Label>
-                  <Input id="email" type="email" {...register('email')} placeholder={t('order', 'emailPlaceholder')} className="mt-1" />
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                  <Input id="email" type="email" {...register('email')} aria-invalid={!!errors.email} placeholder={t('order', 'emailPlaceholder')} className="mt-1" />
+                  {errors.email && <p role="alert" className="text-red-600 text-xs mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="phone">{t('order', 'phone')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
@@ -622,13 +624,13 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                     id="phone"
                     type="tel"
                     inputMode="numeric"
-                    {...register('phone')}
+                    {...register('phone')} aria-invalid={!!errors.phone}
                     onChange={e => setValue('phone', formatPhone(e.target.value), { shouldValidate: true })}
                     placeholder="(787) 555 - 1234"
                     maxLength={16}
                     className="mt-1"
                   />
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                  {errors.phone && <p role="alert" className="text-red-600 text-xs mt-1">{errors.phone.message}</p>}
                 </div>
               </div>
             </CardContent>
@@ -656,21 +658,21 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                     </div>
                   ) : (
                     <>
-                      <Input id="school_name" {...register('school_name')} placeholder={t('order', 'schoolNamePlaceholder')} className="mt-1" />
-                      {errors.school_name && <p className="text-red-500 text-xs mt-1">{errors.school_name.message}</p>}
+                      <Input id="school_name" {...register('school_name')} aria-invalid={!!errors.school_name} placeholder={t('order', 'schoolNamePlaceholder')} className="mt-1" />
+                      {errors.school_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.school_name.message}</p>}
                     </>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="grade">{t('order', 'gradeGroup')} *</Label>
-                    <Input id="grade" {...register('grade')} placeholder={t('order', 'gradeGroupPlaceholder')} className="mt-1" />
-                    {errors.grade && <p className="text-red-500 text-xs mt-1">{errors.grade.message}</p>}
+                    <Input id="grade" {...register('grade')} aria-invalid={!!errors.grade} placeholder={t('order', 'gradeGroupPlaceholder')} className="mt-1" />
+                    {errors.grade && <p role="alert" className="text-red-600 text-xs mt-1">{errors.grade.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="classroom">{t('order', 'classroom')} *</Label>
-                    <Input id="classroom" {...register('classroom')} placeholder={t('order', 'classroomPlaceholder')} className="mt-1" />
-                    {errors.classroom && <p className="text-red-500 text-xs mt-1">{errors.classroom.message}</p>}
+                    <Input id="classroom" {...register('classroom')} aria-invalid={!!errors.classroom} placeholder={t('order', 'classroomPlaceholder')} className="mt-1" />
+                    {errors.classroom && <p role="alert" className="text-red-600 text-xs mt-1">{errors.classroom.message}</p>}
                   </div>
                 </div>
               </CardContent>
@@ -694,7 +696,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                   {govOrgs.length > 0 ? (
                     <select
                       id="organization_name"
-                      {...register('organization_name')}
+                      {...register('organization_name')} aria-invalid={!!errors.organization_name}
                       onChange={e => {
                         const found = govOrgs.find(o => o.name === e.target.value) || null
                         setSelectedGovOrg(found)
@@ -709,16 +711,16 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                       ))}
                     </select>
                   ) : (
-                    <Input id="organization_name" {...register('organization_name')} placeholder={t('order', 'govOrgInputPlaceholder')} className="mt-1" />
+                    <Input id="organization_name" {...register('organization_name')} aria-invalid={!!errors.organization_name} placeholder={t('order', 'govOrgInputPlaceholder')} className="mt-1" />
                   )}
-                  {errors.organization_name && <p className="text-red-500 text-xs mt-1">{errors.organization_name.message}</p>}
+                  {errors.organization_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.organization_name.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="department_office">{t('order', 'deptOffice')} *</Label>
                   {selectedGovOrg?.departments && selectedGovOrg.departments.length > 0 ? (
                     <select
                       id="department_office"
-                      {...register('department_office')}
+                      {...register('department_office')} aria-invalid={!!errors.department_office}
                       className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                       <option value="">{t('order', 'selectDept')}</option>
@@ -727,9 +729,9 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                       ))}
                     </select>
                   ) : (
-                    <Input id="department_office" {...register('department_office')} placeholder={t('order', 'deptPlaceholder')} className="mt-1" />
+                    <Input id="department_office" {...register('department_office')} aria-invalid={!!errors.department_office} placeholder={t('order', 'deptPlaceholder')} className="mt-1" />
                   )}
-                  {errors.department_office && <p className="text-red-500 text-xs mt-1">{errors.department_office.message}</p>}
+                  {errors.department_office && <p role="alert" className="text-red-600 text-xs mt-1">{errors.department_office.message}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -758,7 +760,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                   ) : privateCompanies.length > 0 ? (
                     <select
                       id="company_name"
-                      {...register('company_name')}
+                      {...register('company_name')} aria-invalid={!!errors.company_name}
                       className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                       <option value="">{t('order', 'selectCompany')}</option>
@@ -767,13 +769,13 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                       ))}
                     </select>
                   ) : (
-                    <Input id="company_name" {...register('company_name')} placeholder={t('order', 'companyInputPlaceholder')} className="mt-1" />
+                    <Input id="company_name" {...register('company_name')} aria-invalid={!!errors.company_name} placeholder={t('order', 'companyInputPlaceholder')} className="mt-1" />
                   )}
-                  {!lockedCompanyName && errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
+                  {!lockedCompanyName && errors.company_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.company_name.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="company_department">{t('order', 'companyDept')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
-                  <Input id="company_department" {...register('company_department')} placeholder={t('order', 'companyDeptPlaceholder')} className="mt-1" />
+                  <Input id="company_department" {...register('company_department')} aria-invalid={!!errors.company_department} placeholder={t('order', 'companyDeptPlaceholder')} className="mt-1" />
                 </div>
               </CardContent>
             </Card>
@@ -796,8 +798,8 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="delivery_street">{t('order', 'streetAddress')} *</Label>
-                  <Input id="delivery_street" {...register('delivery_street')} placeholder={t('order', 'streetAddressPlaceholder')} className="mt-1" />
-                  {errors.delivery_street && <p className="text-red-500 text-xs mt-1">{errors.delivery_street.message}</p>}
+                  <Input id="delivery_street" {...register('delivery_street')} aria-invalid={!!errors.delivery_street} placeholder={t('order', 'streetAddressPlaceholder')} className="mt-1" />
+                  {errors.delivery_street && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_street.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="delivery_street2">{t('order', 'streetAddress2')}</Label>
@@ -806,19 +808,19 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="delivery_city">{t('order', 'city')} *</Label>
-                    <Input id="delivery_city" {...register('delivery_city')} placeholder={t('order', 'cityPlaceholder')} className="mt-1" />
-                    {errors.delivery_city && <p className="text-red-500 text-xs mt-1">{errors.delivery_city.message}</p>}
+                    <Input id="delivery_city" {...register('delivery_city')} aria-invalid={!!errors.delivery_city} placeholder={t('order', 'cityPlaceholder')} className="mt-1" />
+                    {errors.delivery_city && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_city.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="delivery_state">{t('order', 'state')} *</Label>
-                    <Input id="delivery_state" {...register('delivery_state')} placeholder={t('order', 'statePlaceholder')} className="mt-1" />
-                    {errors.delivery_state && <p className="text-red-500 text-xs mt-1">{errors.delivery_state.message}</p>}
+                    <Input id="delivery_state" {...register('delivery_state')} aria-invalid={!!errors.delivery_state} placeholder={t('order', 'statePlaceholder')} className="mt-1" />
+                    {errors.delivery_state && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_state.message}</p>}
                   </div>
                 </div>
                 <div className="max-w-[160px]">
                   <Label htmlFor="delivery_zip">{t('order', 'zipCode')} *</Label>
-                  <Input id="delivery_zip" {...register('delivery_zip')} placeholder={t('order', 'zipPlaceholder')} className="mt-1" />
-                  {errors.delivery_zip && <p className="text-red-500 text-xs mt-1">{errors.delivery_zip.message}</p>}
+                  <Input id="delivery_zip" {...register('delivery_zip')} aria-invalid={!!errors.delivery_zip} placeholder={t('order', 'zipPlaceholder')} className="mt-1" />
+                  {errors.delivery_zip && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_zip.message}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -858,11 +860,13 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
 
               <div>
                 <Label>{t('order', 'shirtSize')} *</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2" role="radiogroup" aria-label={t('order', 'shirtSize')}>
                   {sizes.map(size => (
                     <button
                       key={size}
                       type="button"
+                      role="radio"
+                      aria-checked={watchedSize === size}
                       onClick={() => setValue('shirt_size', size, { shouldValidate: true })}
                       className={cn(
                         'min-w-[52px] px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150',
@@ -875,7 +879,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                     </button>
                   ))}
                 </div>
-                {errors.shirt_size && <p className="text-red-500 text-xs mt-1">{errors.shirt_size.message}</p>}
+                {errors.shirt_size && <p role="alert" className="text-red-600 text-xs mt-1">{errors.shirt_size.message}</p>}
               </div>
 
               <div>
@@ -888,12 +892,12 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                   {...register('quantity', { valueAsNumber: true })}
                   className="mt-1 max-w-[140px]"
                 />
-                {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity.message}</p>}
+                {errors.quantity && <p role="alert" className="text-red-600 text-xs mt-1">{errors.quantity.message}</p>}
               </div>
 
               <div>
                 <Label htmlFor="notes">{t('order', 'notes')}</Label>
-                <Textarea id="notes" {...register('notes')} placeholder={t('order', 'notesPlaceholder')} className="mt-1" rows={3} />
+                <Textarea id="notes" {...register('notes')} aria-invalid={!!errors.notes} placeholder={t('order', 'notesPlaceholder')} className="mt-1" rows={3} />
               </div>
             </CardContent>
           </Card>

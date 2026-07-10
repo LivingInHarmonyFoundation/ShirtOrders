@@ -46,6 +46,7 @@ export const translations: Record<Lang, {
       save: 'Save',
       cancel: 'Cancel',
       optional: '(optional)',
+      tryAgain: 'Try Again',
     },
     landing: {
       heroTag: 'Official Order Portal',
@@ -821,6 +822,7 @@ export const translations: Record<Lang, {
       save: 'Guardar',
       cancel: 'Cancelar',
       optional: '(opcional)',
+      tryAgain: 'Intentar de Nuevo',
     },
     landing: {
       heroTag: 'Portal Oficial de Pedidos',

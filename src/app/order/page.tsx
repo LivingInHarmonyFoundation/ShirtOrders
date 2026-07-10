@@ -12,7 +12,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -92,6 +92,9 @@ export default function OrderPage() {
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
   // null = loading; [] = none active; [one] = single (no picker); [two+] = picker shown
   const [activeCampaigns, setActiveCampaigns] = useState<Campaign[] | null>(null)
+  // Set when the campaigns request fails (network/HTTP error) — distinct from "no
+  // active campaign", so we can show a retry screen instead of "orders closed".
+  const [loadError, setLoadError] = useState(false)
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [inventoryRows, setInventoryRows] = useState<{ catalog_item_id: string | null; shirt_size: string; quantity: number }[]>([])
   const [isAdding, setIsAdding] = useState(false)
@@ -136,7 +139,9 @@ export default function OrderPage() {
       })
     : allSizes
 
-  useEffect(() => {
+  const loadInitialData = useCallback(() => {
+    setLoadError(false)
+
     fetch('/api/admin/settings')
       .then(r => r.json())
       .then(({ settings }) => { if (settings) setSettings(settings) })
@@ -159,16 +164,26 @@ export default function OrderPage() {
       .then(({ companies }) => { if (companies?.length > 0) setPrivateCompanies(companies) })
       .catch(() => {})
 
+    // Campaigns drive the "orders closed" decision, so a failure here must NOT be
+    // mistaken for "no active campaign". Treat a non-OK response as a load error
+    // and surface a retry screen instead of the closed-for-orders dead-end.
     fetch('/api/campaigns/active')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to load campaigns')
+        return r.json()
+      })
       .then(({ campaigns }) => setActiveCampaigns(campaigns ?? []))
-      .catch(() => setActiveCampaigns([]))
+      .catch(() => setLoadError(true))
 
     fetch('/api/inventory')
       .then(r => r.json())
       .then(({ rows }) => { if (rows) setInventoryRows(rows) })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    loadInitialData()
+  }, [loadInitialData])
 
   // Auto-select if only one shirt
   useEffect(() => {
@@ -282,6 +297,25 @@ export default function OrderPage() {
     { value: 'private_company' as const, labelKey: 'privateCompany' as const,  icon: Briefcase, enabled: settings?.private_company_orders_enabled !== false },
     { value: 'staff' as const,           labelKey: 'staff' as const,           icon: Users,     enabled: settings?.staff_orders_enabled === true },
   ]
+
+  // Network/HTTP failure loading the form — offer a retry rather than a dead-end.
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ backgroundColor: '#F5F4F0' }}>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ backgroundColor: '#E5F2F0' }}>
+          <ShoppingBag className="w-8 h-8" style={{ color: '#00352F' }} />
+        </div>
+        <p className="text-gray-600 max-w-sm leading-relaxed mb-6">{t('errors', 'failedToLoad')}</p>
+        <button
+          onClick={loadInitialData}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm transition-all hover:-translate-y-0.5"
+          style={{ backgroundColor: '#00352F' }}
+        >
+          {t('common', 'tryAgain')}
+        </button>
+      </div>
+    )
+  }
 
   if (activeCampaigns === null) {
     return (
@@ -535,13 +569,15 @@ export default function OrderPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('order', 'orderType')}>
                 {institutionOptions.filter(o => o.enabled).map(({ value, labelKey, icon: Icon }) => {
                   const active = institutionType === value
                   return (
                     <button
                       key={value}
                       type="button"
+                      role="radio"
+                      aria-checked={active}
                       onClick={() => {
                         setInstitutionType(value)
                         setValue('institution_type', value, { shouldValidate: true })
@@ -582,7 +618,7 @@ export default function OrderPage() {
                 })}
               </div>
               {errors.institution_type && (
-                <p className="text-red-500 text-xs mt-2">{errors.institution_type.message}</p>
+                <p role="alert" className="text-red-600 text-xs mt-2">{errors.institution_type.message}</p>
               )}
             </CardContent>
           </Card>
@@ -603,14 +639,14 @@ export default function OrderPage() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="full_name">{t('order', 'fullName')} *</Label>
-                <Input id="full_name" {...register('full_name')} placeholder={t('order', 'fullNamePlaceholder')} className="mt-1" />
-                {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
+                <Input id="full_name" {...register('full_name')} aria-invalid={!!errors.full_name} placeholder={t('order', 'fullNamePlaceholder')} className="mt-1" />
+                {errors.full_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.full_name.message}</p>}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="email">{t('order', 'emailAddress')} *</Label>
-                  <Input id="email" type="email" {...register('email')} placeholder={t('order', 'emailPlaceholder')} className="mt-1" />
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                  <Input id="email" type="email" {...register('email')} aria-invalid={!!errors.email} placeholder={t('order', 'emailPlaceholder')} className="mt-1" />
+                  {errors.email && <p role="alert" className="text-red-600 text-xs mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="phone">{t('order', 'phone')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
@@ -618,13 +654,13 @@ export default function OrderPage() {
                     id="phone"
                     type="tel"
                     inputMode="numeric"
-                    {...register('phone')}
+                    {...register('phone')} aria-invalid={!!errors.phone}
                     onChange={e => setValue('phone', formatPhone(e.target.value), { shouldValidate: true })}
                     placeholder="(787) 555 - 1234"
                     maxLength={16}
                     className="mt-1"
                   />
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                  {errors.phone && <p role="alert" className="text-red-600 text-xs mt-1">{errors.phone.message}</p>}
                 </div>
               </div>
             </CardContent>
@@ -644,19 +680,19 @@ export default function OrderPage() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="school_name">{t('order', 'schoolName')} *</Label>
-                  <Input id="school_name" {...register('school_name')} placeholder={t('order', 'schoolNamePlaceholder')} className="mt-1" />
-                  {errors.school_name && <p className="text-red-500 text-xs mt-1">{errors.school_name.message}</p>}
+                  <Input id="school_name" {...register('school_name')} aria-invalid={!!errors.school_name} placeholder={t('order', 'schoolNamePlaceholder')} className="mt-1" />
+                  {errors.school_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.school_name.message}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="grade">{t('order', 'gradeGroup')} *</Label>
-                    <Input id="grade" {...register('grade')} placeholder={t('order', 'gradeGroupPlaceholder')} className="mt-1" />
-                    {errors.grade && <p className="text-red-500 text-xs mt-1">{errors.grade.message}</p>}
+                    <Input id="grade" {...register('grade')} aria-invalid={!!errors.grade} placeholder={t('order', 'gradeGroupPlaceholder')} className="mt-1" />
+                    {errors.grade && <p role="alert" className="text-red-600 text-xs mt-1">{errors.grade.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="classroom">{t('order', 'classroom')} *</Label>
-                    <Input id="classroom" {...register('classroom')} placeholder={t('order', 'classroomPlaceholder')} className="mt-1" />
-                    {errors.classroom && <p className="text-red-500 text-xs mt-1">{errors.classroom.message}</p>}
+                    <Input id="classroom" {...register('classroom')} aria-invalid={!!errors.classroom} placeholder={t('order', 'classroomPlaceholder')} className="mt-1" />
+                    {errors.classroom && <p role="alert" className="text-red-600 text-xs mt-1">{errors.classroom.message}</p>}
                   </div>
                 </div>
               </CardContent>
@@ -680,7 +716,7 @@ export default function OrderPage() {
                   {govOrgs.length > 0 ? (
                     <select
                       id="organization_name"
-                      {...register('organization_name')}
+                      {...register('organization_name')} aria-invalid={!!errors.organization_name}
                       onChange={e => {
                         const found = govOrgs.find(o => o.name === e.target.value) || null
                         setSelectedGovOrg(found)
@@ -695,16 +731,16 @@ export default function OrderPage() {
                       ))}
                     </select>
                   ) : (
-                    <Input id="organization_name" {...register('organization_name')} placeholder={t('order', 'govOrgInputPlaceholder')} className="mt-1" />
+                    <Input id="organization_name" {...register('organization_name')} aria-invalid={!!errors.organization_name} placeholder={t('order', 'govOrgInputPlaceholder')} className="mt-1" />
                   )}
-                  {errors.organization_name && <p className="text-red-500 text-xs mt-1">{errors.organization_name.message}</p>}
+                  {errors.organization_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.organization_name.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="department_office">{t('order', 'deptOffice')} *</Label>
                   {selectedGovOrg?.departments && selectedGovOrg.departments.length > 0 ? (
                     <select
                       id="department_office"
-                      {...register('department_office')}
+                      {...register('department_office')} aria-invalid={!!errors.department_office}
                       className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                       <option value="">{t('order', 'selectDept')}</option>
@@ -713,9 +749,9 @@ export default function OrderPage() {
                       ))}
                     </select>
                   ) : (
-                    <Input id="department_office" {...register('department_office')} placeholder={t('order', 'deptPlaceholder')} className="mt-1" />
+                    <Input id="department_office" {...register('department_office')} aria-invalid={!!errors.department_office} placeholder={t('order', 'deptPlaceholder')} className="mt-1" />
                   )}
-                  {errors.department_office && <p className="text-red-500 text-xs mt-1">{errors.department_office.message}</p>}
+                  {errors.department_office && <p role="alert" className="text-red-600 text-xs mt-1">{errors.department_office.message}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -738,7 +774,7 @@ export default function OrderPage() {
                   {privateCompanies.length > 0 ? (
                     <select
                       id="company_name"
-                      {...register('company_name')}
+                      {...register('company_name')} aria-invalid={!!errors.company_name}
                       className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                       <option value="">{t('order', 'selectCompany')}</option>
@@ -747,13 +783,13 @@ export default function OrderPage() {
                       ))}
                     </select>
                   ) : (
-                    <Input id="company_name" {...register('company_name')} placeholder={t('order', 'companyInputPlaceholder')} className="mt-1" />
+                    <Input id="company_name" {...register('company_name')} aria-invalid={!!errors.company_name} placeholder={t('order', 'companyInputPlaceholder')} className="mt-1" />
                   )}
-                  {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
+                  {errors.company_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.company_name.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="company_department">{t('order', 'companyDept')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
-                  <Input id="company_department" {...register('company_department')} placeholder={t('order', 'companyDeptPlaceholder')} className="mt-1" />
+                  <Input id="company_department" {...register('company_department')} aria-invalid={!!errors.company_department} placeholder={t('order', 'companyDeptPlaceholder')} className="mt-1" />
                 </div>
               </CardContent>
             </Card>
@@ -778,11 +814,11 @@ export default function OrderPage() {
                   <Label htmlFor="delivery_street">{t('order', 'streetAddress')} *</Label>
                   <Input
                     id="delivery_street"
-                    {...register('delivery_street')}
+                    {...register('delivery_street')} aria-invalid={!!errors.delivery_street}
                     placeholder={t('order', 'streetAddressPlaceholder')}
                     className="mt-1"
                   />
-                  {errors.delivery_street && <p className="text-red-500 text-xs mt-1">{errors.delivery_street.message}</p>}
+                  {errors.delivery_street && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_street.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="delivery_street2">{t('order', 'streetAddress2')}</Label>
@@ -798,32 +834,32 @@ export default function OrderPage() {
                     <Label htmlFor="delivery_city">{t('order', 'city')} *</Label>
                     <Input
                       id="delivery_city"
-                      {...register('delivery_city')}
+                      {...register('delivery_city')} aria-invalid={!!errors.delivery_city}
                       placeholder={t('order', 'cityPlaceholder')}
                       className="mt-1"
                     />
-                    {errors.delivery_city && <p className="text-red-500 text-xs mt-1">{errors.delivery_city.message}</p>}
+                    {errors.delivery_city && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_city.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="delivery_state">{t('order', 'state')} *</Label>
                     <Input
                       id="delivery_state"
-                      {...register('delivery_state')}
+                      {...register('delivery_state')} aria-invalid={!!errors.delivery_state}
                       placeholder={t('order', 'statePlaceholder')}
                       className="mt-1"
                     />
-                    {errors.delivery_state && <p className="text-red-500 text-xs mt-1">{errors.delivery_state.message}</p>}
+                    {errors.delivery_state && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_state.message}</p>}
                   </div>
                 </div>
                 <div className="max-w-[160px]">
                   <Label htmlFor="delivery_zip">{t('order', 'zipCode')} *</Label>
                   <Input
                     id="delivery_zip"
-                    {...register('delivery_zip')}
+                    {...register('delivery_zip')} aria-invalid={!!errors.delivery_zip}
                     placeholder={t('order', 'zipPlaceholder')}
                     className="mt-1"
                   />
-                  {errors.delivery_zip && <p className="text-red-500 text-xs mt-1">{errors.delivery_zip.message}</p>}
+                  {errors.delivery_zip && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_zip.message}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -864,11 +900,13 @@ export default function OrderPage() {
 
               <div>
                 <Label>{t('order', 'shirtSize')} *</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2" role="radiogroup" aria-label={t('order', 'shirtSize')}>
                   {sizes.map(size => (
                     <button
                       key={size}
                       type="button"
+                      role="radio"
+                      aria-checked={watchedSize === size}
                       onClick={() => setValue('shirt_size', size, { shouldValidate: true })}
                       className={cn(
                         'min-w-[52px] px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150',
@@ -881,7 +919,7 @@ export default function OrderPage() {
                     </button>
                   ))}
                 </div>
-                {errors.shirt_size && <p className="text-red-500 text-xs mt-1">{errors.shirt_size.message}</p>}
+                {errors.shirt_size && <p role="alert" className="text-red-600 text-xs mt-1">{errors.shirt_size.message}</p>}
               </div>
 
               <div>
@@ -894,12 +932,12 @@ export default function OrderPage() {
                   {...register('quantity', { valueAsNumber: true })}
                   className="mt-1 max-w-[140px]"
                 />
-                {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity.message}</p>}
+                {errors.quantity && <p role="alert" className="text-red-600 text-xs mt-1">{errors.quantity.message}</p>}
               </div>
 
               <div>
                 <Label htmlFor="notes">{t('order', 'notes')}</Label>
-                <Textarea id="notes" {...register('notes')} placeholder={t('order', 'notesPlaceholder')} className="mt-1" rows={3} />
+                <Textarea id="notes" {...register('notes')} aria-invalid={!!errors.notes} placeholder={t('order', 'notesPlaceholder')} className="mt-1" rows={3} />
               </div>
             </CardContent>
           </Card>

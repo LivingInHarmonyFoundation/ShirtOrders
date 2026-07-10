@@ -146,7 +146,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
       setValue('quantity', 1, { shouldValidate: false })
       if (catalog.length > 1) setSelectedCatalogItem(null)
 
-      toast.success(`Added ${data.quantity}× ${data.shirt_size} to cart`)
+      toast.success(`${data.quantity}× ${data.shirt_size} ${t('order', 'addedToCartSuffix')}`)
       openCart()
     } finally {
       setIsAdding(false)
@@ -297,14 +297,14 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="full_name">{t('order', 'fullName')} *</Label>
-                <Input id="full_name" {...register('full_name')} placeholder={t('order', 'fullNamePlaceholder')} className="mt-1" />
-                {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
+                <Input id="full_name" {...register('full_name')} aria-invalid={!!errors.full_name} placeholder={t('order', 'fullNamePlaceholder')} className="mt-1" />
+                {errors.full_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.full_name.message}</p>}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="email">{t('order', 'emailAddress')} *</Label>
-                  <Input id="email" type="email" {...register('email')} placeholder={t('order', 'emailPlaceholder')} className="mt-1" />
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                  <Input id="email" type="email" {...register('email')} aria-invalid={!!errors.email} placeholder={t('order', 'emailPlaceholder')} className="mt-1" />
+                  {errors.email && <p role="alert" className="text-red-600 text-xs mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="phone">{t('order', 'phone')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
@@ -312,13 +312,13 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                     id="phone"
                     type="tel"
                     inputMode="numeric"
-                    {...register('phone')}
+                    {...register('phone')} aria-invalid={!!errors.phone}
                     onChange={e => setValue('phone', formatPhone(e.target.value), { shouldValidate: true })}
                     placeholder="(787) 555 - 1234"
                     maxLength={16}
                     className="mt-1"
                   />
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                  {errors.phone && <p role="alert" className="text-red-600 text-xs mt-1">{errors.phone.message}</p>}
                 </div>
               </div>
             </CardContent>
@@ -340,7 +340,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
               </div>
               <div>
                 <Label htmlFor="company_department">{t('order', 'companyDept')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
-                <Input id="company_department" {...register('company_department')} placeholder={t('order', 'companyDeptPlaceholder')} className="mt-1" />
+                <Input id="company_department" {...register('company_department')} aria-invalid={!!errors.company_department} placeholder={t('order', 'companyDeptPlaceholder')} className="mt-1" />
               </div>
             </CardContent>
           </Card>
@@ -370,11 +370,13 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
               )}
               <div>
                 <Label>{t('order', 'shirtSize')} *</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2" role="radiogroup" aria-label={t('order', 'shirtSize')}>
                   {sizes.map(size => (
                     <button
                       key={size}
                       type="button"
+                      role="radio"
+                      aria-checked={watchedSize === size}
                       onClick={() => setValue('shirt_size', size, { shouldValidate: true })}
                       className={cn(
                         'px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all',
@@ -387,7 +389,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                     </button>
                   ))}
                 </div>
-                {errors.shirt_size && <p className="text-red-500 text-xs mt-1">{errors.shirt_size.message}</p>}
+                {errors.shirt_size && <p role="alert" className="text-red-600 text-xs mt-1">{errors.shirt_size.message}</p>}
               </div>
               <div>
                 <Label htmlFor="quantity">{t('order', 'quantity')} *</Label>
@@ -399,11 +401,11 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                   {...register('quantity', { valueAsNumber: true })}
                   className="mt-1 max-w-[140px]"
                 />
-                {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity.message}</p>}
+                {errors.quantity && <p role="alert" className="text-red-600 text-xs mt-1">{errors.quantity.message}</p>}
               </div>
               <div>
                 <Label htmlFor="notes">{t('order', 'notes')}</Label>
-                <Textarea id="notes" {...register('notes')} placeholder={t('order', 'notesPlaceholder')} className="mt-1" rows={3} />
+                <Textarea id="notes" {...register('notes')} aria-invalid={!!errors.notes} placeholder={t('order', 'notesPlaceholder')} className="mt-1" rows={3} />
               </div>
             </CardContent>
           </Card>
@@ -412,7 +414,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           {watchedSize && watchedQty > 0 && (
             <Card className="border-[#CEDC00]/40 bg-[#E5F2F0]">
               <CardContent className="p-4">
-                <h3 className="font-semibold text-[#00352F] mb-3">This Item</h3>
+                <h3 className="font-semibold text-[#00352F] mb-3">{t('order', 'thisItem')}</h3>
                 <div className="space-y-1 text-sm">
                   {selectedCatalogItem && (
                     <div className="flex justify-between text-gray-600">
@@ -421,8 +423,8 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                     </div>
                   )}
                   <div className="flex justify-between text-gray-600">
-                    <span>Size {watchedSize} × {watchedQty}</span>
-                    <span>{formatCurrency(unitPrice)} each</span>
+                    <span>{t('order', 'sizeRow')} {watchedSize} × {watchedQty}</span>
+                    <span>{formatCurrency(unitPrice)} {t('order', 'each')}</span>
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold text-gray-900">

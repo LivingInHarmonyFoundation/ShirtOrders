@@ -185,6 +185,16 @@ function CheckoutContent() {
     }
   })()
 
+  // Translated institution-type label — avoids showing the raw enum (e.g. "Private_company")
+  const institutionTypeLabels: Record<string, string> = {
+    school: t('order', 'school'),
+    government: t('order', 'government'),
+    personal: t('order', 'personal'),
+    private_company: t('order', 'privateCompany'),
+    staff: t('order', 'staff'),
+  }
+  const institutionLabel = institutionTypeLabels[order.institution_type] ?? order.institution_type
+
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
   const allowedMethods = order.order_allowed_payment_methods
@@ -261,7 +271,7 @@ function CheckoutContent() {
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">{t('checkout', 'institution')}</p>
-                  <p className="font-medium text-gray-900 capitalize">{order.institution_type}</p>
+                  <p className="font-medium text-gray-900">{institutionLabel}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">{t('checkout', 'details')}</p>
