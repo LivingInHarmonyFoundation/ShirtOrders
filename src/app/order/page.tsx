@@ -15,19 +15,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
-import { School, Building2, Loader2, CheckCircle2, ShoppingBag, ShoppingCart, Users } from 'lucide-react'
-import { cn, formatCurrency, formatPhone } from '@/lib/utils'
+import { Loader2, ShoppingBag, ShoppingCart } from 'lucide-react'
+import { formatPhone } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
-import ShirtViewer from '@/components/shared/ShirtViewer'
 import CartIcon from '@/components/shared/CartIcon'
 import CartDrawer from '@/components/shared/CartDrawer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
@@ -37,54 +30,13 @@ import ShirtDetailsCard, { OrderItemSummary } from '@/components/order/ShirtDeta
 import InstitutionFields from '@/components/order/InstitutionFields'
 import InstitutionTypePicker from '@/components/order/InstitutionTypePicker'
 import { CampaignPicker, CatalogPicker } from '@/components/order/OrderPickers'
+import { orderFormSchema, type OrderFormData } from '@/components/order/orderFormSchema'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
-import { Briefcase, User } from 'lucide-react'
 import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
 
-// ─── Zod Validation Schema ────────────────────────────────────
-const schema = z.object({
-  full_name: z.string().min(2, 'Full name is required'),
-  email: z.string().email('Valid email is required'),
-  phone: z.string().optional().refine(v => !v || v.replace(/\D/g, '').length === 10, { message: 'Enter a valid 10-digit phone number' }),
-  institution_type: z.enum(['school', 'government', 'personal', 'private_company', 'staff'] as const),
-  school_name: z.string().optional(),
-  grade: z.string().optional(),
-  classroom: z.string().optional(),
-  organization_name: z.string().optional(),
-  department_office: z.string().optional(),
-  company_name: z.string().optional(),
-  company_department: z.string().optional(),
-  delivery_street: z.string().optional(),
-  delivery_street2: z.string().optional(),
-  delivery_city: z.string().optional(),
-  delivery_state: z.string().optional(),
-  delivery_zip: z.string().optional(),
-  shirt_size: z.string().min(1, 'Please select a size'),
-  quantity: z.number().int().positive('Quantity must be at least 1'),
-  notes: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (data.institution_type === 'school') {
-    if (!data.school_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'School name is required', path: ['school_name'] })
-    if (!data.grade) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Grade is required', path: ['grade'] })
-    if (!data.classroom) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Classroom is required', path: ['classroom'] })
-  }
-  if (data.institution_type === 'government') {
-    if (!data.organization_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Organization name is required', path: ['organization_name'] })
-    if (!data.department_office) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Department/Office is required', path: ['department_office'] })
-  }
-  if (data.institution_type === 'private_company') {
-    if (!data.company_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Company name is required', path: ['company_name'] })
-  }
-  if (data.institution_type === 'personal') {
-    if (!data.delivery_street) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Street address is required', path: ['delivery_street'] })
-    if (!data.delivery_city) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'City is required', path: ['delivery_city'] })
-    if (!data.delivery_state) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'State is required', path: ['delivery_state'] })
-    if (!data.delivery_zip) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'ZIP code is required', path: ['delivery_zip'] })
-  }
-})
-
-type FormData = z.infer<typeof schema>
+// Uses the shared multi-institution schema (see components/order/orderFormSchema.ts)
+type FormData = OrderFormData
 
 export default function OrderPage() {
   const t = useT()
@@ -122,7 +74,7 @@ export default function OrderPage() {
   }>(null)
 
   const { register, handleSubmit, setValue, watch, reset, trigger, getValues, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(orderFormSchema),
     defaultValues: { quantity: 1 },
   })
 
