@@ -101,26 +101,30 @@ function ConfirmationContent() {
     )
   }
 
-  // Build a single human-readable institution string for display in the receipt
-  const institutionDisplay = (() => {
+  // Primary institution identifier — the specific entity name (company, school, or
+  // agency). Personal/staff have no entity name, so fall back to the translated category.
+  const institutionLabel = (() => {
     switch (order.institution_type) {
-      case 'school': return [order.school_name, order.grade && `Grade ${order.grade}`, order.classroom].filter(Boolean).join(' — ')
-      case 'government': return [order.organization_name, order.department_office].filter(Boolean).join(' — ')
-      case 'private_company': return [order.company_name, order.company_department].filter(Boolean).join(' — ')
-      case 'personal': return order.delivery_address || 'Personal Order'
-      default: return ''
+      case 'school': return order.school_name || t('order', 'school')
+      case 'government': return order.organization_name || t('order', 'government')
+      case 'private_company': return order.company_name || t('order', 'privateCompany')
+      case 'personal': return t('order', 'personal')
+      case 'staff': return t('order', 'staff')
+      default: return order.institution_type
     }
   })()
 
-  // Translated institution-type label — avoids showing the raw enum (e.g. "Private_company")
-  const institutionTypeLabels: Record<string, string> = {
-    school: t('order', 'school'),
-    government: t('order', 'government'),
-    personal: t('order', 'personal'),
-    private_company: t('order', 'privateCompany'),
-    staff: t('order', 'staff'),
-  }
-  const institutionLabel = institutionTypeLabels[order.institution_type] ?? order.institution_type
+  // Supplementary details only (sub-unit / delivery) — the entity name is shown above,
+  // so it's intentionally omitted here to avoid duplicating it on the receipt.
+  const institutionDisplay = (() => {
+    switch (order.institution_type) {
+      case 'school': return [order.grade && `Grade ${order.grade}`, order.classroom].filter(Boolean).join(' — ')
+      case 'government': return order.department_office || ''
+      case 'private_company': return order.company_department || ''
+      case 'personal': return order.delivery_address || ''
+      default: return ''
+    }
+  })()
 
   return (
     <div className="min-h-screen bg-[#F5F4F0]">
@@ -214,10 +218,12 @@ function ConfirmationContent() {
                   <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'institution')}</p>
                   <p className="font-medium text-gray-900 mt-0.5">{institutionLabel}</p>
                 </div>
-                <div className="col-span-2">
-                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'details')}</p>
-                  <p className="font-medium text-gray-900 mt-0.5">{institutionDisplay}</p>
-                </div>
+                {institutionDisplay && (
+                  <div className="col-span-2">
+                    <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'details')}</p>
+                    <p className="font-medium text-gray-900 mt-0.5">{institutionDisplay}</p>
+                  </div>
+                )}
               </div>
 
               <Separator />

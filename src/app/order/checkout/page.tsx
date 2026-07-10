@@ -175,25 +175,29 @@ function CheckoutContent() {
     return null
   }
 
-  const institutionDisplay = (() => {
+  // Primary institution identifier — the specific entity name (company, school, or
+  // agency). Personal/staff have no entity name, so fall back to the translated category.
+  const institutionLabel = (() => {
     switch (order.institution_type) {
-      case 'school': return `${order.school_name || ''} — Grade ${order.grade || ''}, ${order.classroom || ''}`
-      case 'government': return `${order.organization_name || ''} — ${order.department_office || ''}`
-      case 'private_company': return `${order.company_name || ''} — ${order.company_department || ''}`
-      case 'personal': return order.delivery_address || 'Personal Order'
-      default: return ''
+      case 'school': return order.school_name || t('order', 'school')
+      case 'government': return order.organization_name || t('order', 'government')
+      case 'private_company': return order.company_name || t('order', 'privateCompany')
+      case 'personal': return t('order', 'personal')
+      case 'staff': return t('order', 'staff')
+      default: return order.institution_type
     }
   })()
 
-  // Translated institution-type label — avoids showing the raw enum (e.g. "Private_company")
-  const institutionTypeLabels: Record<string, string> = {
-    school: t('order', 'school'),
-    government: t('order', 'government'),
-    personal: t('order', 'personal'),
-    private_company: t('order', 'privateCompany'),
-    staff: t('order', 'staff'),
-  }
-  const institutionLabel = institutionTypeLabels[order.institution_type] ?? order.institution_type
+  // Supplementary details only (sub-unit / delivery) — the entity name is shown above.
+  const institutionDisplay = (() => {
+    switch (order.institution_type) {
+      case 'school': return [order.grade && `Grade ${order.grade}`, order.classroom].filter(Boolean).join(', ')
+      case 'government': return order.department_office || ''
+      case 'private_company': return order.company_department || ''
+      case 'personal': return order.delivery_address || ''
+      default: return ''
+    }
+  })()
 
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
@@ -273,10 +277,12 @@ function CheckoutContent() {
                   <p className="text-gray-500 text-xs">{t('checkout', 'institution')}</p>
                   <p className="font-medium text-gray-900">{institutionLabel}</p>
                 </div>
-                <div>
-                  <p className="text-gray-500 text-xs">{t('checkout', 'details')}</p>
-                  <p className="font-medium text-gray-900 text-xs">{institutionDisplay}</p>
-                </div>
+                {institutionDisplay && (
+                  <div>
+                    <p className="text-gray-500 text-xs">{t('checkout', 'details')}</p>
+                    <p className="font-medium text-gray-900 text-xs">{institutionDisplay}</p>
+                  </div>
+                )}
               </div>
               <Separator />
               {/* Items breakdown */}
