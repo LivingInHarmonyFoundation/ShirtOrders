@@ -34,6 +34,7 @@ import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import PersonalInfoCard from '@/components/order/PersonalInfoCard'
 import ShirtDetailsCard, { OrderItemSummary } from '@/components/order/ShirtDetailsCard'
+import InstitutionFields from '@/components/order/InstitutionFields'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
 import { Briefcase, User } from 'lucide-react'
@@ -637,204 +638,23 @@ export default function OrderPage() {
             phoneError={errors.phone?.message}
           />
 
-          {/* School fields */}
-          {institutionType === 'school' && (
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
-                    {String(baseStep + 2)}
-                  </div>
-                  <CardTitle className="text-base">{t('order', 'schoolInfo')}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="school_name">{t('order', 'schoolName')} *</Label>
-                  <Input id="school_name" {...register('school_name')} aria-invalid={!!errors.school_name} placeholder={t('order', 'schoolNamePlaceholder')} className="mt-1" />
-                  {errors.school_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.school_name.message}</p>}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="grade">{t('order', 'gradeGroup')} *</Label>
-                    <Input id="grade" {...register('grade')} aria-invalid={!!errors.grade} placeholder={t('order', 'gradeGroupPlaceholder')} className="mt-1" />
-                    {errors.grade && <p role="alert" className="text-red-600 text-xs mt-1">{errors.grade.message}</p>}
-                  </div>
-                  <div>
-                    <Label htmlFor="classroom">{t('order', 'classroom')} *</Label>
-                    <Input id="classroom" {...register('classroom')} aria-invalid={!!errors.classroom} placeholder={t('order', 'classroomPlaceholder')} className="mt-1" />
-                    {errors.classroom && <p role="alert" className="text-red-600 text-xs mt-1">{errors.classroom.message}</p>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Government fields */}
-          {institutionType === 'government' && (
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
-                    {String(baseStep + 2)}
-                  </div>
-                  <CardTitle className="text-base">{t('order', 'orgInfo')}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="organization_name">{t('order', 'orgName')} *</Label>
-                  {govOrgs.length > 0 ? (
-                    <select
-                      id="organization_name"
-                      {...register('organization_name')} aria-invalid={!!errors.organization_name}
-                      onChange={e => {
-                        const found = govOrgs.find(o => o.name === e.target.value) || null
-                        setSelectedGovOrg(found)
-                        setValue('organization_name', e.target.value, { shouldValidate: true })
-                        setValue('department_office', '', { shouldValidate: false })
-                      }}
-                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    >
-                      <option value="">{t('order', 'selectOrg')}</option>
-                      {govOrgs.map(org => (
-                        <option key={org.id} value={org.name}>{org.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <Input id="organization_name" {...register('organization_name')} aria-invalid={!!errors.organization_name} placeholder={t('order', 'govOrgInputPlaceholder')} className="mt-1" />
-                  )}
-                  {errors.organization_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.organization_name.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="department_office">{t('order', 'deptOffice')} *</Label>
-                  {selectedGovOrg?.departments && selectedGovOrg.departments.length > 0 ? (
-                    <select
-                      id="department_office"
-                      {...register('department_office')} aria-invalid={!!errors.department_office}
-                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    >
-                      <option value="">{t('order', 'selectDept')}</option>
-                      {selectedGovOrg.departments.map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <Input id="department_office" {...register('department_office')} aria-invalid={!!errors.department_office} placeholder={t('order', 'deptPlaceholder')} className="mt-1" />
-                  )}
-                  {errors.department_office && <p role="alert" className="text-red-600 text-xs mt-1">{errors.department_office.message}</p>}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Private Company fields */}
-          {institutionType === 'private_company' && (
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
-                    {String(baseStep + 2)}
-                  </div>
-                  <CardTitle className="text-base">{t('order', 'companyInfo')}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="company_name">{t('order', 'companyName')} *</Label>
-                  {privateCompanies.length > 0 ? (
-                    <select
-                      id="company_name"
-                      {...register('company_name')} aria-invalid={!!errors.company_name}
-                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    >
-                      <option value="">{t('order', 'selectCompany')}</option>
-                      {privateCompanies.map(c => (
-                        <option key={c.id} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <Input id="company_name" {...register('company_name')} aria-invalid={!!errors.company_name} placeholder={t('order', 'companyInputPlaceholder')} className="mt-1" />
-                  )}
-                  {errors.company_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.company_name.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="company_department">{t('order', 'companyDept')} <span className="text-gray-400">{t('common', 'optional')}</span></Label>
-                  <Input id="company_department" {...register('company_department')} aria-invalid={!!errors.company_department} placeholder={t('order', 'companyDeptPlaceholder')} className="mt-1" />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Personal — delivery address */}
-          {institutionType === 'personal' && (
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0" style={{ backgroundColor: '#00352F' }}>
-                    {String(baseStep + 2)}
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">{t('order', 'deliveryInfo')}</CardTitle>
-                    <CardDescription className="mt-0.5">{t('order', 'deliveryInfoSub')}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="delivery_street">{t('order', 'streetAddress')} *</Label>
-                  <Input
-                    id="delivery_street"
-                    {...register('delivery_street')} aria-invalid={!!errors.delivery_street}
-                    placeholder={t('order', 'streetAddressPlaceholder')}
-                    className="mt-1"
-                  />
-                  {errors.delivery_street && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_street.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="delivery_street2">{t('order', 'streetAddress2')}</Label>
-                  <Input
-                    id="delivery_street2"
-                    {...register('delivery_street2')}
-                    placeholder={t('order', 'streetAddress2Placeholder')}
-                    className="mt-1"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="delivery_city">{t('order', 'city')} *</Label>
-                    <Input
-                      id="delivery_city"
-                      {...register('delivery_city')} aria-invalid={!!errors.delivery_city}
-                      placeholder={t('order', 'cityPlaceholder')}
-                      className="mt-1"
-                    />
-                    {errors.delivery_city && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_city.message}</p>}
-                  </div>
-                  <div>
-                    <Label htmlFor="delivery_state">{t('order', 'state')} *</Label>
-                    <Input
-                      id="delivery_state"
-                      {...register('delivery_state')} aria-invalid={!!errors.delivery_state}
-                      placeholder={t('order', 'statePlaceholder')}
-                      className="mt-1"
-                    />
-                    {errors.delivery_state && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_state.message}</p>}
-                  </div>
-                </div>
-                <div className="max-w-[160px]">
-                  <Label htmlFor="delivery_zip">{t('order', 'zipCode')} *</Label>
-                  <Input
-                    id="delivery_zip"
-                    {...register('delivery_zip')} aria-invalid={!!errors.delivery_zip}
-                    placeholder={t('order', 'zipPlaceholder')}
-                    className="mt-1"
-                  />
-                  {errors.delivery_zip && <p role="alert" className="text-red-600 text-xs mt-1">{errors.delivery_zip.message}</p>}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Institution-specific fields */}
+          <InstitutionFields
+            institutionType={institutionType}
+            stepNumber={String(baseStep + 2)}
+            register={register}
+            errors={errors}
+            setValue={setValue}
+            govOrgs={govOrgs}
+            selectedGovOrg={selectedGovOrg}
+            onGovOrgChange={name => {
+              const found = govOrgs.find(o => o.name === name) || null
+              setSelectedGovOrg(found)
+              setValue('organization_name', name, { shouldValidate: true })
+              setValue('department_office', '', { shouldValidate: false })
+            }}
+            privateCompanies={privateCompanies}
+          />
 
           {/* Shirt Details */}
           <ShirtDetailsCard
