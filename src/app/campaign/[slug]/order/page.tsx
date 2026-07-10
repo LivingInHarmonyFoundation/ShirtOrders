@@ -25,6 +25,7 @@ import PersonalInfoCard from '@/components/order/PersonalInfoCard'
 import ShirtDetailsCard, { OrderItemSummary } from '@/components/order/ShirtDetailsCard'
 import InstitutionFields from '@/components/order/InstitutionFields'
 import InstitutionTypePicker from '@/components/order/InstitutionTypePicker'
+import { CatalogPicker } from '@/components/order/OrderPickers'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
 import { Briefcase, User } from 'lucide-react'
@@ -460,67 +461,12 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
 
           {/* Shirt Style Picker — only shown when multiple options exist */}
           {showCatalogPicker && (
-            <Card className={cn('border-2 shadow-sm transition-colors', !selectedCatalogItem ? 'border-amber-300 bg-amber-50/60' : 'border-[#CEDC00]/40')}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold font-heading flex-shrink-0"
-                    style={{ backgroundColor: '#00352F' }}
-                  >
-                    1
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">{t('order', 'chooseShirt')} *</CardTitle>
-                    <CardDescription className="mt-0.5">{t('order', 'chooseShirtSub')}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {catalog.map(item => {
-                    const selected = selectedCatalogItem?.id === item.id
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setSelectedCatalogItem(item)}
-                        className={cn(
-                          'relative rounded-xl border-2 overflow-hidden text-left transition-all focus:outline-none',
-                          selected
-                            ? 'border-[#00352F] shadow-md ring-2 ring-[#00352F]/20'
-                            : 'border-gray-200 hover:border-[#00352F]/40'
-                        )}
-                      >
-                        <div className="relative" onClick={e => e.stopPropagation()}>
-                          <ShirtViewer
-                            frontUrl={item.image_url}
-                            backUrl={item.back_image_url ?? null}
-                            name={item.name}
-                            variant="compact"
-                          />
-                          {selected && (
-                            <div className="absolute top-2 right-2 z-10 w-6 h-6 bg-[#00352F] rounded-full flex items-center justify-center shadow pointer-events-none">
-                              <CheckCircle2 className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <div className={cn('p-2.5', selected ? 'bg-[#E5F2F0]' : 'bg-white')}>
-                          <p className={cn('text-xs font-semibold leading-tight', selected ? 'text-[#00352F]' : 'text-gray-800')}>
-                            {item.name}
-                          </p>
-                          {item.description && (
-                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>
-                          )}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-                {!selectedCatalogItem && (
-                  <p className="text-amber-600 text-xs mt-3 font-medium">{t('order', 'selectShirtToContinue')}</p>
-                )}
-              </CardContent>
-            </Card>
+            <CatalogPicker
+              stepNumber="1"
+              catalog={catalog}
+              selectedItem={selectedCatalogItem}
+              onSelect={setSelectedCatalogItem}
+            />
           )}
 
           {/* Institution Type — hidden when locked via ?institution= param */}
