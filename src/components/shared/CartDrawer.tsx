@@ -68,26 +68,26 @@ function CartItemRow({ item }: { item: CartItem }) {
       <div className="flex flex-col items-end justify-between flex-shrink-0">
         <button
           onClick={() => removeItem(item.id)}
-          className="text-gray-300 hover:text-red-500 transition-colors p-0.5"
+          className="text-gray-300 hover:text-red-600 transition-colors w-9 h-9 -mr-2 -mt-1.5 flex items-center justify-center"
           aria-label="Remove item"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
         </button>
         <div className="flex items-center gap-1 mt-1">
           <button
             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-            className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center hover:border-[#00352F] hover:bg-[#E5F2F0] transition-colors"
+            className="w-9 h-9 rounded-md border border-gray-200 flex items-center justify-center hover:border-[#00352F] hover:bg-[#E5F2F0] transition-colors"
             aria-label="Decrease quantity"
           >
-            <Minus className="w-3 h-3 text-gray-600" />
+            <Minus className="w-3.5 h-3.5 text-gray-600" />
           </button>
-          <span className="text-sm font-semibold text-gray-900 w-6 text-center">{item.quantity}</span>
+          <span className="text-sm font-semibold text-gray-900 w-7 text-center">{item.quantity}</span>
           <button
             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-            className="w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center hover:border-[#00352F] hover:bg-[#E5F2F0] transition-colors"
+            className="w-9 h-9 rounded-md border border-gray-200 flex items-center justify-center hover:border-[#00352F] hover:bg-[#E5F2F0] transition-colors"
             aria-label="Increase quantity"
           >
-            <Plus className="w-3 h-3 text-gray-600" />
+            <Plus className="w-3.5 h-3.5 text-gray-600" />
           </button>
         </div>
       </div>

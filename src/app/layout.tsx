@@ -19,9 +19,25 @@ const dmSans = DM_Sans({
   display: 'swap',
 })
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://shirt-orders-lihf.netlify.app'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'Living in Harmony Foundation',
   description: 'Order shirts for your school or government institution',
+  openGraph: {
+    title: 'Living in Harmony Foundation',
+    description: 'Order shirts for your school or government institution',
+    siteName: 'Living in Harmony Foundation',
+    images: [{ url: '/logo-full.jpeg' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Living in Harmony Foundation',
+    description: 'Order shirts for your school or government institution',
+    images: ['/logo-full.jpeg'],
+  },
 }
 
 export default function RootLayout({

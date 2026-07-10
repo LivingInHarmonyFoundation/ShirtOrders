@@ -339,7 +339,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                 { icon: CreditCard,  key: 'multiplePayment' },
               ].map(({ icon: Icon, key }) => (
                 <div key={key} className="flex items-center gap-1.5">
-                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#CEDC00' }} />
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#00352F' }} />
                   <span className="text-gray-500 font-medium whitespace-nowrap" style={{ fontSize: '11px' }}>{t('landing', key)}</span>
                 </div>
               ))}
@@ -521,7 +521,7 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                             <h3 className="font-semibold text-gray-900" style={{ fontSize: '14px' }}>{t('landing', titleKey)}</h3>
                             <p className="text-gray-500 mt-0.5 leading-relaxed" style={{ fontSize: '13px' }}>{t('landing', descKey)}</p>
                           </div>
-                          <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#CEDC00' }} />
+                          <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#00352F' }} />
                         </div>
                       </div>
                     </div>

@@ -359,7 +359,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
                     </div>
                   ) : (
                     <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-                      <ShoppingBag className="w-6 h-6 text-[#CEDC00]" />
+                      <ShoppingBag className="w-6 h-6 text-[#00352F]/40" />
                     </div>
                   )}
                   <div>

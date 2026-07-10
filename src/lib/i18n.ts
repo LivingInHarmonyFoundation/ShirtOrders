@@ -267,6 +267,10 @@ export const translations: Record<Lang, {
       companyLinkNotFound: 'This company order link could not be found.',
       failedToLoad: 'Failed to load order form. Please try again.',
       somethingWentWrong: 'Something went wrong. Please try again.',
+      pageNotFound: 'Page Not Found',
+      pageNotFoundDesc: "The page you're looking for doesn't exist or may have moved.",
+      errorTitle: 'Something Went Wrong',
+      errorDesc: 'An unexpected error occurred. Please try again.',
     },
     admin: {
       // Login page
@@ -1043,6 +1047,10 @@ export const translations: Record<Lang, {
       companyLinkNotFound: 'Este enlace de pedido empresarial no se pudo encontrar.',
       failedToLoad: 'Error al cargar el formulario. Por favor intenta de nuevo.',
       somethingWentWrong: 'Algo salió mal. Por favor intenta de nuevo.',
+      pageNotFound: 'Página No Encontrada',
+      pageNotFoundDesc: 'La página que buscas no existe o pudo haber sido movida.',
+      errorTitle: 'Algo Salió Mal',
+      errorDesc: 'Ocurrió un error inesperado. Por favor intenta de nuevo.',
     },
     admin: {
       // Login page
