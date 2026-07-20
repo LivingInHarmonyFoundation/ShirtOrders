@@ -66,6 +66,7 @@ export default function OrderPage() {
     classroom?: string
     organization_name?: string
     department_office?: string
+    region?: string
     company_name?: string
     company_department?: string
     delivery_address?: string
@@ -164,6 +165,14 @@ export default function OrderPage() {
       toast.error(t('order', 'selectShirtFirst'))
       return
     }
+    // Region is required when the chosen government department defines regions.
+    if (data.institution_type === 'government' && data.department_office) {
+      const regions = selectedGovOrg?.department_regions?.[data.department_office] || []
+      if (regions.length > 0 && !data.region) {
+        toast.error(t('order', 'selectRegionFirst'))
+        return
+      }
+    }
     setIsAdding(true)
     try {
       const delivery_address = data.institution_type === 'personal'
@@ -181,6 +190,7 @@ export default function OrderPage() {
         classroom: data.classroom,
         organization_name: data.organization_name,
         department_office: data.department_office,
+        region: data.region,
         company_name: data.company_name,
         company_department: data.company_department,
         delivery_address,
@@ -216,6 +226,13 @@ export default function OrderPage() {
     if (!result) return false
 
     const data = getValues()
+    if (data.institution_type === 'government' && data.department_office) {
+      const regions = selectedGovOrg?.department_regions?.[data.department_office] || []
+      if (regions.length > 0 && !data.region) {
+        toast.error(t('order', 'selectRegionFirst'))
+        return false
+      }
+    }
     const delivery_address = data.institution_type === 'personal'
       ? [data.delivery_street, data.delivery_street2, data.delivery_city, data.delivery_state, data.delivery_zip]
           .filter(Boolean).join(', ')
@@ -424,6 +441,12 @@ export default function OrderPage() {
               setSelectedGovOrg(found)
               setValue('organization_name', name, { shouldValidate: true })
               setValue('department_office', '', { shouldValidate: false })
+              setValue('region', '', { shouldValidate: false })
+            }}
+            selectedDepartment={watch('department_office')}
+            onDepartmentChange={dept => {
+              setValue('department_office', dept, { shouldValidate: true })
+              setValue('region', '', { shouldValidate: false })
             }}
             privateCompanies={privateCompanies}
           />

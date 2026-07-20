@@ -213,6 +213,12 @@ export default function OrderDetailPage() {
                     <p className="text-xs text-gray-500">Department / Office</p>
                     <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.department_office || '—'}</p>
                   </div>
+                  {order.region && (
+                    <div>
+                      <p className="text-xs text-gray-500">Region</p>
+                      <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.region}</p>
+                    </div>
+                  )}
                 </>)}
                 {order.institution_type === 'private_company' && (<>
                   <div>

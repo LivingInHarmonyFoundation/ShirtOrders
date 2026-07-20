@@ -29,6 +29,10 @@ interface InstitutionFieldsProps {
   selectedGovOrg: GovOrg | null
   /** Called when a government org is picked — updates selection + dependent department. */
   onGovOrgChange: (name: string) => void
+  /** Currently selected department (drives the optional region dropdown). */
+  selectedDepartment?: string
+  /** Called when the department changes — updates the field and resets the region. */
+  onDepartmentChange?: (dept: string) => void
   privateCompanies: PrivateCompany[]
   /** Campaign-link flow: when set, the school name is pre-filled and shown read-only. */
   lockedSchoolName?: string | null
@@ -68,6 +72,8 @@ export default function InstitutionFields({
   govOrgs,
   selectedGovOrg,
   onGovOrgChange,
+  selectedDepartment,
+  onDepartmentChange,
   privateCompanies,
   lockedSchoolName,
   lockedCompanyName,
@@ -149,6 +155,7 @@ export default function InstitutionFields({
                 id="department_office"
                 {...register('department_office')}
                 aria-invalid={!!errors.department_office}
+                onChange={e => onDepartmentChange?.(e.target.value)}
                 className={NATIVE_SELECT_CLASS}
               >
                 <option value="">{t('order', 'selectDept')}</option>
@@ -161,6 +168,29 @@ export default function InstitutionFields({
             )}
             {errors.department_office && <p role="alert" className="text-red-600 text-xs mt-1">{errors.department_office.message}</p>}
           </div>
+
+          {/* Region — shown only when the selected department defines regions (then required) */}
+          {(() => {
+            const regions = selectedDepartment ? (selectedGovOrg?.department_regions?.[selectedDepartment] || []) : []
+            if (regions.length === 0) return null
+            return (
+              <div>
+                <Label htmlFor="region">{t('order', 'region')} *</Label>
+                <select
+                  id="region"
+                  {...register('region')}
+                  aria-invalid={!!errors.region}
+                  className={NATIVE_SELECT_CLASS}
+                >
+                  <option value="">{t('order', 'selectRegion')}</option>
+                  {regions.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                {errors.region && <p role="alert" className="text-red-600 text-xs mt-1">{errors.region.message}</p>}
+              </div>
+            )
+          })()}
         </CardContent>
       </Card>
     )

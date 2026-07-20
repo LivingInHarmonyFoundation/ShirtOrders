@@ -5,7 +5,7 @@ export async function GET() {
   const admin = await createAdminClient()
   const { data, error } = await admin
     .from('government_orgs')
-    .select('id, name, departments, allowed_payment_methods')
+    .select('id, name, departments, department_regions, allowed_payment_methods')
     .eq('is_active', true)
     .order('name', { ascending: true })
 

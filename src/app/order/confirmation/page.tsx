@@ -119,7 +119,7 @@ function ConfirmationContent() {
   const institutionDisplay = (() => {
     switch (order.institution_type) {
       case 'school': return [order.grade && `Grade ${order.grade}`, order.classroom].filter(Boolean).join(' — ')
-      case 'government': return order.department_office || ''
+      case 'government': return [order.department_office, order.region].filter(Boolean).join(' — ')
       case 'private_company': return order.company_department || ''
       case 'personal': return order.delivery_address || ''
       default: return ''

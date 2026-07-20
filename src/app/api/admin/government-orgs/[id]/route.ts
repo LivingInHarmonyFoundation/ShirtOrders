@@ -39,6 +39,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if ('departments' in body) updates.departments = body.departments
   if ('allowed_payment_methods' in body) updates.allowed_payment_methods = body.allowed_payment_methods
 
+  // department_regions: object map of { "<department>": ["<region>", ...] }.
+  // Validate shape to avoid storing malformed data that the order form would choke on.
+  if ('department_regions' in body) {
+    const dr = body.department_regions
+    const valid =
+      dr !== null &&
+      typeof dr === 'object' &&
+      !Array.isArray(dr) &&
+      Object.values(dr as Record<string, unknown>).every(
+        v => Array.isArray(v) && v.every(r => typeof r === 'string')
+      )
+    if (!valid) {
+      return NextResponse.json({ error: 'Invalid department_regions' }, { status: 400 })
+    }
+    updates.department_regions = dr
+  }
+
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
   }

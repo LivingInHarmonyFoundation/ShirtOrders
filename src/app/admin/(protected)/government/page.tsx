@@ -59,6 +59,9 @@ export default function GovernmentPage() {
   const [expandedPayment, setExpandedPayment] = useState<Set<string>>(new Set())
   const [newDept, setNewDept] = useState<Record<string, string>>({})
   const [savingDeptId, setSavingDeptId] = useState<string | null>(null)
+  // New-region input, keyed by `${orgId}::${department}`; savingRegionKey tracks the in-flight one.
+  const [newRegion, setNewRegion] = useState<Record<string, string>>({})
+  const [savingRegionKey, setSavingRegionKey] = useState<string | null>(null)
   const [savingPaymentId, setSavingPaymentId] = useState<string | null>(null)
 
   const fetchOrgs = async () => {
@@ -209,20 +212,61 @@ export default function GovernmentPage() {
 
   const handleRemoveDept = async (org: GovOrg, dept: string) => {
     const updated = (org.departments || []).filter(d => d !== dept)
+    // Drop the removed department's regions so no orphaned entries linger in the map.
+    const updatedRegions = { ...(org.department_regions || {}) }
+    delete updatedRegions[dept]
     setSavingDeptId(org.id)
     try {
       const res = await fetch(`/api/admin/government-orgs/${org.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ departments: updated }),
+        body: JSON.stringify({ departments: updated, department_regions: updatedRegions }),
       })
       if (!res.ok) throw new Error()
-      setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, departments: updated } : o))
+      setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, departments: updated, department_regions: updatedRegions } : o))
     } catch {
       toast.error('Failed to remove department')
     } finally {
       setSavingDeptId(null)
     }
+  }
+
+  // ─── Region management (per department) ──────────────────────
+  const saveRegions = async (org: GovOrg, nextRegions: Record<string, string[]>, key: string) => {
+    setSavingRegionKey(key)
+    try {
+      const res = await fetch(`/api/admin/government-orgs/${org.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ department_regions: nextRegions }),
+      })
+      if (!res.ok) throw new Error()
+      setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, department_regions: nextRegions } : o))
+      return true
+    } catch {
+      toast.error('Failed to update regions')
+      return false
+    } finally {
+      setSavingRegionKey(null)
+    }
+  }
+
+  const handleAddRegion = async (org: GovOrg, dept: string) => {
+    const key = `${org.id}::${dept}`
+    const region = (newRegion[key] || '').trim()
+    if (!region) return
+    const current = org.department_regions?.[dept] || []
+    if (current.includes(region)) { setNewRegion(prev => ({ ...prev, [key]: '' })); return }
+    const next = { ...(org.department_regions || {}), [dept]: [...current, region] }
+    const ok = await saveRegions(org, next, key)
+    if (ok) setNewRegion(prev => ({ ...prev, [key]: '' }))
+  }
+
+  const handleRemoveRegion = async (org: GovOrg, dept: string, region: string) => {
+    const key = `${org.id}::${dept}`
+    const current = org.department_regions?.[dept] || []
+    const next = { ...(org.department_regions || {}), [dept]: current.filter(r => r !== region) }
+    await saveRegions(org, next, key)
   }
 
   const handlePaymentToggle = async (org: GovOrg, method: PaymentMethod) => {
@@ -438,26 +482,76 @@ export default function GovernmentPage() {
                   <div className="px-4 pb-3 border-t border-gray-50">
                     <div className="pt-3">
                       <p className="text-xs font-medium text-gray-600 mb-2">{t('admin', 'departmentsLabel')}</p>
-                      <div className="flex flex-wrap gap-1.5 mb-3">
+                      <div className="space-y-2 mb-3">
                         {(org.departments || []).length === 0 ? (
                           <p className="text-xs text-gray-400">{t('admin', 'noDepartmentsYet')}</p>
                         ) : (
-                          (org.departments || []).map(dept => (
-                            <span
-                              key={dept}
-                              className="flex items-center gap-1 px-2.5 py-1 bg-[#E5F2F0] text-[#00352F] text-xs font-medium rounded-full"
-                            >
-                              {dept}
-                              <button
-                                type="button"
-                                disabled={savingDeptId === org.id}
-                                onClick={() => handleRemoveDept(org, dept)}
-                                className="ml-0.5 text-[#00352F]/60 hover:text-red-500 transition-colors disabled:opacity-50"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </span>
-                          ))
+                          (org.departments || []).map(dept => {
+                            const regions = org.department_regions?.[dept] || []
+                            const rkey = `${org.id}::${dept}`
+                            return (
+                              <div key={dept} className="rounded-lg border border-gray-100 bg-gray-50/50 p-2.5">
+                                {/* Department name + remove */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-semibold text-[#00352F]">{dept}</span>
+                                  <button
+                                    type="button"
+                                    disabled={savingDeptId === org.id}
+                                    onClick={() => handleRemoveDept(org, dept)}
+                                    className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                {/* Regions for this department */}
+                                <div className="mt-2 pl-1">
+                                  <p className="text-[11px] font-medium text-gray-500 mb-1.5">{t('admin', 'regionsLabel')}</p>
+                                  <div className="flex flex-wrap gap-1.5 mb-2">
+                                    {regions.length === 0 ? (
+                                      <p className="text-[11px] text-gray-400">{t('admin', 'noRegionsYet')}</p>
+                                    ) : (
+                                      regions.map(region => (
+                                        <span
+                                          key={region}
+                                          className="flex items-center gap-1 px-2 py-0.5 bg-white border border-[#CEDC00]/40 text-[#00352F] text-[11px] font-medium rounded-full"
+                                        >
+                                          {region}
+                                          <button
+                                            type="button"
+                                            disabled={savingRegionKey === rkey}
+                                            onClick={() => handleRemoveRegion(org, dept, region)}
+                                            className="ml-0.5 text-[#00352F]/50 hover:text-red-500 transition-colors disabled:opacity-50"
+                                          >
+                                            <X className="w-2.5 h-2.5" />
+                                          </button>
+                                        </span>
+                                      ))
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      placeholder={t('admin', 'newRegionPlaceholder')}
+                                      value={newRegion[rkey] || ''}
+                                      onChange={e => setNewRegion(prev => ({ ...prev, [rkey]: e.target.value }))}
+                                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddRegion(org, dept) } }}
+                                      className="flex-1 h-7 text-xs"
+                                      disabled={savingRegionKey === rkey}
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleAddRegion(org, dept)}
+                                      disabled={savingRegionKey === rkey || !(newRegion[rkey] || '').trim()}
+                                      className="text-white h-7 text-xs px-3"
+                                      style={{ backgroundColor: '#00352F' }}
+                                    >
+                                      {t('admin', 'addRegionButton')}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })
                         )}
                       </div>
                       <div className="flex gap-2">

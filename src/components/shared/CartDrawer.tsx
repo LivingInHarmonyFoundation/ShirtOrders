@@ -21,6 +21,7 @@ interface CheckoutPayload {
   classroom?: string
   organization_name?: string
   department_office?: string
+  region?: string
   company_name?: string
   company_department?: string
   delivery_address?: string

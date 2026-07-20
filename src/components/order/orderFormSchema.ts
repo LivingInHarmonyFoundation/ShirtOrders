@@ -16,6 +16,7 @@ export const orderFormSchema = z.object({
   classroom: z.string().optional(),
   organization_name: z.string().optional(),
   department_office: z.string().optional(),
+  region: z.string().optional(),
   company_name: z.string().optional(),
   company_department: z.string().optional(),
   delivery_street: z.string().optional(),

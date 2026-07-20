@@ -138,7 +138,7 @@ export const deliveryStatusConfig: Record<DeliveryStatus, { label: string; class
 export const CSV_HEADERS = [
   'Order Number', 'Full Name', 'Email', 'Phone',
   'Institution Type', 'School Name', 'Grade', 'Classroom',
-  'Organization Name', 'Department/Office', 'Shirt Size',
+  'Organization Name', 'Department/Office', 'Region', 'Shirt Size',
   'Quantity', 'Unit Price', 'Total Amount',
   'Payment Status', 'Payment Method', 'Order Status', 'Delivery Status',
   'Date Submitted', 'Date Paid', 'Date Delivered',
@@ -162,6 +162,7 @@ export function buildOrderCsvRow(order: Record<string, unknown>): string[] {
     String(order.classroom ?? ''),
     String(order.organization_name ?? ''),
     String(order.department_office ?? ''),
+    String(order.region ?? ''),
     String(order.shirt_size ?? ''),
     String(order.quantity ?? ''),
     String(order.unit_price ?? ''),

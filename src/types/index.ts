@@ -83,6 +83,7 @@ export interface Order {
   classroom: string | null
   organization_name: string | null
   department_office: string | null
+  region: string | null
   company_name: string | null
   company_department: string | null
   delivery_address: string | null
@@ -315,6 +316,8 @@ export interface GovOrg {
   name: string
   is_active: boolean
   departments: string[] | null
+  /** Optional per-department regions, keyed by department name: { "ADSEF": ["Región 1", ...] }. */
+  department_regions: Record<string, string[]> | null
   allowed_payment_methods: string[] | null
   created_at: string
   updated_at: string
