@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateOrderNumber } from '@/lib/utils'
 import { sendOrderNotifications, sendLowInventoryNotification } from '@/lib/notifications'
+import { getCheapestShippingRate, SHIRT_WEIGHT_OZ } from '@/lib/shippo'
 import { z } from 'zod'
 
 // ─── Validation Schemas ───────────────────────────────────────
@@ -45,6 +46,8 @@ const orderSchema = z.object({
   company_name: z.string().optional(),
   company_department: z.string().optional(),
   delivery_address: z.string().optional(),
+  delivery_city: z.string().optional(),
+  delivery_state: z.string().optional(),
   delivery_zip: z.string().optional(),
   notes: z.string().optional(),
   school_link_id: z.string().uuid().optional(),
@@ -303,16 +306,29 @@ export async function POST(request: NextRequest) {
         : fee.value,
     }))
 
-    // Personal-order shipping — flat rate chosen by delivery ZIP:
-    // Puerto Rico ZIPs (00600–00999) use the PR rate; everything else the off-island rate.
+    // Personal-order shipping — a live rate quote from the carrier (Shippo), priced by the
+    // customer's delivery address. Quote only; no label is purchased. If the rate service is
+    // unavailable, fall back to a flat rate chosen by ZIP (PR 00600–00999 vs off-island).
     if (data.institution_type === 'personal') {
-      const zipNum = parseInt((data.delivery_zip || '').replace(/\D/g, '').slice(0, 5) || '0', 10)
-      const isPR = zipNum >= 600 && zipNum <= 999
-      const shipCost = isPR
-        ? Number(settings.personal_shipping_pr ?? 0)
-        : Number(settings.personal_shipping_other ?? 0)
+      const totalWeightOz = SHIRT_WEIGHT_OZ * total_quantity
+      let shipCost: number | null = null
+
+      if (data.delivery_zip) {
+        shipCost = await getCheapestShippingRate(
+          { city: data.delivery_city, state: data.delivery_state, zip: data.delivery_zip },
+          totalWeightOz,
+        )
+      }
+
+      // Fallback flat rate when the live quote is unavailable.
+      if (shipCost === null) {
+        const zipNum = parseInt((data.delivery_zip || '').replace(/\D/g, '').slice(0, 5) || '0', 10)
+        const isPR = zipNum >= 600 && zipNum <= 999
+        shipCost = Number(isPR ? settings.personal_shipping_pr : settings.personal_shipping_other) || 0
+      }
+
       if (shipCost > 0) {
-        appliedFees.push({ name: 'Shipping & Handling', type: 'fixed', value: shipCost, amount: shipCost })
+        appliedFees.push({ name: 'Shipping', type: 'fixed', value: shipCost, amount: shipCost })
       }
     }
 

@@ -25,6 +25,9 @@ interface CheckoutPayload {
   company_name?: string
   company_department?: string
   delivery_address?: string
+  delivery_city?: string
+  delivery_state?: string
+  delivery_zip?: string
   notes?: string
   school_link_id?: string
   company_link_id?: string

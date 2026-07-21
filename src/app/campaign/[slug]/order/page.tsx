@@ -82,6 +82,9 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
     company_name?: string
     company_department?: string
     delivery_address?: string
+    delivery_city?: string
+    delivery_state?: string
+    delivery_zip?: string
     notes?: string
     school_link_id?: string
     company_link_id?: string
@@ -209,6 +212,9 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
         company_name: data.company_name,
         company_department: data.company_department,
         delivery_address,
+        delivery_city: data.delivery_city,
+        delivery_state: data.delivery_state,
+        delivery_zip: data.delivery_zip,
         notes: data.notes,
         campaign_id: campaign?.id,
         school_link_id: lockedSchoolLinkId ?? undefined,
@@ -266,6 +272,9 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
       company_name: data.company_name,
       company_department: data.company_department,
       delivery_address,
+      delivery_city: data.delivery_city,
+      delivery_state: data.delivery_state,
+      delivery_zip: data.delivery_zip,
       notes: data.notes,
       campaign_id: campaign?.id,
       school_link_id: lockedSchoolLinkId ?? undefined,

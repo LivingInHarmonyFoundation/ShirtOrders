@@ -70,6 +70,9 @@ export default function OrderPage() {
     company_name?: string
     company_department?: string
     delivery_address?: string
+    delivery_city?: string
+    delivery_state?: string
+    delivery_zip?: string
     notes?: string
     campaign_id?: string
   }>(null)
@@ -194,6 +197,9 @@ export default function OrderPage() {
         company_name: data.company_name,
         company_department: data.company_department,
         delivery_address,
+        delivery_city: data.delivery_city,
+        delivery_state: data.delivery_state,
+        delivery_zip: data.delivery_zip,
         notes: data.notes,
         campaign_id: selectedCampaign?.id ?? activeCampaigns?.[0]?.id,
       }
@@ -250,6 +256,9 @@ export default function OrderPage() {
       company_name: data.company_name,
       company_department: data.company_department,
       delivery_address,
+      delivery_city: data.delivery_city,
+      delivery_state: data.delivery_state,
+      delivery_zip: data.delivery_zip,
       notes: data.notes,
       campaign_id: selectedCampaign?.id ?? activeCampaigns?.[0]?.id,
     })
