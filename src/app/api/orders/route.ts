@@ -45,6 +45,7 @@ const orderSchema = z.object({
   company_name: z.string().optional(),
   company_department: z.string().optional(),
   delivery_address: z.string().optional(),
+  delivery_zip: z.string().optional(),
   notes: z.string().optional(),
   school_link_id: z.string().uuid().optional(),
   company_link_id: z.string().uuid().optional(),
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     const { data: settings } = await supabase
       .from('app_settings')
-      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, staff_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled, personal_allowed_payment_methods, cash_enabled, order_fees')
+      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, staff_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled, personal_allowed_payment_methods, cash_enabled, order_fees, personal_shipping_pr, personal_shipping_other')
       .single()
 
     if (!settings) {
@@ -301,6 +302,20 @@ export async function POST(request: NextRequest) {
         ? Math.round(subtotal * (fee.value / 100) * 100) / 100
         : fee.value,
     }))
+
+    // Personal-order shipping — flat rate chosen by delivery ZIP:
+    // Puerto Rico ZIPs (00600–00999) use the PR rate; everything else the off-island rate.
+    if (data.institution_type === 'personal') {
+      const zipNum = parseInt((data.delivery_zip || '').replace(/\D/g, '').slice(0, 5) || '0', 10)
+      const isPR = zipNum >= 600 && zipNum <= 999
+      const shipCost = isPR
+        ? Number(settings.personal_shipping_pr ?? 0)
+        : Number(settings.personal_shipping_other ?? 0)
+      if (shipCost > 0) {
+        appliedFees.push({ name: 'Shipping & Handling', type: 'fixed', value: shipCost, amount: shipCost })
+      }
+    }
+
     const feesTotal = appliedFees.reduce((sum, f) => sum + f.amount, 0)
     const total_amount = Math.round((subtotal + feesTotal) * 100) / 100
 

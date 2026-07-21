@@ -108,11 +108,22 @@ export async function PATCH(request: NextRequest) {
     'cash_enabled_school', 'cash_enabled_government', 'cash_enabled_private_company',
     'personal_allowed_payment_methods', 'confirmation_message',
     'admin_phone', 'sms_notifications_enabled', 'qr_tagline', 'order_fees',
+    'personal_shipping_pr', 'personal_shipping_other',
   ]
 
   const updateData: Record<string, unknown> = {}
   for (const field of allowedFields) {
     if (field in body) updateData[field] = body[field]
+  }
+
+  // Shipping rates: non-negative numbers (0 = free / disabled for that zone).
+  for (const key of ['personal_shipping_pr', 'personal_shipping_other'] as const) {
+    if (key in updateData) {
+      const v = updateData[key]
+      if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) {
+        return NextResponse.json({ error: `Invalid ${key}` }, { status: 400 })
+      }
+    }
   }
 
   // ─── Validation ───────────────────────────────────────────

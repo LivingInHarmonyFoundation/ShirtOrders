@@ -207,6 +207,9 @@ export interface AppSettings {
   confirmation_message: string
   qr_tagline: string
   order_fees: OrderFee[]
+  /** Personal-order shipping, chosen by delivery ZIP: PR (00600–00999) vs off-island. */
+  personal_shipping_pr: number
+  personal_shipping_other: number
   admin_phone: string | null
   sms_notifications_enabled: boolean
   created_at: string
