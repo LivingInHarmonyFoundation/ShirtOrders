@@ -250,17 +250,16 @@ export default function CampaignShowcasePage({
         </div>
       </header>
 
-      {/* Banner image */}
+      {/* Banner image — shown in full (no cropping) at its natural aspect ratio */}
       {effectiveBannerUrl && (
-        <div className="w-full overflow-hidden" style={{ maxHeight: '256px' }}>
+        <div className="w-full overflow-hidden bg-white">
           <Image
             src={effectiveBannerUrl}
             alt={campaign?.name ?? 'Campaign banner'}
             width={0}
             height={0}
             sizes="100vw"
-            className="w-full h-auto object-cover"
-            style={{ maxHeight: '256px' }}
+            className="w-full h-auto"
           />
         </div>
       )}
