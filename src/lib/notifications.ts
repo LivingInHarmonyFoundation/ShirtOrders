@@ -22,6 +22,7 @@ interface OrderNotificationData {
   institution_type: string
   school_name?: string | null
   organization_name?: string | null
+  company_name?: string | null
   shirt_size: string
   quantity: number
   total_amount: number
@@ -49,9 +50,15 @@ export async function sendOrderNotifications(
 ) {
   if (!settings.sms_notifications_enabled || !settings.admin_phone) return
 
-  const institution = order.institution_type === 'school'
-    ? order.school_name || 'School'
-    : order.organization_name || 'Government'
+  // Label the order by its actual institution type — falling back to a readable
+  // category name when the entity-specific field isn't set.
+  const institution =
+    order.institution_type === 'school'          ? (order.school_name || 'School') :
+    order.institution_type === 'government'       ? (order.organization_name || 'Government') :
+    order.institution_type === 'private_company'  ? (order.company_name || 'Private Company') :
+    order.institution_type === 'personal'         ? 'Personal' :
+    order.institution_type === 'staff'            ? 'Staff' :
+    order.institution_type
 
   const total = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.total_amount)
   const style = order.catalog_item_name ? ` | ${order.catalog_item_name}` : ''
