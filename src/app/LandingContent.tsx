@@ -127,17 +127,6 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
 
             {/* Title */}
             <div className="text-center mb-10">
-              <div
-                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 mb-4 font-bold uppercase tracking-wider"
-                style={{
-                  backgroundColor: '#E5F2F0',
-                  color: '#00352F',
-                  border: '1px solid rgba(206,220,0,0.35)',
-                  fontSize: '10px',
-                }}
-              >
-                {t('landing', 'heroTag')}
-              </div>
               <h1 className="font-heading text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
                 {t('landing', 'chooseCampaign')}
               </h1>
@@ -156,14 +145,14 @@ export default function LandingContent({ catalog, missionBannerUrl, badgeUrl, ca
                     className="bg-white rounded-2xl border-2 overflow-hidden transition-all duration-200 hover:border-[#00352F]/40 hover:shadow-lg group"
                     style={{ borderColor: 'rgba(206,220,0,0.4)' }}
                   >
-                    {/* Banner */}
+                    {/* Banner — shown in full (no cropping) at its natural aspect ratio */}
                     {campaign.banner_url ? (
-                      <div className="relative w-full h-40 overflow-hidden">
-                        <Image
+                      <div className="w-full overflow-hidden bg-white">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                           src={campaign.banner_url}
                           alt={campaign.name}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="w-full h-auto block transition-transform duration-300 group-hover:scale-105"
                         />
                       </div>
                     ) : (
