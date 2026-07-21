@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ImagePlus, Trash2, Plus, Upload, X, Eye, EyeOff, Shirt, RotateCcw, Pencil } from 'lucide-react'
+import { ImagePlus, Trash2, Plus, Upload, X, Eye, EyeOff, Shirt, RotateCcw, Pencil, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import type { ShirtCatalogItem } from '@/types'
 
@@ -51,6 +51,8 @@ export default function CatalogPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [viewBack, setViewBack] = useState<Record<string, boolean>>({})
   const [uploadingBackId, setUploadingBackId] = useState<string | null>(null)
+  // Tracks an in-flight photo change in the edit form, keyed by `${itemId}::front|back`.
+  const [editImageBusy, setEditImageBusy] = useState<string | null>(null)
 
   // New item form
   const [name, setName] = useState('')
@@ -250,6 +252,33 @@ export default function CatalogPage() {
       toast.error('Failed to upload back image')
     } finally {
       setUploadingBackId(null)
+    }
+  }
+
+  /**
+   * handleItemImage — replace (file) or remove (null) an existing item's front/back photo.
+   * Uploads to the catalog upload endpoint when given a file, then PATCHes the item so the
+   * change is saved immediately (no separate Save click), mirroring handleAddBackImage.
+   */
+  const handleItemImage = async (item: ShirtCatalogItem, which: 'front' | 'back', file: File | null) => {
+    const field = which === 'front' ? 'image_url' : 'back_image_url'
+    const key = `${item.id}::${which}`
+    if (file && file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+    setEditImageBusy(key)
+    try {
+      const url = file ? await uploadImage(file) : null
+      const res = await fetch(`/api/admin/catalog/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: url }),
+      })
+      if (!res.ok) throw new Error()
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, [field]: url } : i))
+      toast.success(file ? 'Photo updated' : 'Photo removed')
+    } catch {
+      toast.error('Failed to update photo')
+    } finally {
+      setEditImageBusy(null)
     }
   }
 
@@ -608,6 +637,55 @@ export default function CatalogPage() {
                   {/* Inline edit panel */}
                   {editingItemId === item.id && (
                     <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+                      {/* Photos — replace / add / remove front and back images */}
+                      <div>
+                        <Label className="text-xs">Photos</Label>
+                        <div className="flex gap-4 mt-1.5">
+                          {(['front', 'back'] as const).map(which => {
+                            const url = which === 'front' ? item.image_url : item.back_image_url
+                            const busy = editImageBusy === `${item.id}::${which}`
+                            return (
+                              <div key={which} className="text-center">
+                                <p className="text-[10px] text-gray-400 mb-1 capitalize">{which}</p>
+                                <div className="relative w-[72px] h-[72px] rounded-lg overflow-hidden border bg-gray-50 flex items-center justify-center">
+                                  {url ? (
+                                    <Image src={url} alt={which} fill className="object-cover" />
+                                  ) : (
+                                    <Shirt className="w-5 h-5 text-gray-300" />
+                                  )}
+                                  {busy && (
+                                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                                      <Loader2 className="w-4 h-4 animate-spin text-[#00352F]" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-2 mt-1 justify-center">
+                                  <label className={`text-[10px] text-[#00352F] hover:underline ${busy ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
+                                    {url ? 'Replace' : 'Add'}
+                                    <input
+                                      type="file"
+                                      accept="image/jpeg,image/png,image/webp,image/gif"
+                                      className="hidden"
+                                      disabled={busy}
+                                      onChange={e => { const f = e.target.files?.[0]; if (f) handleItemImage(item, which, f); e.target.value = '' }}
+                                    />
+                                  </label>
+                                  {url && (
+                                    <button
+                                      type="button"
+                                      disabled={busy}
+                                      onClick={() => handleItemImage(item, which, null)}
+                                      className="text-[10px] text-red-500 hover:underline disabled:opacity-50"
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
                       <div>
                         <Label className="text-xs">Name</Label>
                         <Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1 h-8 text-sm" />
