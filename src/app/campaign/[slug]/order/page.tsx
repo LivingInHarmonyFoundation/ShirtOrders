@@ -286,7 +286,6 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
   const showCatalogPicker = catalog.length > 1
   const baseStep = (showCatalogPicker ? 1 : 0) + 1
 
-  const effectiveBannerUrl = campaign?.banner_url || fallbackSettings.banner_url || null
   const effectiveBadgeUrl = campaign?.badge_url || fallbackSettings.badge_url || null
   const logoSrc = effectiveBadgeUrl || '/logo.png'
 
@@ -413,25 +412,23 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
         </div>
       </header>
 
-      {effectiveBannerUrl && (
-        <div className="w-full max-h-48 overflow-hidden">
-          <Image
-            src={effectiveBannerUrl}
-            alt={campaign?.name ?? 'Campaign banner'}
-            width={0}
-            height={0}
-            sizes="100vw"
-            className="w-full h-auto object-cover max-h-48"
-          />
-        </div>
-      )}
-
       <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">{campaign?.name}</h1>
-          {campaign?.description && (
-            <p className="text-gray-500 mt-1" style={{ fontSize: '14px' }}>{campaign.description}</p>
-          )}
+        <div className="mb-6 flex items-start gap-4">
+          <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shadow-sm flex-shrink-0 bg-white">
+            <Image
+              src={effectiveBadgeUrl || logoSrc}
+              alt={campaign?.name ?? 'Badge'}
+              width={56}
+              height={56}
+              className="object-contain w-full h-full"
+            />
+          </div>
+          <div className="min-w-0">
+            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">{campaign?.name}</h1>
+            {campaign?.description && (
+              <p className="text-gray-500 mt-1" style={{ fontSize: '14px' }}>{campaign.description}</p>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
