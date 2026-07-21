@@ -341,7 +341,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden p-0.5">
-                <Image src={logoSrc} alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
+                <Image src="/logo.png" alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
               </div>
               <p className="font-semibold leading-none" style={{ color: '#00352F', fontSize: '13px' }}>
                 <span className="hidden sm:inline">Living in Harmony Foundation</span>
@@ -389,7 +389,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden p-0.5">
-              <Image src={logoSrc} alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
+              <Image src="/logo.png" alt="Living in Harmony Foundation" width={32} height={32} className="object-contain" />
             </div>
             <div>
               <p className="font-semibold leading-none" style={{ color: '#00352F', fontSize: '13px' }}>
