@@ -7,7 +7,7 @@
  * Key invariants:
  * - Requires an active, non-expired campaign; rejects otherwise.
  * - Duplicate-submission guard: blocks resubmission of the same email + first-item
- *   size + qty within a 10-minute window.
+ *   size + qty within a 2-minute window.
  * - Supports multi-item cart (`items` array) and legacy single-item fields for
  *   backwards compatibility; `items` takes precedence when present.
  * - `order_items` rows are bulk-inserted after the order row; insert failure is
@@ -220,8 +220,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Duplicate-submission guard: rejects if the same email + first-item size + qty
-    // was submitted within the last 10 minutes to prevent accidental double-orders.
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    // was submitted within the last 2 minutes. Short window so it catches accidental
+    // double-clicks / page-refresh resubmits without blocking a legitimate repeat order.
+    const dupWindowStart = new Date(Date.now() - 2 * 60 * 1000).toISOString()
     const firstItem = cartItems[0]
     const { data: existing } = await supabase
       .from('orders')
@@ -229,7 +230,7 @@ export async function POST(request: NextRequest) {
       .eq('email', data.email)
       .eq('shirt_size', firstItem.shirt_size)
       .eq('quantity', firstItem.quantity)
-      .gte('created_at', tenMinutesAgo)
+      .gte('created_at', dupWindowStart)
       .limit(1)
 
     if (existing && existing.length > 0) {
