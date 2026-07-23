@@ -8,8 +8,7 @@ import ShirtViewer from '@/components/shared/ShirtViewer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
 import { useT } from '@/contexts/LanguageContext'
-import { formatCurrency } from '@/lib/utils'
-import type { Campaign, AppSettings, ShirtCatalogItem } from '@/types'
+import type { Campaign, ShirtCatalogItem } from '@/types'
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -49,7 +48,6 @@ function AccentBar() {
 }
 
 function MinimalHeader({ logoSrc }: { logoSrc: string }) {
-  const t = useT()
   return (
     <header
       className="border-b"
@@ -90,7 +88,6 @@ export default function CampaignShowcasePage({
     badge_url: string | null
   }>({ banner_url: null, badge_url: null })
   const [loadState, setLoadState] = useState<'loading' | 'notfound' | 'ready'>('loading')
-  const [appSettings, setAppSettings] = useState<AppSettings | null>(null)
   const [catalog, setCatalog] = useState<ShirtCatalogItem[]>([])
   const [heroItem, setHeroItem] = useState<ShirtCatalogItem | null>(null)
 
@@ -113,11 +110,6 @@ export default function CampaignShowcasePage({
         setLoadState('ready')
       })
       .catch(() => setLoadState('notfound'))
-
-    fetch('/api/admin/settings')
-      .then(r => r.json())
-      .then(({ settings: s }) => { if (s) setAppSettings(s) })
-      .catch(() => {})
   }, [slug])
 
   // ─── Derived values ──────────────────────────────────────────
@@ -125,8 +117,6 @@ export default function CampaignShowcasePage({
   const effectiveBannerUrl = campaign?.banner_url || fallbackSettings.banner_url || null
   const effectiveBadgeUrl = campaign?.badge_url || fallbackSettings.badge_url || null
   const logoSrc = effectiveBadgeUrl || '/logo.png'
-  const globalPrice = appSettings?.shirt_price ?? 15
-  const itemPrice = (item: ShirtCatalogItem) => item.price ?? globalPrice
 
   // ─── Loading ─────────────────────────────────────────────────
 
@@ -326,7 +316,6 @@ export default function CampaignShowcasePage({
                 </div>
                 <div className="mt-4 text-center">
                   <p className="font-semibold text-gray-900">{displayItem.name}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(itemPrice(displayItem))} {t('order', 'each')}</p>
                 </div>
               </div>
             )}
@@ -347,7 +336,6 @@ export default function CampaignShowcasePage({
                 {/* Selected item name + price */}
                 <div className="text-center">
                   <p className="font-semibold text-gray-900">{displayItem.name}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">{formatCurrency(itemPrice(displayItem))} {t('order', 'each')}</p>
                 </div>
 
                 {/* Thumbnail scroll row */}

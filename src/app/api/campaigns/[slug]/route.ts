@@ -34,7 +34,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   // Fetch catalog items assigned to this campaign; fall back to all active items if none assigned
   const { data: assignedRows } = await admin
     .from('campaign_catalog_items')
-    .select('shirt_catalog(id, name, description, image_url, back_image_url, display_order, price, available_sizes)')
+    .select('shirt_catalog(id, name, description, image_url, back_image_url, display_order, price, available_sizes, size_prices)')
     .eq('campaign_id', campaign.id)
 
   let catalog_items = (assignedRows ?? [])
@@ -44,7 +44,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (catalog_items.length === 0) {
     const { data: all } = await admin
       .from('shirt_catalog')
-      .select('id, name, description, image_url, back_image_url, display_order, price, available_sizes')
+      .select('id, name, description, image_url, back_image_url, display_order, price, available_sizes, size_prices')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
       .order('created_at', { ascending: true })

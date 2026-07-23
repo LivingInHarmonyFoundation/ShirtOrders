@@ -40,17 +40,20 @@ async function uploadImage(file: File): Promise<string> {
 const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 /**
- * SizePriceGroups — edit per-size price overrides as grouped rows.
- * The base price already covers every size; here an admin can carve out a GROUP of
- * sizes that cost something different (e.g. XXL + XXXL at $15 when the base is $12),
- * instead of typing a price for every single size. Sizes left out stay at the base
- * price. `value` is the { size: price } map persisted as shirt_catalog.size_prices.
+ * PricingEditor — the single place to set an item's pricing.
+ * The admin sets one base price that applies to every size, then (optionally) carves
+ * out GROUPS of sizes that cost something different — e.g. XXL + XXXL at $15 when the
+ * base is $12 — instead of typing a price for every size. This is the only pricing
+ * control on the catalog form; there is no separate standalone price field.
+ * `basePrice` persists to shirt_catalog.price; `value` is the { size: price } override
+ * map persisted to shirt_catalog.size_prices (sizes left out use the base price).
  */
 function SizePriceGroups({
-  sizes, basePrice, value, onChange, compact = false,
+  sizes, basePrice, onBasePriceChange, value, onChange, compact = false,
 }: {
   sizes: string[]
   basePrice: string
+  onBasePriceChange: (v: string) => void
   value: Record<string, number>
   onChange: (next: Record<string, number>) => void
   compact?: boolean
@@ -70,6 +73,7 @@ function SizePriceGroups({
 
   const priceNum = Number(groupPrice)
   const canAdd = pick.length > 0 && Number.isFinite(priceNum) && priceNum > 0
+  const hasBase = basePrice.trim() !== '' && Number(basePrice) > 0
 
   const addGroup = () => {
     if (!canAdd) return
@@ -89,14 +93,25 @@ function SizePriceGroups({
 
   return (
     <div>
-      <Label className={compact ? 'text-xs' : undefined}>
+      {/* Base price — applies to every size unless overridden by a group below */}
+      <Label className={compact ? 'text-xs' : undefined}>Price</Label>
+      <div className={`relative mt-1 ${compact ? 'max-w-[150px]' : 'max-w-[180px]'}`}>
+        <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 ${compact ? 'text-xs' : 'text-sm'}`}>$</span>
+        <Input
+          type="number" min="0" step="0.01" placeholder="12.00"
+          value={basePrice}
+          onChange={e => onBasePriceChange(e.target.value)}
+          className={`pl-7 ${compact ? 'h-8 text-sm' : ''}`}
+        />
+      </div>
+      <p className={`text-gray-400 mt-1 ${compact ? 'text-[10px]' : 'text-xs'}`}>
+        Applies to every size. Set a different price below only for sizes that cost more or less.
+      </p>
+
+      {/* Different price for specific sizes */}
+      <Label className={`block mt-3 ${compact ? 'text-xs' : ''}`}>
         Different price for specific sizes <span className="text-gray-400 font-normal">(optional)</span>
       </Label>
-      <p className={`text-gray-400 mt-0.5 ${compact ? 'text-[10px]' : 'text-xs'}`}>
-        {basePrice.trim() !== ''
-          ? <>Base price <span className="font-semibold text-gray-500">${Number(basePrice).toFixed(2)}</span> applies to every size. Add a group only for sizes that cost more or less.</>
-          : <>Set a base price above first; then group the sizes that cost something different.</>}
-      </p>
 
       {/* Existing override groups */}
       {groups.length > 0 && (
@@ -123,7 +138,9 @@ function SizePriceGroups({
       )}
 
       {/* Add a new group */}
-      {sizes.length > 0 ? (
+      {!hasBase ? (
+        <p className={`text-gray-400 mt-2 ${compact ? 'text-[10px]' : 'text-xs'}`}>Set a price above first, then group the sizes that cost something different.</p>
+      ) : sizes.length > 0 ? (
         unpriced.length > 0 ? (
           <div className="mt-2 rounded-lg border border-dashed border-gray-200 p-2.5">
             <div className="flex flex-wrap gap-1.5 mb-2">
@@ -529,25 +546,6 @@ export default function CatalogPage() {
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="max-w-[180px]">
-                <Label htmlFor="item-price">Price <span className="text-gray-400 font-normal">(optional)</span></Label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                  <Input
-                    id="item-price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="15.00"
-                    value={newPrice}
-                    onChange={e => setNewPrice(e.target.value)}
-                    className="pl-7"
-                    disabled={uploading}
-                  />
-                </div>
-              </div>
-
               {/* Available sizes */}
               <div>
                 <Label>Available Sizes <span className="text-gray-400 font-normal">(optional)</span></Label>
@@ -612,10 +610,11 @@ export default function CatalogPage() {
                 </div>
               </div>
 
-              {/* Per-size price overrides */}
+              {/* Pricing — base price + optional per-size groups (single control) */}
               <SizePriceGroups
                 sizes={newSizes.length > 0 ? newSizes : PRESET_SIZES}
                 basePrice={newPrice}
+                onBasePriceChange={setNewPrice}
                 value={newSizePrices}
                 onChange={setNewSizePrices}
               />
@@ -855,18 +854,6 @@ export default function CatalogPage() {
                         <Textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} className="mt-1 text-sm resize-none" rows={2} />
                       </div>
                       <div>
-                        <Label className="text-xs">Price <span className="text-gray-400 font-normal">(optional)</span></Label>
-                        <div className="relative mt-1">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
-                          <Input
-                            type="number" min="0" step="0.01" placeholder="15.00"
-                            value={editForm.price}
-                            onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
-                            className="pl-6 h-8 text-sm"
-                          />
-                        </div>
-                      </div>
-                      <div>
                         <Label className="text-xs">Sizes <span className="text-gray-400 font-normal">(optional)</span></Label>
                         <div className="flex flex-wrap gap-1.5 mt-1.5 mb-1.5">
                           {PRESET_SIZES.map(size => (
@@ -930,6 +917,7 @@ export default function CatalogPage() {
                       <SizePriceGroups
                         sizes={editForm.available_sizes.length > 0 ? editForm.available_sizes : PRESET_SIZES}
                         basePrice={editForm.price}
+                        onBasePriceChange={v => setEditForm(f => ({ ...f, price: v }))}
                         value={editForm.size_prices}
                         onChange={sp => setEditForm(f => ({ ...f, size_prices: sp }))}
                         compact
