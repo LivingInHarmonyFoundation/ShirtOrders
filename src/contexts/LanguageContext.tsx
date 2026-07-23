@@ -5,8 +5,8 @@
  *
  * Key invariants:
  * - Selected language is persisted to localStorage under the key `lih_lang`.
- * - Initial render defaults to 'en'; the stored preference is applied in a
- *   useEffect, so the first render is always English (avoids SSR mismatch).
+ * - Initial render defaults to 'es'; the stored preference is applied in a
+ *   useEffect, so the first render is always Spanish (avoids SSR mismatch).
  * - useT(section, key) falls back to the English value if the key is missing
  *   in the active language, then returns the raw key string if missing in
  *   both languages.
@@ -37,7 +37,7 @@ const LanguageContext = createContext<LanguageContextType | null>(null)
  * on mount and writes it back whenever the user switches language.
  */
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('en')
+  const [lang, setLangState] = useState<Lang>('es')
 
   useEffect(() => {
     const stored = localStorage.getItem('lih_lang')
