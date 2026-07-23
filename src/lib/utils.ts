@@ -178,3 +178,21 @@ export function buildOrderCsvRow(order: Record<string, unknown>): string[] {
     String(order.admin_notes ?? ''),
   ]
 }
+
+/**
+ * sanitizeSizePrices — normalize a per-size price override map from untrusted input.
+ * Keeps only entries with a non-empty size key and a positive finite price (rounded
+ * to cents); everything else is dropped. Returns {} for non-object input.
+ * Used by the catalog admin routes before persisting shirt_catalog.size_prices.
+ */
+export function sanitizeSizePrices(input: unknown): Record<string, number> {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return {}
+  const out: Record<string, number> = {}
+  for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+    const n = Number(v)
+    if (typeof k === 'string' && k.trim() && Number.isFinite(n) && n > 0) {
+      out[k] = Math.round(n * 100) / 100
+    }
+  }
+  return out
+}

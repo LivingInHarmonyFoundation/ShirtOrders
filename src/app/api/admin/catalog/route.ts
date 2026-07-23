@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/supabase/require-role'
+import { sanitizeSizePrices } from '@/lib/utils'
 
 // ─── GET /api/admin/catalog ───────────────────────────────────
 
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   // ─── Input Validation ────────────────────────────────────────
-  const { name, description, image_url, back_image_url, display_order, price, available_sizes } = await request.json()
+  const { name, description, image_url, back_image_url, display_order, price, available_sizes, size_prices } = await request.json()
   if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
   // ─── Insert ──────────────────────────────────────────────────
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
       display_order: display_order ?? 0,
       price: price != null ? Number(price) : null,
       available_sizes: available_sizes?.length > 0 ? available_sizes : null,
+      size_prices: sanitizeSizePrices(size_prices),
     })
     .select()
     .single()

@@ -84,7 +84,13 @@ export default function OrderPage() {
 
   const watchedSize = watch('shirt_size')
   const watchedQty = watch('quantity')
-  const unitPrice = selectedCatalogItem?.price ?? settings?.shirt_price ?? 15
+  // Price follows the selected size: a per-size override (size_prices) wins, then the
+  // item's base price, then the global shirt_price. Mirrors resolvePrice server-side.
+  const unitPrice =
+    (watchedSize ? selectedCatalogItem?.size_prices?.[watchedSize] : undefined)
+    ?? selectedCatalogItem?.price
+    ?? settings?.shirt_price
+    ?? 15
   const allSizes: string[] = selectedCatalogItem?.available_sizes ?? settings?.available_sizes ?? ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const itemInventory = inventoryRows.filter(r =>
     selectedCatalogItem

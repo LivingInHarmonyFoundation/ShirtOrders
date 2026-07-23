@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/supabase/require-role'
+import { sanitizeSizePrices } from '@/lib/utils'
 
 // ─── PATCH /api/admin/catalog/[id] ───────────────────────────
 
@@ -32,11 +33,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // ─── Input Validation & Field Allowlist ──────────────────────
   const { id } = await params
   const body = await request.json()
-  const allowed = ['name', 'description', 'image_url', 'back_image_url', 'display_order', 'is_active', 'price', 'available_sizes']
+  const allowed = ['name', 'description', 'image_url', 'back_image_url', 'display_order', 'is_active', 'price', 'available_sizes', 'size_prices']
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]
   }
+  // size_prices is untrusted JSON — normalize to a clean { size: price } map before persisting
+  if ('size_prices' in updates) updates.size_prices = sanitizeSizePrices(updates.size_prices)
 
   // ─── Update ──────────────────────────────────────────────────
   // createAdminClient() bypasses RLS — required to write catalog rows

@@ -310,6 +310,8 @@ export interface ShirtCatalogItem {
   is_active: boolean
   price?: number | null
   available_sizes?: string[] | null
+  /** Per-size price overrides, keyed by size: { "XXL": 15 }. Sizes absent use `price`. */
+  size_prices?: Record<string, number> | null
   created_at: string
   updated_at: string
 }

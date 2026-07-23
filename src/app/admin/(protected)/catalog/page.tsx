@@ -37,6 +37,144 @@ async function uploadImage(file: File): Promise<string> {
   return json.url as string
 }
 
+const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+
+/**
+ * SizePriceGroups — edit per-size price overrides as grouped rows.
+ * The base price already covers every size; here an admin can carve out a GROUP of
+ * sizes that cost something different (e.g. XXL + XXXL at $15 when the base is $12),
+ * instead of typing a price for every single size. Sizes left out stay at the base
+ * price. `value` is the { size: price } map persisted as shirt_catalog.size_prices.
+ */
+function SizePriceGroups({
+  sizes, basePrice, value, onChange, compact = false,
+}: {
+  sizes: string[]
+  basePrice: string
+  value: Record<string, number>
+  onChange: (next: Record<string, number>) => void
+  compact?: boolean
+}) {
+  const [pick, setPick] = useState<string[]>([])
+  const [groupPrice, setGroupPrice] = useState('')
+
+  // Existing overrides, grouped by identical price → one row per price.
+  const byPrice: Record<string, string[]> = {}
+  for (const s of sizes) if (value[s] != null) (byPrice[String(value[s])] ||= []).push(s)
+  // Defensive: surface any override whose size is no longer in the available list.
+  for (const [s, p] of Object.entries(value)) if (!sizes.includes(s)) (byPrice[String(p)] ||= []).push(s)
+  const groups = Object.entries(byPrice).map(([price, ss]) => ({ price: Number(price), sizes: ss }))
+
+  // Sizes still at the base price — the only ones offered when building a new group.
+  const unpriced = sizes.filter(s => value[s] == null)
+
+  const priceNum = Number(groupPrice)
+  const canAdd = pick.length > 0 && Number.isFinite(priceNum) && priceNum > 0
+
+  const addGroup = () => {
+    if (!canAdd) return
+    const next = { ...value }
+    for (const s of pick) next[s] = Math.round(priceNum * 100) / 100
+    onChange(next)
+    setPick([]); setGroupPrice('')
+  }
+
+  const removeGroup = (groupSizes: string[]) => {
+    const next = { ...value }
+    for (const s of groupSizes) delete next[s]
+    onChange(next)
+  }
+
+  const chip = compact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm'
+
+  return (
+    <div>
+      <Label className={compact ? 'text-xs' : undefined}>
+        Different price for specific sizes <span className="text-gray-400 font-normal">(optional)</span>
+      </Label>
+      <p className={`text-gray-400 mt-0.5 ${compact ? 'text-[10px]' : 'text-xs'}`}>
+        {basePrice.trim() !== ''
+          ? <>Base price <span className="font-semibold text-gray-500">${Number(basePrice).toFixed(2)}</span> applies to every size. Add a group only for sizes that cost more or less.</>
+          : <>Set a base price above first; then group the sizes that cost something different.</>}
+      </p>
+
+      {/* Existing override groups */}
+      {groups.length > 0 && (
+        <div className="flex flex-col gap-1.5 mt-2">
+          {groups.map(g => (
+            <div key={g.price} className="flex items-center gap-2 flex-wrap bg-[#E5F2F0]/50 border border-[#CEDC00]/30 rounded-lg px-2.5 py-1.5">
+              <div className="flex flex-wrap gap-1">
+                {g.sizes.map(s => (
+                  <span key={s} className="text-[11px] font-medium px-1.5 py-0.5 bg-white border border-gray-200 text-gray-700 rounded">{s}</span>
+                ))}
+              </div>
+              <span className="text-sm font-semibold text-[#00352F]">${g.price.toFixed(2)}</span>
+              <button
+                type="button"
+                onClick={() => removeGroup(g.sizes)}
+                className="ml-auto text-gray-400 hover:text-red-500 transition-colors"
+                title="Remove this price group"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add a new group */}
+      {sizes.length > 0 ? (
+        unpriced.length > 0 ? (
+          <div className="mt-2 rounded-lg border border-dashed border-gray-200 p-2.5">
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {unpriced.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setPick(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s])}
+                  className={`rounded-lg font-medium border-2 transition-colors ${chip} ${
+                    pick.includes(s)
+                      ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F]'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                <Input
+                  type="number" min="0" step="0.01" placeholder="15.00"
+                  value={groupPrice}
+                  onChange={e => setGroupPrice(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addGroup() } }}
+                  className={`pl-6 w-[110px] ${compact ? 'h-7 text-xs' : 'h-8 text-sm'}`}
+                />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!canAdd}
+                onClick={addGroup}
+                className={compact ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-xs'}
+              >
+                Set price for {pick.length || ''} size{pick.length === 1 ? '' : 's'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className={`text-gray-400 mt-2 ${compact ? 'text-[10px]' : 'text-xs'}`}>Every size has a price group.</p>
+        )
+      ) : (
+        <p className={`text-gray-400 mt-2 ${compact ? 'text-[10px]' : 'text-xs'}`}>Choose available sizes above to price them individually.</p>
+      )}
+    </div>
+  )
+}
+
 /**
  * CatalogPage — manages the shirt catalog displayed on the public home page.
  * Each item has optional front and back images; both can be uploaded during creation
@@ -59,6 +197,7 @@ export default function CatalogPage() {
   const [description, setDescription] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newSizes, setNewSizes] = useState<string[]>([])
+  const [newSizePrices, setNewSizePrices] = useState<Record<string, number>>({})
   const [newCustomSizeInput, setNewCustomSizeInput] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -71,11 +210,9 @@ export default function CatalogPage() {
 
   // Inline edit per item
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', available_sizes: [] as string[] })
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', available_sizes: [] as string[], size_prices: {} as Record<string, number> })
   const [editCustomSizeInput, setEditCustomSizeInput] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
-
-  const PRESET_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
   const openEdit = (item: ShirtCatalogItem) => {
     setEditingItemId(item.id)
@@ -85,6 +222,7 @@ export default function CatalogPage() {
       description: item.description ?? '',
       price: item.price != null ? String(item.price) : '',
       available_sizes: item.available_sizes ?? [],
+      size_prices: item.size_prices ?? {},
     })
   }
 
@@ -100,6 +238,7 @@ export default function CatalogPage() {
           description: editForm.description.trim() || null,
           price: editForm.price !== '' ? Number(editForm.price) : null,
           available_sizes: editForm.available_sizes.length > 0 ? editForm.available_sizes : null,
+          size_prices: editForm.size_prices,
         }),
       })
       const json = await res.json()
@@ -186,6 +325,7 @@ export default function CatalogPage() {
           display_order: items.length,
           price: newPrice !== '' ? Number(newPrice) : null,
           available_sizes: newSizes.length > 0 ? newSizes : null,
+          size_prices: newSizePrices,
         }),
       })
       const json = await res.json()
@@ -193,7 +333,7 @@ export default function CatalogPage() {
 
       toast.success(`"${name}" added to catalog`)
       setItems(prev => [...prev, json.item])
-      setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); setNewCustomSizeInput(''); clearImage(); clearBackImage()
+      setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); setNewSizePrices({}); setNewCustomSizeInput(''); clearImage(); clearBackImage()
       setAdding(false)
     } catch {
       toast.error('Something went wrong')
@@ -472,11 +612,19 @@ export default function CatalogPage() {
                 </div>
               </div>
 
+              {/* Per-size price overrides */}
+              <SizePriceGroups
+                sizes={newSizes.length > 0 ? newSizes : PRESET_SIZES}
+                basePrice={newPrice}
+                value={newSizePrices}
+                onChange={setNewSizePrices}
+              />
+
               <div className="flex gap-3">
                 <Button type="submit" disabled={uploading || !name.trim()} className="text-white" style={{ backgroundColor: '#00352F' }}>
                   {uploading ? t('admin', 'addingShirt') : t('admin', 'addToCatalog')}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => { setAdding(false); setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); setNewCustomSizeInput(''); clearImage(); clearBackImage() }} disabled={uploading}>
+                <Button type="button" variant="outline" onClick={() => { setAdding(false); setName(''); setDescription(''); setNewPrice(''); setNewSizes([]); setNewSizePrices({}); setNewCustomSizeInput(''); clearImage(); clearBackImage() }} disabled={uploading}>
                   {t('admin', 'cancelAction')}
                 </Button>
               </div>
@@ -623,6 +771,18 @@ export default function CatalogPage() {
                         ${item.price.toFixed(2)}
                       </span>
                     )}
+                    {/* Per-size overrides, grouped by identical price (e.g. "XXL · XXXL $15") */}
+                    {item.size_prices && Object.keys(item.size_prices).length > 0 &&
+                      Object.entries(
+                        Object.entries(item.size_prices).reduce((acc, [s, p]) => {
+                          (acc[String(p)] ||= []).push(s)
+                          return acc
+                        }, {} as Record<string, string[]>)
+                      ).map(([price, ss]) => (
+                        <span key={price} className="text-xs font-semibold px-2 py-0.5 rounded-md border border-[#CEDC00]/50" style={{ backgroundColor: '#F7FAD9', color: '#00352F' }}>
+                          {ss.join(' · ')} ${Number(price).toFixed(2)}
+                        </span>
+                      ))}
                     {item.available_sizes && item.available_sizes.length > 0 && item.available_sizes.map(s => (
                       <span key={s} className="text-[10px] font-medium px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
                         {s}
@@ -767,6 +927,13 @@ export default function CatalogPage() {
                           </Button>
                         </div>
                       </div>
+                      <SizePriceGroups
+                        sizes={editForm.available_sizes.length > 0 ? editForm.available_sizes : PRESET_SIZES}
+                        basePrice={editForm.price}
+                        value={editForm.size_prices}
+                        onChange={sp => setEditForm(f => ({ ...f, size_prices: sp }))}
+                        compact
+                      />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={handleSaveEdit} disabled={savingEdit || !editForm.name.trim()} className="text-white text-xs h-7" style={{ backgroundColor: '#00352F' }}>
                           {savingEdit ? 'Saving…' : 'Save'}

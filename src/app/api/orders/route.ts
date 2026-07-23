@@ -177,11 +177,11 @@ export async function POST(request: NextRequest) {
 
     // Fetch catalog items for per-item price and size validation
     const catalogItemIds = [...new Set(cartItems.map(i => i.catalog_item_id).filter(Boolean))]
-    const catalogMap: Record<string, { price: number | null; available_sizes: string[] | null }> = {}
+    const catalogMap: Record<string, { price: number | null; available_sizes: string[] | null; size_prices: Record<string, number> | null }> = {}
     if (catalogItemIds.length > 0) {
       const { data: catalogRows } = await supabase
         .from('shirt_catalog')
-        .select('id, price, available_sizes')
+        .select('id, price, available_sizes, size_prices')
         .in('id', catalogItemIds)
       for (const row of catalogRows ?? []) catalogMap[row.id] = row
     }
@@ -278,17 +278,21 @@ export async function POST(request: NextRequest) {
       orderAllowedPaymentMethods = orderAllowedPaymentMethods.filter(m => m !== 'cash')
     }
 
-    // Resolve per-item price (fallback to global if item has no price set)
-    const resolvePrice = (catalogItemId: string | null | undefined) => {
+    // Resolve per-item price by size. A catalog item may set per-size overrides
+    // (size_prices), e.g. { "XXL": 15 }; sizes without an override use the item's
+    // base price, then the global shirt_price. Priced server-side so a tampered
+    // client cart cannot dictate the amount charged.
+    const resolvePrice = (catalogItemId: string | null | undefined, size: string | null | undefined) => {
       const catalogItem = catalogItemId ? catalogMap[catalogItemId] : null
-      return catalogItem?.price ?? settings.shirt_price
+      const sizeOverride = size ? catalogItem?.size_prices?.[size] : undefined
+      return sizeOverride ?? catalogItem?.price ?? settings.shirt_price
     }
 
-    const unit_price = resolvePrice(cartItems[0]?.catalog_item_id)
+    const unit_price = resolvePrice(cartItems[0]?.catalog_item_id, cartItems[0]?.shirt_size)
 
     // Compute totals from cart items using per-item prices
     const total_quantity = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-    const subtotal = cartItems.reduce((sum, item) => sum + item.quantity * resolvePrice(item.catalog_item_id), 0)
+    const subtotal = cartItems.reduce((sum, item) => sum + item.quantity * resolvePrice(item.catalog_item_id, item.shirt_size), 0)
 
     // Apply each configured fee against the subtotal (not cumulative).
     // A fee with applies_to null or [] applies to every institution type;
@@ -383,7 +387,7 @@ export async function POST(request: NextRequest) {
 
     // Bulk-insert into order_items
     const orderItemsPayload = cartItems.map(item => {
-      const itemPrice = resolvePrice(item.catalog_item_id)
+      const itemPrice = resolvePrice(item.catalog_item_id, item.shirt_size)
       return {
         order_id: order.id,
         catalog_item_id: item.catalog_item_id || null,
