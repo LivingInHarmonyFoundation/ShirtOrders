@@ -27,7 +27,7 @@ const PUBLIC_FIELDS = [
   'manual_payment_enabled', 'cash_enabled',
   'cash_enabled_school', 'cash_enabled_government', 'cash_enabled_private_company',
   'personal_allowed_payment_methods', 'confirmation_message',
-  'qr_tagline', 'order_fees',
+  'qr_tagline', 'order_fees', 'size_groups',
 ]
 
 const VALID_INSTITUTION_TYPES = ['school', 'government', 'personal', 'private_company', 'staff'] as const
@@ -49,6 +49,15 @@ const OrderFeeSchema = z.object({
   fee => fee.type !== 'percentage' || fee.value <= 100,
   { message: 'Percentage fee value cannot exceed 100' },
 )
+
+/**
+ * Validates a size category before it is stored in `app_settings.size_groups`.
+ * Customers see the category name verbatim, so it is length-capped.
+ */
+const SizeGroupSchema = z.object({
+  name:  z.string().trim().min(1).max(40),
+  sizes: z.array(z.string().trim().min(1).max(30)).max(60),
+})
 
 // ─── GET /api/admin/settings ──────────────────────────────────
 
@@ -108,7 +117,7 @@ export async function PATCH(request: NextRequest) {
     'cash_enabled_school', 'cash_enabled_government', 'cash_enabled_private_company',
     'personal_allowed_payment_methods', 'confirmation_message',
     'admin_phone', 'sms_notifications_enabled', 'qr_tagline', 'order_fees',
-    'personal_shipping_pr', 'personal_shipping_other',
+    'personal_shipping_pr', 'personal_shipping_other', 'size_groups',
   ]
 
   const updateData: Record<string, unknown> = {}
@@ -136,6 +145,20 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid order_fees' }, { status: 400 })
     }
     updateData.order_fees = result.data
+  }
+
+  // size_groups: validate structure, then keep each size in at most ONE group
+  // (first occurrence wins) and drop groups left empty — customers pick a
+  // category first, so an ambiguous or empty category would dead-end the form.
+  if ('size_groups' in updateData) {
+    const result = z.array(SizeGroupSchema).max(12).safeParse(updateData.size_groups)
+    if (!result.success) {
+      return NextResponse.json({ error: 'Invalid size_groups' }, { status: 400 })
+    }
+    const seen = new Set<string>()
+    updateData.size_groups = result.data
+      .map(g => ({ name: g.name, sizes: g.sizes.filter(s => !seen.has(s) && !!seen.add(s)) }))
+      .filter(g => g.sizes.length > 0)
   }
 
   // admin_phone: must be a valid ntfy.sh topic name (alphanumeric, hyphens, underscores).

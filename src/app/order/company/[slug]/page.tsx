@@ -28,6 +28,7 @@ import { Briefcase, Loader2, AlertCircle, CheckCircle2, ShoppingBag, ShoppingCar
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import Image from 'next/image'
 import ShirtViewer from '@/components/shared/ShirtViewer'
+import SizePicker from '@/components/order/SizePicker'
 import CartIcon from '@/components/shared/CartIcon'
 import CartDrawer from '@/components/shared/CartDrawer'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
@@ -370,25 +371,12 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
               )}
               <div>
                 <Label>{t('order', 'shirtSize')} *</Label>
-                <div className="flex flex-wrap gap-2 mt-2" role="radiogroup" aria-label={t('order', 'shirtSize')}>
-                  {sizes.map(size => (
-                    <button
-                      key={size}
-                      type="button"
-                      role="radio"
-                      aria-checked={watchedSize === size}
-                      onClick={() => setValue('shirt_size', size, { shouldValidate: true })}
-                      className={cn(
-                        'px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all',
-                        watchedSize === size
-                          ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F]'
-                          : 'border-gray-200 hover:border-[#00352F]/30 text-gray-700'
-                      )}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
+                <SizePicker
+                  sizes={sizes}
+                  selectedSize={watchedSize}
+                  onSelectSize={size => setValue('shirt_size', size, { shouldValidate: true })}
+                  sizeGroups={settings?.size_groups ?? null}
+                />
                 {errors.shirt_size && <p role="alert" className="text-red-600 text-xs mt-1">{errors.shirt_size.message}</p>}
               </div>
               <div>

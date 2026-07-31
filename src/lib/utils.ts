@@ -15,7 +15,7 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { format, parseISO } from 'date-fns'
-import type { PaymentStatus, OrderStatus, DeliveryStatus } from '@/types'
+import type { PaymentStatus, OrderStatus, DeliveryStatus, SizeGroup } from '@/types'
 
 // ─── Tailwind Class Utility ───────────────────────────────────
 
@@ -195,4 +195,50 @@ export function sanitizeSizePrices(input: unknown): Record<string, number> {
     }
   }
   return out
+}
+
+// ─── Size Categories ──────────────────────────────────────────
+
+/**
+ * deriveDefaultSizeGroups — build sensible size categories from raw size names
+ * when the admin hasn't configured app_settings.size_groups. Pattern-matches
+ * each size into Niños (KIDS/NIÑ/TODDLER…), Jóvenes (YOUTH/JOVEN/JR) or Adultos
+ * (everything else). Groups with no sizes are omitted; order is Adultos,
+ * Jóvenes, Niños. Names are the Spanish defaults the admin can override.
+ */
+export function deriveDefaultSizeGroups(sizes: string[]): SizeGroup[] {
+  const kids: string[] = []
+  const youth: string[] = []
+  const adults: string[] = []
+  for (const s of sizes) {
+    const u = s.toUpperCase()
+    if (/KID|NI[ÑN]|TODDLER|INFANT|BEB/.test(u)) kids.push(s)
+    else if (/YOUTH|JOVEN|JUVENIL|\bJR\b/.test(u)) youth.push(s)
+    else adults.push(s)
+  }
+  const groups: SizeGroup[] = []
+  if (adults.length) groups.push({ name: 'Adultos', sizes: adults })
+  if (youth.length) groups.push({ name: 'Jóvenes', sizes: youth })
+  if (kids.length) groups.push({ name: 'Niños', sizes: kids })
+  return groups
+}
+
+/**
+ * sortSizesForDisplay — order size names the way people expect: numeric ranges
+ * ascending (2-4, 6-8, 10-12…), then lettered sizes XS→XXXL (a YOUTH/other
+ * prefix is ignored for ranking), then anything unrecognized alphabetically.
+ * Pure display ordering — never reorders stored data.
+ */
+export function sortSizesForDisplay(sizes: string[]): string[] {
+  const LETTER_RANK: Record<string, number> = { XXS: 0, XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, XXXL: 7, XXXXL: 8 }
+  const rank = (raw: string): number => {
+    const u = raw.trim().toUpperCase()
+    const num = u.match(/^(\d+)/)
+    if (num) return 100 + parseInt(num[1], 10)
+    for (const token of u.split(/[\s-]+/)) {
+      if (token in LETTER_RANK) return 200 + LETTER_RANK[token]
+    }
+    return 300
+  }
+  return [...sizes].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
 }

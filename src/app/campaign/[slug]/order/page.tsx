@@ -511,6 +511,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
             selectedSize={watchedSize}
             onSelectSize={size => setValue('shirt_size', size, { shouldValidate: true })}
             sizeError={errors.shirt_size?.message}
+            sizeGroups={settings?.size_groups ?? null}
             quantityReg={register('quantity', { valueAsNumber: true })}
             quantityError={errors.quantity?.message}
             notesReg={register('notes')}

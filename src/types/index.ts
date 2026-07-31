@@ -175,6 +175,21 @@ export interface DiscountCode {
   times_used?: number
 }
 
+// ─── Size Categories ──────────────────────────────────────────
+
+/**
+ * SizeGroup — an admin-defined size category shown to customers as a first-step
+ * box (e.g. "Adultos", "Jóvenes", "Niños") before the individual size chips.
+ * Stored in app_settings.size_groups. A size belongs to at most one group;
+ * sizes in no group appear under an automatic "Other" category. When no groups
+ * are configured, sensible defaults are derived from the size names
+ * (see deriveDefaultSizeGroups in lib/utils).
+ */
+export interface SizeGroup {
+  name: string
+  sizes: string[]
+}
+
 // ─── Application Settings ─────────────────────────────────────
 
 /**
@@ -210,6 +225,8 @@ export interface AppSettings {
   /** Personal-order shipping, chosen by delivery ZIP: PR (00600–00999) vs off-island. */
   personal_shipping_pr: number
   personal_shipping_other: number
+  /** Admin-defined size categories for the order form; empty → defaults derived from size names. */
+  size_groups?: SizeGroup[] | null
   admin_phone: string | null
   sms_notifications_enabled: boolean
   created_at: string

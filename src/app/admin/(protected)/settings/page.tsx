@@ -22,8 +22,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users } from 'lucide-react'
-import type { AppSettings, OrderFee, InstitutionType } from '@/types'
+import { Save, Loader2, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users, Ruler, X } from 'lucide-react'
+import type { AppSettings, OrderFee, InstitutionType, SizeGroup } from '@/types'
+import { deriveDefaultSizeGroups, sortSizesForDisplay } from '@/lib/utils'
 import { useRole } from '@/components/admin/role-provider'
 import { useT } from '@/contexts/LanguageContext'
 
@@ -58,6 +59,10 @@ export default function SettingsPage() {
 
   // Order fees
   const [orderFees, setOrderFees] = useState<OrderFee[]>([])
+  // Size categories: the customer-facing grouping of sizes. `sizePool` is every
+  // size the app knows about (global list + all catalog items' sizes).
+  const [sizeGroups, setSizeGroups] = useState<SizeGroup[]>([])
+  const [sizePool, setSizePool] = useState<string[]>([])
   const [newFeeName, setNewFeeName] = useState('')
   const [newFeeType, setNewFeeType] = useState<'percentage' | 'fixed'>('percentage')
   const [newFeeValue, setNewFeeValue] = useState('')
@@ -66,9 +71,22 @@ export default function SettingsPage() {
   // ── Effects ──
 
   useEffect(() => {
-    fetch('/api/admin/settings')
-      .then(r => r.json())
-      .then(({ settings }) => {
+    Promise.all([
+      fetch('/api/admin/settings').then(r => r.json()),
+      fetch('/api/admin/catalog').then(r => r.json()).catch(() => ({ items: [] })),
+    ])
+      .then(([{ settings }, { items }]) => {
+        // Pool = global sizes + every catalog item's sizes + already-grouped sizes.
+        const pool: string[] = []
+        for (const s of settings?.available_sizes ?? []) if (!pool.includes(s)) pool.push(s)
+        for (const item of items ?? []) for (const s of item.available_sizes ?? []) if (!pool.includes(s)) pool.push(s)
+        for (const g of settings?.size_groups ?? []) for (const s of g.sizes) if (!pool.includes(s)) pool.push(s)
+        setSizePool(pool)
+        // No categories saved yet → prefill with the same defaults customers see,
+        // so the admin edits the effective grouping rather than starting blank.
+        setSizeGroups(
+          settings?.size_groups?.length ? settings.size_groups : deriveDefaultSizeGroups(pool)
+        )
         if (settings) {
           setSettings(settings)
           setSchoolEnabled(settings.school_orders_enabled ?? true)
@@ -120,6 +138,29 @@ export default function SettingsPage() {
     setOrderFees(prev => prev.filter(f => f.id !== id))
   }
 
+  // ── Size-category handlers ──
+  // A size lives in at most one category: toggling it into a group removes it
+  // from every other group; toggling it off leaves it unassigned ("Other").
+  const toggleGroupSize = (groupIndex: number, size: string) => {
+    setSizeGroups(prev => prev.map((g, i) => {
+      if (i === groupIndex) {
+        return g.sizes.includes(size)
+          ? { ...g, sizes: g.sizes.filter(s => s !== size) }
+          : { ...g, sizes: [...g.sizes, size] }
+      }
+      return { ...g, sizes: g.sizes.filter(s => s !== size) }
+    }))
+  }
+
+  const renameGroup = (groupIndex: number, name: string) => {
+    setSizeGroups(prev => prev.map((g, i) => (i === groupIndex ? { ...g, name } : g)))
+  }
+
+  const addGroup = () => setSizeGroups(prev => [...prev, { name: '', sizes: [] }])
+
+  const removeGroup = (groupIndex: number) =>
+    setSizeGroups(prev => prev.filter((_, i) => i !== groupIndex))
+
   const handleSave = async () => {
     setSaving(true)
     try {
@@ -141,6 +182,9 @@ export default function SettingsPage() {
           admin_phone: adminPhone || null,
           sms_notifications_enabled: smsNotifications,
           order_fees: orderFees,
+          size_groups: sizeGroups
+            .map(g => ({ name: g.name.trim(), sizes: g.sizes }))
+            .filter(g => g.name && g.sizes.length > 0),
         }),
       })
       if (res.ok) {
@@ -174,6 +218,74 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin', 'settingsTitle')}</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{t('admin', 'settingsSubtitle')}</p>
       </div>
+
+      {/* Size Categories */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Ruler className="w-4 h-4" /> {t('admin', 'sizeGroupsTitle')}
+          </CardTitle>
+          <CardDescription>{t('admin', 'sizeGroupsDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {sizeGroups.map((group, gi) => (
+            <div key={gi} className="rounded-xl border border-gray-200 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Input
+                  value={group.name}
+                  onChange={e => renameGroup(gi, e.target.value)}
+                  placeholder={t('admin', 'categoryNamePlaceholder')}
+                  className="h-8 text-sm max-w-[220px] font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeGroup(gi)}
+                  className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Remove"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {sortSizesForDisplay(sizePool).map(size => {
+                  const inThisGroup = group.sizes.includes(size)
+                  const inOtherGroup = !inThisGroup && sizeGroups.some((g, i) => i !== gi && g.sizes.includes(size))
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => toggleGroupSize(gi, size)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border-2 transition-colors ${
+                        inThisGroup
+                          ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F]'
+                          : inOtherGroup
+                            ? 'border-gray-100 text-gray-300 hover:border-gray-300 hover:text-gray-500'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+
+          {(() => {
+            const assigned = new Set(sizeGroups.flatMap(g => g.sizes))
+            const unassigned = sizePool.filter(s => !assigned.has(s))
+            return unassigned.length > 0 ? (
+              <p className="text-xs text-gray-400">
+                {t('admin', 'unassignedSizes')} {sortSizesForDisplay(unassigned).join(', ')}
+              </p>
+            ) : null
+          })()}
+
+          <Button type="button" size="sm" variant="outline" onClick={addGroup} className="text-xs">
+            <Plus className="w-3.5 h-3.5 mr-1" /> {t('admin', 'addCategory')}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Order Fees & Taxes */}
       <Card>

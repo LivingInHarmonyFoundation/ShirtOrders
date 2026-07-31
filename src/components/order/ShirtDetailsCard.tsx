@@ -17,9 +17,10 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { cn, formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { useT } from '@/contexts/LanguageContext'
-import type { ShirtCatalogItem } from '@/types'
+import SizePicker from '@/components/order/SizePicker'
+import type { ShirtCatalogItem, SizeGroup } from '@/types'
 
 interface ShirtDetailsCardProps {
   stepNumber: string
@@ -30,6 +31,8 @@ interface ShirtDetailsCardProps {
   selectedSize: string
   onSelectSize: (size: string) => void
   sizeError?: string
+  /** Admin-defined size categories (settings.size_groups); omitted → derived defaults. */
+  sizeGroups?: SizeGroup[] | null
   quantityReg: UseFormRegisterReturn
   quantityError?: string
   notesReg: UseFormRegisterReturn
@@ -43,6 +46,7 @@ export default function ShirtDetailsCard({
   selectedSize,
   onSelectSize,
   sizeError,
+  sizeGroups,
   quantityReg,
   quantityError,
   notesReg,
@@ -83,25 +87,7 @@ export default function ShirtDetailsCard({
 
         <div>
           <Label>{t('order', 'shirtSize')} *</Label>
-          <div className="flex flex-wrap gap-2 mt-2" role="radiogroup" aria-label={t('order', 'shirtSize')}>
-            {sizes.map(size => (
-              <button
-                key={size}
-                type="button"
-                role="radio"
-                aria-checked={selectedSize === size}
-                onClick={() => onSelectSize(size)}
-                className={cn(
-                  'min-w-[52px] px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150',
-                  selectedSize === size
-                    ? 'border-[#00352F] bg-[#E5F2F0] text-[#00352F] shadow-sm'
-                    : 'border-gray-200 bg-white hover:border-[#00352F]/30 hover:bg-[#F5F4F0] text-gray-600'
-                )}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
+          <SizePicker sizes={sizes} selectedSize={selectedSize} onSelectSize={onSelectSize} sizeGroups={sizeGroups} />
           {sizeError && <p role="alert" className="text-red-600 text-xs mt-1">{sizeError}</p>}
         </div>
 
