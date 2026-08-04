@@ -511,6 +511,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
             }}
             privateCompanies={privateCompanies}
             municipalities={municipalities}
+            selectedMunicipality={watch('organization_name') || ''}
             lockedSchoolName={lockedSchoolName}
             lockedCompanyName={lockedCompanyName}
           />

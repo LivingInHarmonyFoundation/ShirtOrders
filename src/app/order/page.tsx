@@ -477,6 +477,7 @@ export default function OrderPage() {
             }}
             privateCompanies={privateCompanies}
             municipalities={municipalities}
+            selectedMunicipality={watch('organization_name') || ''}
           />
 
           {/* Shirt Details */}

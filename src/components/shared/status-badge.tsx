@@ -54,9 +54,11 @@ const institutionConfig: Record<InstitutionType, { label: string; className: str
   municipality:    { label: 'Municipio',       className: 'bg-teal-50 text-teal-700 border-teal-200' },
 }
 
-/** InstitutionBadge — colored badge for school / government / personal / private_company. */
+/** InstitutionBadge — colored badge for the order's institution type. Falls back to a
+ * neutral badge for unknown values so a newly added type can never crash the page
+ * (e.g. an older cached bundle rendering orders of a type it doesn't know yet). */
 export function InstitutionBadge({ type }: { type: InstitutionType }) {
-  const config = institutionConfig[type]
+  const config = institutionConfig[type] ?? { label: type, className: 'bg-gray-100 text-gray-600 border-gray-200' }
   return (
     <Badge variant="outline" className={cn('font-medium text-xs', config.className)}>
       {config.label}

@@ -9,11 +9,15 @@
  */
 'use client'
 
+import { useState } from 'react'
 import type { UseFormRegister, FieldErrors, UseFormSetValue } from 'react-hook-form'
-import { School, Briefcase } from 'lucide-react'
+import { School, Briefcase, Check, ChevronsUpDown, MapPin } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { cn } from '@/lib/utils'
 import { useT } from '@/contexts/LanguageContext'
 import type { InstitutionType, GovOrg, PrivateCompany, Municipality } from '@/types'
 import type { OrderFormData } from './orderFormSchema'
@@ -36,6 +40,8 @@ interface InstitutionFieldsProps {
   privateCompanies: PrivateCompany[]
   /** Municipios shown in the dropdown for the "municipality" order type. */
   municipalities?: Municipality[]
+  /** Currently selected municipio (watch('organization_name')) for the combobox display. */
+  selectedMunicipality?: string
   /** Campaign-link flow: when set, the school name is pre-filled and shown read-only. */
   lockedSchoolName?: string | null
   /** Campaign-link flow: when set, the company name is pre-filled and shown read-only. */
@@ -55,6 +61,67 @@ function PrefilledEntity({ icon: Icon, name, label }: { icon: typeof School; nam
 
 const NATIVE_SELECT_CLASS =
   'mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+
+/**
+ * MunicipalityCombobox — searchable picker for the 78 municipios. A plain native
+ * select is unwieldy at that size (a huge list that can open upward), so this uses
+ * a Popover + Command combobox: tap to open a panel anchored below the field with a
+ * search box and a scrollable, filtered list. Works well on desktop and mobile.
+ */
+function MunicipalityCombobox({
+  municipalities, value, onSelect, invalid,
+}: {
+  municipalities: Municipality[]
+  value: string
+  onSelect: (name: string) => void
+  invalid?: boolean
+}) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        aria-invalid={invalid}
+        className={cn(
+          'mt-1 w-full flex items-center gap-2 rounded-lg border bg-background px-3 py-2.5 text-sm text-left',
+          'ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors',
+          invalid ? 'border-red-300' : 'border-input hover:border-[#00352F]/30',
+        )}
+      >
+        <MapPin className="w-4 h-4 text-[#00352F]/50 flex-shrink-0" />
+        <span className={cn('flex-1 truncate', value ? 'font-medium text-gray-900' : 'text-gray-400')}>
+          {value || t('order', 'selectMunicipality')}
+        </span>
+        <ChevronsUpDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+      </PopoverTrigger>
+      <PopoverContent
+        className="p-0 w-[var(--anchor-width)]"
+        align="start"
+        side="bottom"
+        sideOffset={4}
+      >
+        <Command>
+          <CommandInput placeholder={t('order', 'searchMunicipality')} />
+          <CommandList className="max-h-56 overscroll-contain">
+            <CommandEmpty>{t('order', 'noMunicipalityFound')}</CommandEmpty>
+            {municipalities.map(m => (
+              <CommandItem
+                key={m.id}
+                value={m.name}
+                onSelect={() => { onSelect(m.name); setOpen(false) }}
+                className="py-2.5"
+              >
+                <Check className={cn('w-4 h-4 mr-1 text-[#00352F]', value === m.name ? 'opacity-100' : 'opacity-0')} />
+                {m.name}
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 const StepBadge = ({ n }: { n: string }) => (
   <div
@@ -78,6 +145,7 @@ export default function InstitutionFields({
   onDepartmentChange,
   privateCompanies,
   municipalities = [],
+  selectedMunicipality = '',
   lockedSchoolName,
   lockedCompanyName,
 }: InstitutionFieldsProps) {
@@ -94,19 +162,19 @@ export default function InstitutionFields({
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="organization_name">{t('order', 'municipalityName')} *</Label>
+            <Label>{t('order', 'municipalityName')} *</Label>
             {municipalities.length > 0 ? (
-              <select
-                id="organization_name"
-                {...register('organization_name')}
-                aria-invalid={!!errors.organization_name}
-                className={NATIVE_SELECT_CLASS}
-              >
-                <option value="">{t('order', 'selectMunicipality')}</option>
-                {municipalities.map(m => (
-                  <option key={m.id} value={m.name}>{m.name}</option>
-                ))}
-              </select>
+              <>
+                {/* Hidden registered field keeps organization_name in the form state;
+                    the combobox writes to it via setValue. */}
+                <input type="hidden" {...register('organization_name')} />
+                <MunicipalityCombobox
+                  municipalities={municipalities}
+                  value={selectedMunicipality}
+                  onSelect={name => setValue('organization_name', name, { shouldValidate: true })}
+                  invalid={!!errors.organization_name}
+                />
+              </>
             ) : (
               <Input id="organization_name" {...register('organization_name')} aria-invalid={!!errors.organization_name} placeholder={t('order', 'municipalityName')} className="mt-1" />
             )}
