@@ -58,6 +58,7 @@ export async function sendOrderNotifications(
     order.institution_type === 'private_company'  ? (order.company_name || 'Private Company') :
     order.institution_type === 'personal'         ? 'Personal' :
     order.institution_type === 'staff'            ? 'Staff' :
+    order.institution_type === 'municipality'     ? (order.organization_name ? `Municipio de ${order.organization_name}` : 'Municipio') :
     order.institution_type
 
   const total = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.total_amount)

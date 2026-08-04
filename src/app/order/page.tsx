@@ -33,7 +33,7 @@ import { CampaignPicker, CatalogPicker } from '@/components/order/OrderPickers'
 import { orderFormSchema, type OrderFormData } from '@/components/order/orderFormSchema'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
-import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
+import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Municipality, Campaign } from '@/types'
 
 // Uses the shared multi-institution schema (see components/order/orderFormSchema.ts)
 type FormData = OrderFormData
@@ -47,6 +47,7 @@ export default function OrderPage() {
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [selectedGovOrg, setSelectedGovOrg] = useState<GovOrg | null>(null)
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
+  const [municipalities, setMunicipalities] = useState<Municipality[]>([])
   // null = loading; [] = none active; [one] = single (no picker); [two+] = picker shown
   const [activeCampaigns, setActiveCampaigns] = useState<Campaign[] | null>(null)
   // Set when the campaigns request fails (network/HTTP error) — distinct from "no
@@ -124,6 +125,11 @@ export default function OrderPage() {
     fetch('/api/government-orgs')
       .then(r => r.json())
       .then(({ orgs }) => { if (orgs?.length > 0) setGovOrgs(orgs) })
+      .catch(() => {})
+
+    fetch('/api/municipalities')
+      .then(r => r.json())
+      .then(({ municipalities: m }) => { if (m?.length > 0) setMunicipalities(m) })
       .catch(() => {})
 
     fetch('/api/private-companies')
@@ -426,6 +432,12 @@ export default function OrderPage() {
               setInstitutionType(type)
               setValue('institution_type', type, { shouldValidate: true })
               if (type !== 'government') setSelectedGovOrg(null)
+              // organization_name is shared by government AND municipality —
+              // clear it (and its gov sub-fields) so a stale value never leaks
+              // into the other type after switching.
+              setValue('organization_name', '', { shouldValidate: false })
+              setValue('department_office', '', { shouldValidate: false })
+              setValue('region', '', { shouldValidate: false })
             }}
             error={errors.institution_type?.message}
           />
@@ -464,6 +476,7 @@ export default function OrderPage() {
               setValue('region', '', { shouldValidate: false })
             }}
             privateCompanies={privateCompanies}
+            municipalities={municipalities}
           />
 
           {/* Shirt Details */}

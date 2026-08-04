@@ -13,7 +13,7 @@
 // ─── Enum-style String Unions ─────────────────────────────────
 
 /** InstitutionType — the order categories supported by the ordering form. */
-export type InstitutionType = 'school' | 'government' | 'personal' | 'private_company' | 'staff'
+export type InstitutionType = 'school' | 'government' | 'personal' | 'private_company' | 'staff' | 'municipality'
 
 /** ShirtSize — available shirt size options. */
 export type ShirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL'
@@ -213,6 +213,7 @@ export interface AppSettings {
   personal_orders_enabled: boolean
   private_company_orders_enabled: boolean
   staff_orders_enabled: boolean
+  municipality_orders_enabled: boolean
   manual_payment_enabled: boolean
   cash_enabled: boolean
   cash_enabled_school: boolean
@@ -329,6 +330,19 @@ export interface ShirtCatalogItem {
   available_sizes?: string[] | null
   /** Per-size price overrides, keyed by size: { "XXL": 15 }. Sizes absent use `price`. */
   size_prices?: Record<string, number> | null
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * Municipality — a Puerto Rico municipio shown in the order-form dropdown when
+ * the customer picks the "Municipios" order type. Admin-managed list; the
+ * chosen name is stored in orders.organization_name (like government orders).
+ */
+export interface Municipality {
+  id: string
+  name: string
+  is_active: boolean
   created_at: string
   updated_at: string
 }

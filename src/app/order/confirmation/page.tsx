@@ -110,6 +110,7 @@ function ConfirmationContent() {
       case 'private_company': return order.company_name || t('order', 'privateCompany')
       case 'personal': return t('order', 'personal')
       case 'staff': return t('order', 'staff')
+      case 'municipality': return order.organization_name || t('order', 'municipality')
       default: return order.institution_type
     }
   })()
@@ -215,7 +216,7 @@ function ConfirmationContent() {
                   </div>
                 )}
                 <div>
-                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{t('confirmation', 'institution')}</p>
+                  <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{order.institution_type === 'municipality' ? t('order', 'municipalityName') : t('confirmation', 'institution')}</p>
                   <p className="font-medium text-gray-900 mt-0.5">{institutionLabel}</p>
                 </div>
                 {institutionDisplay && (

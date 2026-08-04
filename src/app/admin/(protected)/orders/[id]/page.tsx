@@ -220,6 +220,12 @@ export default function OrderDetailPage() {
                     </div>
                   )}
                 </>)}
+                {order.institution_type === 'municipality' && (
+                  <div>
+                    <p className="text-xs text-gray-500">Municipio</p>
+                    <p className="font-medium text-gray-900 dark:text-white mt-0.5">{order.organization_name || '—'}</p>
+                  </div>
+                )}
                 {order.institution_type === 'private_company' && (<>
                   <div>
                     <p className="text-xs text-gray-500">Company</p>

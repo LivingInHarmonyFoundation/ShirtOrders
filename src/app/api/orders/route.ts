@@ -36,7 +36,7 @@ const orderSchema = z.object({
   full_name: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional(),
-  institution_type: z.enum(['school', 'government', 'personal', 'private_company', 'staff']),
+  institution_type: z.enum(['school', 'government', 'personal', 'private_company', 'staff', 'municipality']),
   school_name: z.string().optional(),
   grade: z.string().optional(),
   classroom: z.string().optional(),
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     const { data: settings } = await supabase
       .from('app_settings')
-      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, staff_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled, personal_allowed_payment_methods, cash_enabled, order_fees, personal_shipping_pr, personal_shipping_other')
+      .select('shirt_price, school_orders_enabled, government_orders_enabled, personal_orders_enabled, private_company_orders_enabled, staff_orders_enabled, municipality_orders_enabled, available_sizes, admin_phone, sms_notifications_enabled, personal_allowed_payment_methods, cash_enabled, order_fees, personal_shipping_pr, personal_shipping_other')
       .single()
 
     if (!settings) {
@@ -154,6 +154,9 @@ export async function POST(request: NextRequest) {
     }
     if (data.institution_type === 'private_company' && settings.private_company_orders_enabled === false) {
       return NextResponse.json({ error: 'Private company orders are currently disabled' }, { status: 400 })
+    }
+    if (data.institution_type === 'municipality' && settings.municipality_orders_enabled === false) {
+      return NextResponse.json({ error: 'Municipality orders are currently disabled' }, { status: 403 })
     }
     if (data.institution_type === 'staff' && settings.staff_orders_enabled !== true) {
       return NextResponse.json({ error: 'Staff orders are currently disabled' }, { status: 400 })

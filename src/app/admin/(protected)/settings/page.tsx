@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users, Ruler, X } from 'lucide-react'
+import { Save, Loader2, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users, Ruler, X, Landmark } from 'lucide-react'
 import type { AppSettings, OrderFee, InstitutionType, SizeGroup } from '@/types'
 import { deriveDefaultSizeGroups, sortSizesForDisplay } from '@/lib/utils'
 import { useRole } from '@/components/admin/role-provider'
@@ -48,6 +48,7 @@ export default function SettingsPage() {
   const [personalEnabled, setPersonalEnabled] = useState(true)
   const [privateCompanyEnabled, setPrivateCompanyEnabled] = useState(true)
   const [staffEnabled, setStaffEnabled] = useState(false)
+  const [municipalityEnabled, setMunicipalityEnabled] = useState(true)
   const [cashEnabled, setCashEnabled] = useState(false)
   const [cashEnabledSchool, setCashEnabledSchool] = useState(false)
   const [cashEnabledGovernment, setCashEnabledGovernment] = useState(false)
@@ -94,6 +95,7 @@ export default function SettingsPage() {
           setPersonalEnabled(settings.personal_orders_enabled ?? true)
           setPrivateCompanyEnabled(settings.private_company_orders_enabled ?? true)
           setStaffEnabled(settings.staff_orders_enabled ?? false)
+          setMunicipalityEnabled(settings.municipality_orders_enabled ?? true)
           setCashEnabled(settings.cash_enabled ?? false)
           setCashEnabledSchool(settings.cash_enabled_school ?? false)
           setCashEnabledGovernment(settings.cash_enabled_government ?? false)
@@ -173,6 +175,7 @@ export default function SettingsPage() {
           personal_orders_enabled: personalEnabled,
           private_company_orders_enabled: privateCompanyEnabled,
           staff_orders_enabled: staffEnabled,
+          municipality_orders_enabled: municipalityEnabled,
           cash_enabled: cashEnabled,
           cash_enabled_school: cashEnabledSchool,
           cash_enabled_government: cashEnabledGovernment,
@@ -303,7 +306,7 @@ export default function SettingsPage() {
             <div className="space-y-2">
               {orderFees.map(fee => {
                 const targetLabels: Record<string, string> = {
-                  school: t('admin', 'schoolType'), government: t('admin', 'governmentType'), personal: t('admin', 'personalType'), private_company: t('admin', 'privateCompanyType'),
+                  school: t('admin', 'schoolType'), government: t('admin', 'governmentType'), personal: t('admin', 'personalType'), private_company: t('admin', 'privateCompanyType'), municipality: t('admin', 'municipalityType'),
                 }
                 const scopeText = !fee.applies_to || fee.applies_to.length === 0
                   ? t('admin', 'allOrdersScope')
@@ -409,6 +412,7 @@ export default function SettingsPage() {
                   { key: 'government', label: t('admin', 'governmentType') },
                   { key: 'personal', label: t('admin', 'personalType') },
                   { key: 'private_company', label: t('admin', 'privateCompanyType') },
+                  { key: 'municipality', label: t('admin', 'municipalityType') },
                 ] as const).map(({ key, label }) => {
                   const active = newFeeAppliesTo.includes(key)
                   return (
@@ -507,6 +511,17 @@ export default function SettingsPage() {
               </div>
             </div>
             <Switch checked={staffEnabled} onCheckedChange={setStaffEnabled} />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Landmark className="w-4 h-4 text-teal-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{t('admin', 'municipalityOrdersLabel')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'municipalityOrdersDesc')}</p>
+              </div>
+            </div>
+            <Switch checked={municipalityEnabled} onCheckedChange={setMunicipalityEnabled} />
           </div>
         </CardContent>
       </Card>

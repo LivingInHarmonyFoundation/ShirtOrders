@@ -321,6 +321,7 @@ export default function AdminOrdersPage() {
                 <SelectItem value="government">{t('admin', 'governmentType')}</SelectItem>
                 <SelectItem value="personal">{t('admin', 'personalType')}</SelectItem>
                 <SelectItem value="private_company">{t('admin', 'privateCompanyType')}</SelectItem>
+                <SelectItem value="municipality">{t('admin', 'municipalityType')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -550,6 +551,9 @@ export default function AdminOrdersPage() {
                         )}
                         {order.institution_type === 'government' && order.department_office && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.department_office}</p>
+                        )}
+                        {order.institution_type === 'municipality' && order.organization_name && (
+                          <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.organization_name}</p>
                         )}
                         {order.institution_type === 'private_company' && order.company_name && (
                           <p className="text-xs text-gray-400 max-w-[130px] truncate">{order.company_name}</p>

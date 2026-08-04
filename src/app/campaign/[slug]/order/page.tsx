@@ -22,7 +22,7 @@ import { CatalogPicker } from '@/components/order/OrderPickers'
 import { orderFormSchema, type OrderFormData } from '@/components/order/orderFormSchema'
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
-import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Campaign } from '@/types'
+import type { AppSettings, InstitutionType, ShirtCatalogItem, GovOrg, PrivateCompany, Municipality, Campaign } from '@/types'
 
 type FormData = OrderFormData
 
@@ -66,6 +66,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
   const [govOrgs, setGovOrgs] = useState<GovOrg[]>([])
   const [selectedGovOrg, setSelectedGovOrg] = useState<GovOrg | null>(null)
   const [privateCompanies, setPrivateCompanies] = useState<PrivateCompany[]>([])
+  const [municipalities, setMunicipalities] = useState<Municipality[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [institutionType, setInstitutionType] = useState<InstitutionType | ''>(lockedInstitution ?? '')
   const [checkoutPayload, setCheckoutPayload] = useState<null | {
@@ -147,6 +148,11 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
     fetch('/api/government-orgs')
       .then(r => r.json())
       .then(({ orgs }) => { if (orgs?.length > 0) setGovOrgs(orgs) })
+      .catch(() => {})
+
+    fetch('/api/municipalities')
+      .then(r => r.json())
+      .then(({ municipalities: m }) => { if (m?.length > 0) setMunicipalities(m) })
       .catch(() => {})
 
     fetch('/api/private-companies')
@@ -459,6 +465,12 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
                 setInstitutionType(type)
                 setValue('institution_type', type, { shouldValidate: true })
                 if (type !== 'government') setSelectedGovOrg(null)
+                // organization_name is shared by government AND municipality —
+                // clear it (and its gov sub-fields) so a stale value never leaks
+                // into the other type after switching.
+                setValue('organization_name', '', { shouldValidate: false })
+                setValue('department_office', '', { shouldValidate: false })
+                setValue('region', '', { shouldValidate: false })
               }}
               error={errors.institution_type?.message}
             />
@@ -498,6 +510,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
               setValue('region', '', { shouldValidate: false })
             }}
             privateCompanies={privateCompanies}
+            municipalities={municipalities}
             lockedSchoolName={lockedSchoolName}
             lockedCompanyName={lockedCompanyName}
           />

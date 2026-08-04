@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { useT } from '@/contexts/LanguageContext'
-import type { InstitutionType, GovOrg, PrivateCompany } from '@/types'
+import type { InstitutionType, GovOrg, PrivateCompany, Municipality } from '@/types'
 import type { OrderFormData } from './orderFormSchema'
 
 interface InstitutionFieldsProps {
@@ -34,6 +34,8 @@ interface InstitutionFieldsProps {
   /** Called when the department changes — updates the field and resets the region. */
   onDepartmentChange?: (dept: string) => void
   privateCompanies: PrivateCompany[]
+  /** Municipios shown in the dropdown for the "municipality" order type. */
+  municipalities?: Municipality[]
   /** Campaign-link flow: when set, the school name is pre-filled and shown read-only. */
   lockedSchoolName?: string | null
   /** Campaign-link flow: when set, the company name is pre-filled and shown read-only. */
@@ -75,10 +77,45 @@ export default function InstitutionFields({
   selectedDepartment,
   onDepartmentChange,
   privateCompanies,
+  municipalities = [],
   lockedSchoolName,
   lockedCompanyName,
 }: InstitutionFieldsProps) {
   const t = useT()
+
+  if (institutionType === 'municipality') {
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <StepBadge n={stepNumber} />
+            <CardTitle className="text-base">{t('order', 'municipalityInfo')}</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="organization_name">{t('order', 'municipalityName')} *</Label>
+            {municipalities.length > 0 ? (
+              <select
+                id="organization_name"
+                {...register('organization_name')}
+                aria-invalid={!!errors.organization_name}
+                className={NATIVE_SELECT_CLASS}
+              >
+                <option value="">{t('order', 'selectMunicipality')}</option>
+                {municipalities.map(m => (
+                  <option key={m.id} value={m.name}>{m.name}</option>
+                ))}
+              </select>
+            ) : (
+              <Input id="organization_name" {...register('organization_name')} aria-invalid={!!errors.organization_name} placeholder={t('order', 'municipalityName')} className="mt-1" />
+            )}
+            {errors.organization_name && <p role="alert" className="text-red-600 text-xs mt-1">{errors.organization_name.message}</p>}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (institutionType === 'school') {
     return (

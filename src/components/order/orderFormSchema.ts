@@ -10,7 +10,7 @@ export const orderFormSchema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Valid email is required'),
   phone: z.string().optional().refine(v => !v || v.replace(/\D/g, '').length === 10, { message: 'Enter a valid 10-digit phone number' }),
-  institution_type: z.enum(['school', 'government', 'personal', 'private_company', 'staff'] as const),
+  institution_type: z.enum(['school', 'government', 'personal', 'private_company', 'staff', 'municipality'] as const),
   school_name: z.string().optional(),
   grade: z.string().optional(),
   classroom: z.string().optional(),
@@ -36,6 +36,9 @@ export const orderFormSchema = z.object({
   if (data.institution_type === 'government') {
     if (!data.organization_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Organization name is required', path: ['organization_name'] })
     if (!data.department_office) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Department/Office is required', path: ['department_office'] })
+  }
+  if (data.institution_type === 'municipality') {
+    if (!data.organization_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Municipio is required', path: ['organization_name'] })
   }
   if (data.institution_type === 'private_company') {
     if (!data.company_name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Company name is required', path: ['company_name'] })

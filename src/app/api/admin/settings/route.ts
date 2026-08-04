@@ -24,13 +24,14 @@ const PUBLIC_FIELDS = [
   'id', 'app_name', 'logo_url', 'mission_banner_url', 'badge_url',
   'school_orders_enabled', 'government_orders_enabled',
   'personal_orders_enabled', 'private_company_orders_enabled', 'staff_orders_enabled',
+  'municipality_orders_enabled',
   'manual_payment_enabled', 'cash_enabled',
   'cash_enabled_school', 'cash_enabled_government', 'cash_enabled_private_company',
   'personal_allowed_payment_methods', 'confirmation_message',
   'qr_tagline', 'order_fees', 'size_groups',
 ]
 
-const VALID_INSTITUTION_TYPES = ['school', 'government', 'personal', 'private_company', 'staff'] as const
+const VALID_INSTITUTION_TYPES = ['school', 'government', 'personal', 'private_company', 'staff', 'municipality'] as const
 const VALID_PAYMENT_METHODS   = ['paypal', 'venmo', 'card', 'cash'] as const
 
 // ─── Zod Schemas ──────────────────────────────────────────────
@@ -113,6 +114,7 @@ export async function PATCH(request: NextRequest) {
     'app_name', 'logo_url', 'mission_banner_url', 'badge_url',
     'school_orders_enabled', 'government_orders_enabled',
     'personal_orders_enabled', 'private_company_orders_enabled', 'staff_orders_enabled',
+    'municipality_orders_enabled',
     'manual_payment_enabled', 'cash_enabled',
     'cash_enabled_school', 'cash_enabled_government', 'cash_enabled_private_company',
     'personal_allowed_payment_methods', 'confirmation_message',

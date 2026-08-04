@@ -184,6 +184,7 @@ function CheckoutContent() {
       case 'private_company': return order.company_name || t('order', 'privateCompany')
       case 'personal': return t('order', 'personal')
       case 'staff': return t('order', 'staff')
+      case 'municipality': return order.organization_name || t('order', 'municipality')
       default: return order.institution_type
     }
   })()
@@ -274,7 +275,7 @@ function CheckoutContent() {
                   <p className="font-medium text-gray-900 text-xs break-all">{order.email}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 text-xs">{t('checkout', 'institution')}</p>
+                  <p className="text-gray-500 text-xs">{order.institution_type === 'municipality' ? t('order', 'municipalityName') : t('checkout', 'institution')}</p>
                   <p className="font-medium text-gray-900">{institutionLabel}</p>
                 </div>
                 {institutionDisplay && (
