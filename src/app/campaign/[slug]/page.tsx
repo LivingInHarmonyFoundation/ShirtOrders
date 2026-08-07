@@ -7,6 +7,7 @@ import { Loader2, ShoppingBag, Calendar, ArrowRight } from 'lucide-react'
 import ShirtViewer from '@/components/shared/ShirtViewer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
+import PendingOrderBanner from '@/components/shared/PendingOrderBanner'
 import { useT } from '@/contexts/LanguageContext'
 import type { Campaign, ShirtCatalogItem } from '@/types'
 
@@ -256,6 +257,7 @@ export default function CampaignShowcasePage({
 
       {/* Main content */}
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-8">
+        <PendingOrderBanner />
 
         {/* Campaign identity card */}
         <div className="flex items-start gap-4">

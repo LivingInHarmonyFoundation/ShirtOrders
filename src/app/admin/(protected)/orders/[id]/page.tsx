@@ -23,8 +23,9 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   ArrowLeft, Save, User, Building2, Package, CreditCard,
-  Truck, Clock, FileText, History, Loader2
+  Truck, Clock, FileText, History, Loader2, Link2
 } from 'lucide-react'
+import { useT } from '@/contexts/LanguageContext'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils'
 import type { Order, AuditLog, OrderItem } from '@/types'
@@ -35,6 +36,7 @@ import type { Order, AuditLog, OrderItem } from '@/types'
  * is called again to pull the latest audit log entries.
  */
 export default function OrderDetailPage() {
+  const t = useT()
   const params = useParams()
   const router = useRouter()
   const orderId = params.id as string
@@ -144,6 +146,18 @@ export default function OrderDetailPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400">Submitted {formatDateTime(order.date_submitted)}</p>
         </div>
         <div className="flex items-center gap-2">
+          {order.payment_status === 'pending' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/order/checkout?order_id=${order.id}`)
+                toast.success(t('admin', 'payLinkCopied'))
+              }}
+            >
+              <Link2 className="w-4 h-4 mr-1" /> {t('admin', 'copyPayLink')}
+            </Button>
+          )}
           <PaymentStatusBadge status={order.payment_status} />
           <OrderStatusBadge status={order.order_status} />
           <DeliveryStatusBadge status={order.delivery_status} />

@@ -14,6 +14,7 @@ import CartIcon from '@/components/shared/CartIcon'
 import CartDrawer from '@/components/shared/CartDrawer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
+import PendingOrderBanner from '@/components/shared/PendingOrderBanner'
 import PersonalInfoCard from '@/components/order/PersonalInfoCard'
 import ShirtDetailsCard, { OrderItemSummary } from '@/components/order/ShirtDetailsCard'
 import InstitutionFields from '@/components/order/InstitutionFields'
@@ -425,6 +426,7 @@ function CampaignOrderInner({ params }: { params: Promise<{ slug: string }> }) {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
+        <PendingOrderBanner />
         <div className="mb-6 flex items-start gap-4">
           <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shadow-sm flex-shrink-0 bg-white">
             <Image

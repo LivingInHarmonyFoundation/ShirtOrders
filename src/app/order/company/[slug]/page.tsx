@@ -29,6 +29,7 @@ import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import Image from 'next/image'
 import ShirtViewer from '@/components/shared/ShirtViewer'
 import SizePicker from '@/components/order/SizePicker'
+import PendingOrderBanner from '@/components/shared/PendingOrderBanner'
 import CartIcon from '@/components/shared/CartIcon'
 import CartDrawer from '@/components/shared/CartDrawer'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
@@ -241,6 +242,7 @@ export default function CompanyOrderPage({ params }: { params: Promise<{ slug: s
           </p>
         </div>
 
+        <PendingOrderBanner />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Shirt Style Picker */}
           {showCatalogPicker && (

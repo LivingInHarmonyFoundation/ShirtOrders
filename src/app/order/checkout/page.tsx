@@ -33,6 +33,7 @@ import { formatCurrency, formatDateTime } from '@/lib/utils'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
+import { clearPendingOrder } from '@/components/shared/PendingOrderBanner'
 import { useT } from '@/contexts/LanguageContext'
 import type { Order, AppSettings } from '@/types'
 
@@ -136,6 +137,8 @@ function CheckoutContent() {
         body: JSON.stringify({ payment_method: 'cash' }),
       })
       if (!res.ok) throw new Error()
+      // Choosing cash is a commitment — stop the resume-payment banner from nagging.
+      clearPendingOrder()
       setCashConfirmed(true)
     } catch {
       toast.error(t('errors', 'somethingWentWrong'))
@@ -525,6 +528,7 @@ function CheckoutContent() {
                           toast.error(t('checkout', 'paymentCaptureFailed'))
                           return
                         }
+                        clearPendingOrder()
                         router.push(`/order/confirmation?order_id=${order.id}`)
                       }}
                       onError={() => {

@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
-import { Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw, Megaphone, ShoppingBag, DollarSign, Shirt } from 'lucide-react'
+import { Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw, Megaphone, ShoppingBag, DollarSign, Shirt, Link2 } from 'lucide-react'
 import { PaymentStatusBadge, OrderStatusBadge, DeliveryStatusBadge, InstitutionBadge } from '@/components/shared/status-badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Order, GovOrg, SchoolLink, PrivateCompany, Campaign } from '@/types'
@@ -590,12 +590,27 @@ export default function AdminOrdersPage() {
                     <TableCell><DeliveryStatusBadge status={order.delivery_status} /></TableCell>
                     <TableCell className="text-xs text-gray-400">{formatDate(order.created_at)}</TableCell>
                     <TableCell>
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        className="inline-flex items-center justify-center h-8 w-8 rounded-lg hover:bg-muted transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
+                      <div className="flex items-center gap-0.5">
+                        {order.payment_status === 'pending' && (
+                          <button
+                            type="button"
+                            title={t('admin', 'copyPayLink')}
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/order/checkout?order_id=${order.id}`)
+                              toast.success(t('admin', 'payLinkCopied'))
+                            }}
+                            className="inline-flex items-center justify-center h-8 w-8 rounded-lg hover:bg-muted transition-colors text-[#00352F]"
+                          >
+                            <Link2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

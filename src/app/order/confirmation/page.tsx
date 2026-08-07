@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { CheckCircle, Printer, Home, Loader2 } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { PaymentStatusBadge } from '@/components/shared/status-badge'
+import { clearPendingOrderIf } from '@/components/shared/PendingOrderBanner'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
@@ -45,6 +46,10 @@ function ConfirmationContent() {
   // Initial load: fetch order data and the admin-configured confirmation message
   useEffect(() => {
     if (!orderId) { router.push('/order'); return }
+
+    // Reaching the confirmation means this order's flow finished — stop the
+    // resume-payment banner from offering it again on this device.
+    clearPendingOrderIf(orderId)
 
     fetch(`/api/orders/${orderId}`)
       .then(r => r.json())

@@ -9,6 +9,7 @@ import { Loader2, Minus, Plus, Trash2, X, ShoppingBag, Megaphone, ArrowRight } f
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
 import { formatCurrency } from '@/lib/utils'
+import { rememberPendingOrder } from '@/components/shared/PendingOrderBanner'
 import type { CartItem, Campaign } from '@/types'
 
 interface CheckoutPayload {
@@ -198,6 +199,9 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
 
       clearCart()
       closeCart()
+      // Remember the order on this device so the customer can resume payment
+      // later (PendingOrderBanner) instead of re-ordering and creating a duplicate.
+      rememberPendingOrder(json.order.id)
       router.push(`/order/checkout?order_id=${json.order.id}`)
     } catch {
       toast.error(t('errors', 'somethingWentWrong'))

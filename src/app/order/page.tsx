@@ -25,6 +25,7 @@ import CartIcon from '@/components/shared/CartIcon'
 import CartDrawer from '@/components/shared/CartDrawer'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
+import PendingOrderBanner from '@/components/shared/PendingOrderBanner'
 import PersonalInfoCard from '@/components/order/PersonalInfoCard'
 import ShirtDetailsCard, { OrderItemSummary } from '@/components/order/ShirtDetailsCard'
 import InstitutionFields from '@/components/order/InstitutionFields'
@@ -394,6 +395,7 @@ export default function OrderPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
+        <PendingOrderBanner />
         <div className="mb-6">
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">{t('order', 'title')}</h1>
           <p className="text-gray-500 mt-1" style={{ fontSize: '14px' }}>
