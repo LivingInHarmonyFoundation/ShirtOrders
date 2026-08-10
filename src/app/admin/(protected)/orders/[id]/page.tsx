@@ -35,6 +35,10 @@ import type { Order, AuditLog, OrderItem } from '@/types'
  * The order UUID comes from the dynamic [id] route segment. After any save, fetchOrder
  * is called again to pull the latest audit log entries.
  */
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  paypal: 'PayPal', venmo: 'Venmo', card: 'Card', cash: 'Cash', ath_movil: 'ATH Móvil',
+}
+
 export default function OrderDetailPage() {
   const t = useT()
   const params = useParams()
@@ -50,6 +54,7 @@ export default function OrderDetailPage() {
 
   // Editable fields — initialized from the fetched order, kept in sync with form inputs
   const [paymentStatus, setPaymentStatus] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('none')
   const [orderStatus, setOrderStatus] = useState('')
   const [deliveryStatus, setDeliveryStatus] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
@@ -67,6 +72,7 @@ export default function OrderDetailPage() {
         setOrderItems(order.items || [])
         setAuditLogs(auditLogs || [])
         setPaymentStatus(order.payment_status)
+        setPaymentMethod(order.payment_method || 'none')
         setOrderStatus(order.order_status)
         setDeliveryStatus(order.delivery_status)
         setAdminNotes(order.admin_notes || '')
@@ -93,6 +99,7 @@ export default function OrderDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           payment_status: paymentStatus,
+          payment_method: paymentMethod === 'none' ? null : paymentMethod,
           order_status: orderStatus,
           delivery_status: deliveryStatus,
           admin_notes: adminNotes,
@@ -418,6 +425,22 @@ export default function OrderDetailPage() {
                 </Select>
               </div>
               <div>
+                <Label className="text-xs text-gray-500">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={v => v && setPaymentMethod(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    <SelectItem value="paypal">PayPal</SelectItem>
+                    <SelectItem value="venmo">Venmo</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="ath_movil">ATH Móvil</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label className="text-xs text-gray-500">Order Status</Label>
                 <Select value={orderStatus} onValueChange={v => v && setOrderStatus(v)}>
                   <SelectTrigger className="mt-1">
@@ -485,7 +508,7 @@ export default function OrderDetailPage() {
               {order.payment_method && (
                 <div className="flex justify-between">
                   <span>Payment Via</span>
-                  <span className="font-medium capitalize">{order.payment_method}</span>
+                  <span className="font-medium">{PAYMENT_METHOD_LABELS[order.payment_method] ?? order.payment_method}</span>
                 </div>
               )}
               {order.stripe_payment_intent_id && (

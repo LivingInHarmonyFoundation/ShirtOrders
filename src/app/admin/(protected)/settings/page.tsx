@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Save, Loader2, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users, Ruler, X, Landmark } from 'lucide-react'
+import { Save, Loader2, School, Building2, MessageSquare, User, Briefcase, Trash2, CreditCard, Banknote, Plus, Percent, Users, Ruler, X, Landmark, Link as LinkIcon } from 'lucide-react'
 import type { AppSettings, OrderFee, InstitutionType, SizeGroup } from '@/types'
 import { deriveDefaultSizeGroups, sortSizesForDisplay } from '@/lib/utils'
 import { useRole } from '@/components/admin/role-provider'
@@ -510,7 +510,23 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin', 'staffOrdersDesc')}</p>
               </div>
             </div>
-            <Switch checked={staffEnabled} onCheckedChange={setStaffEnabled} />
+            <div className="flex items-center gap-2">
+              {staffEnabled && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/order/staff`)
+                    toast.success(t('admin', 'linkCopied'))
+                  }}
+                >
+                  <LinkIcon className="w-3 h-3 mr-1" /> {t('admin', 'copyStaffLink')}
+                </Button>
+              )}
+              <Switch checked={staffEnabled} onCheckedChange={setStaffEnabled} />
+            </div>
           </div>
           <Separator />
           <div className="flex items-center justify-between">

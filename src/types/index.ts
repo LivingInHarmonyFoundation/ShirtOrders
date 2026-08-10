@@ -21,8 +21,10 @@ export type ShirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL'
 /** PaymentStatus — lifecycle states for an order's payment. */
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'manual'
 
-/** PaymentMethod — the payment instrument used (or to be used) for an order. */
-export type PaymentMethod = 'paypal' | 'venmo' | 'card' | 'cash'
+/** PaymentMethod — the payment instrument used (or to be used) for an order.
+ * 'ath_movil' is admin-recorded only (in-person staff sales); it is never
+ * offered in the online checkout. */
+export type PaymentMethod = 'paypal' | 'venmo' | 'card' | 'cash' | 'ath_movil'
 
 /** OrderStatus — admin-managed fulfilment lifecycle state. */
 export type OrderStatus = 'new' | 'processing' | 'ready' | 'completed' | 'cancelled'

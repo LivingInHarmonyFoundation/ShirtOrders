@@ -101,6 +101,15 @@ export async function PATCH(
     'payment_method',
   ]
 
+  // payment_method: null clears it; otherwise must be a known method (matches the
+  // DB CHECK so a typo'd value fails with a clear 400 instead of a DB error).
+  if ('payment_method' in body && body.payment_method !== null) {
+    const VALID_METHODS = ['paypal', 'venmo', 'card', 'cash', 'ath_movil']
+    if (!VALID_METHODS.includes(body.payment_method)) {
+      return NextResponse.json({ error: 'Invalid payment_method' }, { status: 400 })
+    }
+  }
+
   const updateData: Record<string, unknown> = {}
   const auditEntries: Array<{ order_id: string; field_changed: string; old_value: string | null; new_value: string | null; changed_by: string }> = []
 

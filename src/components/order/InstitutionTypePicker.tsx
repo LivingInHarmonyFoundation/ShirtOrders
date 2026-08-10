@@ -7,7 +7,7 @@
  */
 'use client'
 
-import { School, Building2, User, Briefcase, Users, Landmark } from 'lucide-react'
+import { School, Building2, User, Briefcase, Landmark } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useT } from '@/contexts/LanguageContext'
@@ -36,7 +36,8 @@ export default function InstitutionTypePicker({
     { value: 'municipality' as const,    labelKey: 'municipality' as const,   icon: Landmark,  enabled: settings?.municipality_orders_enabled !== false },
     { value: 'personal' as const,        labelKey: 'personal' as const,       icon: User,      enabled: settings?.personal_orders_enabled !== false },
     { value: 'private_company' as const, labelKey: 'privateCompany' as const, icon: Briefcase, enabled: settings?.private_company_orders_enabled !== false },
-    { value: 'staff' as const,           labelKey: 'staff' as const,          icon: Users,     enabled: settings?.staff_orders_enabled === true },
+    // NOTE: 'staff' is deliberately NOT offered here — staff orders are placed
+    // only through the direct link /order/staff shared by the admin.
   ]
 
   return (
