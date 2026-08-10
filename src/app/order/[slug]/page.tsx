@@ -105,7 +105,14 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
 
   const watchedSize = watch('shirt_size')
   const watchedQty = watch('quantity')
-  const unitPrice = settings?.shirt_price || 15
+  // Price follows the selected size: per-size override (size_prices) wins, then
+  // the item's base price, then the global shirt_price. Mirrors the main forms
+  // and the server-side resolvePrice (which is what actually gets charged).
+  const unitPrice =
+    (watchedSize ? selectedCatalogItem?.size_prices?.[watchedSize] : undefined)
+    ?? selectedCatalogItem?.price
+    ?? settings?.shirt_price
+    ?? 15
 
   // ─── Data Fetching ───────────────────────────────────────────
   // Resolves school, settings, and catalog in parallel. A single failure
@@ -187,7 +194,8 @@ export default function SchoolOrderPage({ params }: { params: Promise<{ slug: st
     return true
   }
 
-  const sizes: string[] = settings?.available_sizes || ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  // The selected item's own size list (includes youth/kids) — global list only as fallback.
+  const sizes: string[] = selectedCatalogItem?.available_sizes ?? settings?.available_sizes ?? ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const showCatalogPicker = catalog.length > 1
 
   const Header = () => (
