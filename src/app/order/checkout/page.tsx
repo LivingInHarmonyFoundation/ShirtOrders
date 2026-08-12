@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote, Tag, X, RotateCcw } from 'lucide-react'
+import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote, Tag, X, RotateCcw, Smartphone } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
@@ -49,6 +49,7 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(true)
   const [cashConfirmed, setCashConfirmed] = useState(false)
   const [cashLoading, setCashLoading] = useState(false)
+  const [athLoading, setAthLoading] = useState(false)
   const [discountCode, setDiscountCode] = useState('')
   const [discountLoading, setDiscountLoading] = useState(false)
   const [discountError, setDiscountError] = useState('')
@@ -124,6 +125,28 @@ function CheckoutContent() {
       setOrder(data.order)
     } catch {
       toast.error(t('errors', 'somethingWentWrong'))
+    }
+  }
+
+  // Staff-only: confirms the in-person ATH Móvil transfer was received → the
+  // server marks the order PAID (method ath_movil) and we jump to the receipt.
+  const handleAthSelect = async () => {
+    if (!order) return
+    if (!confirm(t('checkout', 'athConfirmPrompt'))) return
+    setAthLoading(true)
+    try {
+      const res = await fetch(`/api/orders/${order.id}/payment-method`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_method: 'ath_movil' }),
+      })
+      if (!res.ok) throw new Error()
+      clearPendingOrder()
+      router.push(`/order/confirmation?order_id=${order.id}`)
+    } catch {
+      toast.error(t('errors', 'somethingWentWrong'))
+    } finally {
+      setAthLoading(false)
     }
   }
 
@@ -555,6 +578,33 @@ function CheckoutContent() {
                             : <Banknote className="w-4 h-4 mr-2" />
                           }
                           {t('checkout', 'payWithCash')}
+                        </Button>
+                      </>
+                    )}
+
+                    {/* ATH Móvil — STAFF ORDERS ONLY: in-person sales where the client
+                        pays the foundation's ATH directly; marks the order paid. */}
+                    {order.institution_type === 'staff' && (
+                      <>
+                        {!cashAllowed && (
+                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <div className="flex-1 border-t" />
+                            <span>or</span>
+                            <div className="flex-1 border-t" />
+                          </div>
+                        )}
+                        <Button
+                          variant="outline"
+                          className="w-full border-2"
+                          style={{ borderColor: '#F04E23', color: '#F04E23' }}
+                          onClick={handleAthSelect}
+                          disabled={athLoading}
+                        >
+                          {athLoading
+                            ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            : <Smartphone className="w-4 h-4 mr-2" />
+                          }
+                          {t('checkout', 'payWithAth')}
                         </Button>
                       </>
                     )}
