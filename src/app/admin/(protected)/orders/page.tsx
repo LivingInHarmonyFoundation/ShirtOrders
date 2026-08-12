@@ -12,6 +12,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useT } from '@/contexts/LanguageContext'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -76,6 +77,7 @@ export default function AdminOrdersPage() {
   const [sort, setSort] = useState('newest')
   const [page, setPage] = useState(1)
 
+  const router = useRouter()
   // Bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
@@ -144,12 +146,14 @@ export default function AdminOrdersPage() {
 
   const handleBulkUpdate = async () => {
     if (!bulkStatus || selectedIds.length === 0) return
-    const [field, value] = bulkStatus.split(':')
+    // An action is one or more "field:value" pairs separated by commas,
+    // e.g. "payment_status:paid,payment_method:ath_movil".
+    const updates = Object.fromEntries(bulkStatus.split(',').map(pair => pair.split(':') as [string, string]))
     try {
       const res = await fetch('/api/admin/orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: selectedIds, updates: { [field]: value } }),
+        body: JSON.stringify({ ids: selectedIds, updates }),
       })
       if (res.ok) {
         toast.success(`Updated ${selectedIds.length} orders`)
@@ -466,6 +470,9 @@ export default function AdminOrdersPage() {
             <SelectContent>
               <SelectItem value="delivery_status:delivered">{t('admin', 'markAsDelivered')}</SelectItem>
               <SelectItem value="delivery_status:partially_delivered">{t('admin', 'markPartiallyDelivered')}</SelectItem>
+              <SelectItem value="payment_status:paid">{t('admin', 'markAsPaid')}</SelectItem>
+              <SelectItem value="payment_status:paid,payment_method:ath_movil">{t('admin', 'markAsPaidAth')}</SelectItem>
+              <SelectItem value="payment_status:paid,payment_method:cash">{t('admin', 'markAsPaidCash')}</SelectItem>
               <SelectItem value="payment_status:manual">{t('admin', 'markAsManualPayment')}</SelectItem>
               <SelectItem value="order_status:processing">{t('admin', 'markAsProcessing')}</SelectItem>
               <SelectItem value="order_status:completed">{t('admin', 'markAsCompleted')}</SelectItem>
@@ -519,8 +526,12 @@ export default function AdminOrdersPage() {
                 </TableRow>
               ) : (
                 data?.orders.map((order: Order) => (
-                  <TableRow key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/30">
-                    <TableCell className="pl-4">
+                  <TableRow
+                    key={order.id}
+                    onClick={() => router.push(`/admin/orders/${order.id}`)}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-900/30 cursor-pointer"
+                  >
+                    <TableCell className="pl-4" onClick={e => e.stopPropagation()}>
                       <Checkbox
                         checked={selectedIds.includes(order.id)}
                         onCheckedChange={() => toggleSelect(order.id)}
@@ -589,7 +600,7 @@ export default function AdminOrdersPage() {
                     <TableCell><OrderStatusBadge status={order.order_status} /></TableCell>
                     <TableCell><DeliveryStatusBadge status={order.delivery_status} /></TableCell>
                     <TableCell className="text-xs text-gray-400">{formatDate(order.created_at)}</TableCell>
-                    <TableCell>
+                    <TableCell onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-0.5">
                         {order.payment_status === 'pending' && (
                           <button

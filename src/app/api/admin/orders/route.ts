@@ -18,7 +18,7 @@ import { requirePermission } from '@/lib/supabase/require-role'
 
 // Fields allowed in bulk PATCH — prevents mass-assignment of sensitive columns.
 const BULK_ORDER_ALLOWED_FIELDS = [
-  'payment_status', 'order_status', 'delivery_status',
+  'payment_status', 'payment_method', 'order_status', 'delivery_status',
   'admin_notes', 'date_paid', 'date_delivered',
 ]
 
@@ -252,6 +252,14 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
   }
 
+  // payment_method must be a known value (matches the DB CHECK)
+  if ('payment_method' in safeUpdates && safeUpdates.payment_method !== null) {
+    const VALID_METHODS = ['paypal', 'venmo', 'card', 'cash', 'ath_movil']
+    if (!VALID_METHODS.includes(safeUpdates.payment_method as string)) {
+      return NextResponse.json({ error: 'Invalid payment_method' }, { status: 400 })
+    }
+  }
+
   const { error } = await adminSupabase
     .from('orders')
     .update(safeUpdates)
@@ -259,6 +267,16 @@ export async function PATCH(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: 'Failed to update orders' }, { status: 500 })
+  }
+
+  // Bulk-marking paid/manual: stamp date_paid on orders that don't have one yet
+  // (mirrors the single-order PATCH; never overwrites an existing date_paid).
+  if (['paid', 'manual'].includes(safeUpdates.payment_status as string) && !('date_paid' in safeUpdates)) {
+    await adminSupabase
+      .from('orders')
+      .update({ date_paid: new Date().toISOString() })
+      .in('id', ids)
+      .is('date_paid', null)
   }
 
   return NextResponse.json({ success: true, updated: ids.length })
