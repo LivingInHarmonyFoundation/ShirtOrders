@@ -14,10 +14,10 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { CheckCircle, Printer, Home, Loader2 } from 'lucide-react'
+import { CheckCircle, Printer, Home, Loader2, RotateCcw } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { PaymentStatusBadge } from '@/components/shared/status-badge'
-import { clearPendingOrderIf } from '@/components/shared/PendingOrderBanner'
+import { clearPendingOrder, clearPendingOrderIf } from '@/components/shared/PendingOrderBanner'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
@@ -330,6 +330,16 @@ function ConfirmationContent() {
         </div>
 
         {/* Actions */}
+        {/* Staff flow: in-person lines — one tap starts the next client's order. */}
+        {order.institution_type === 'staff' && (
+          <Button
+            onClick={() => { clearPendingOrder(); router.push('/order/staff') }}
+            className="w-full h-11 mt-4 font-semibold text-white print:hidden"
+            style={{ backgroundColor: '#00352F' }}
+          >
+            <RotateCcw className="w-4 h-4 mr-2" /> {t('order', 'startNewOrder')}
+          </Button>
+        )}
         <div className="flex gap-3 mt-4 print:hidden">
           <Button onClick={() => window.print()} variant="outline" className="flex-1">
             <Printer className="w-4 h-4 mr-2" /> {t('confirmation', 'printReceipt')}

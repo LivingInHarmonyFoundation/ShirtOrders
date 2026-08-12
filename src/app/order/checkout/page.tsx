@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote, Tag, X } from 'lucide-react'
+import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote, Tag, X, RotateCcw } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
@@ -563,6 +563,20 @@ function CheckoutContent() {
               )}
             </CardContent>
           </Card>
+
+          {/* Staff flow: in-person lines — jump straight to the next client's order.
+              ATH Móvil clients pay the foundation directly, so the staff member ends
+              here (order stays pending until the admin records the payment). */}
+          {order.institution_type === 'staff' && (
+            <Button
+              variant="outline"
+              className="w-full h-11 font-semibold border-2"
+              style={{ borderColor: '#00352F', color: '#00352F' }}
+              onClick={() => { clearPendingOrder(); router.push('/order/staff') }}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" /> {t('order', 'startNewOrder')}
+            </Button>
+          )}
 
           <p className="text-xs text-center text-gray-400">
             {t('checkout', 'paypalSecure')}
