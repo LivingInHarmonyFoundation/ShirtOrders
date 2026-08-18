@@ -100,6 +100,16 @@ function MunicipalityCombobox({
         align="start"
         side="bottom"
         sideOffset={4}
+        // Fixed positioning: the popup is viewport-anchored from its first frame,
+        // so nothing inside it (cmdk auto-scrolling its selected item into view)
+        // can yank the page scroll to the top while the popup is being placed.
+        positionMethod="fixed"
+        // Don't move focus into the popup on open: the popup grabs focus before
+        // it's positioned, which makes the browser scroll the page to the top
+        // (reported by real customers on step 3). Users tap the search box if
+        // they want to type; on phones this also keeps the keyboard closed so
+        // the list stays visible.
+        initialFocus={false}
       >
         <Command>
           <CommandInput placeholder={t('order', 'searchMunicipality')} />
