@@ -106,6 +106,7 @@ export default function ReportsPage() {
     setLoading(true)
     try {
       const params = new URLSearchParams({
+        order_status: 'active',
         institution_type: institutionType, payment_status: paymentStatus,
         delivery_status: deliveryStatus, shirt_size: shirtSize,
         date_from: dateFrom, date_to: dateTo,

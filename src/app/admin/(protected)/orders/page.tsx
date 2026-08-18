@@ -78,6 +78,8 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1)
 
   const router = useRouter()
+  // View group: active orders (default) vs the separate cancelled bin
+  const [viewCancelled, setViewCancelled] = useState(false)
   // Bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
@@ -105,6 +107,7 @@ export default function AdminOrdersPage() {
   const fetchOrders = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({
+      order_status: viewCancelled ? 'cancelled' : 'active',
       search, institution_type: institutionType, payment_status: paymentStatus,
       delivery_status: deliveryStatus, shirt_size: shirtSize,
       date_from: dateFrom, date_to: dateTo,
@@ -124,7 +127,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, grade, classroom, department, organizationName, schoolName, companyName, campaignId, sort, page])
+  }, [viewCancelled, search, institutionType, paymentStatus, deliveryStatus, shirtSize, dateFrom, dateTo, grade, classroom, department, organizationName, schoolName, companyName, campaignId, sort, page])
 
   // Debounce the fetch so search-as-you-type doesn't fire on every keystroke
   useEffect(() => {
@@ -194,6 +197,29 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Summary stats */}
+      {/* Active vs Cancelled view groups — cancelled orders live in their own bin */}
+      <div className="flex gap-2">
+        {([
+          { cancelled: false, label: t('admin', 'activeOrdersTab') },
+          { cancelled: true, label: t('admin', 'cancelledOrdersTab') },
+        ] as const).map(tab => (
+          <button
+            key={String(tab.cancelled)}
+            type="button"
+            onClick={() => { setViewCancelled(tab.cancelled); setPage(1); setSelectedIds([]) }}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold border-2 transition-colors ${
+              viewCancelled === tab.cancelled
+                ? tab.cancelled
+                  ? 'border-red-300 bg-red-50 text-red-700'
+                  : 'border-[#00352F] bg-[#E5F2F0] text-[#00352F]'
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {data?.summary && (
         <div className="space-y-2">
           <div className="grid grid-cols-3 gap-3">

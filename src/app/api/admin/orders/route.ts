@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
   const school_name = searchParams.get('school_name') || ''
   const company_name = searchParams.get('company_name') || ''
   const campaign_id = searchParams.get('campaign_id') || ''
+  // 'active' = everything except cancelled (the default working view);
+  // any other value filters to that exact order_status (e.g. 'cancelled').
+  const order_status = searchParams.get('order_status') || ''
   const sort = searchParams.get('sort') || 'newest'
   const page = parseInt(searchParams.get('page') || '1')
   const rawLimit = parseInt(searchParams.get('limit') || '20')
@@ -83,6 +86,8 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  if (order_status === 'active') query = query.neq('order_status', 'cancelled')
+  else if (order_status) query = query.eq('order_status', order_status)
   if (institution_type) query = query.eq('institution_type', institution_type)
   if (payment_status) query = query.eq('payment_status', payment_status)
   if (delivery_status) query = query.eq('delivery_status', delivery_status)
@@ -130,6 +135,8 @@ export async function GET(request: NextRequest) {
       `full_name.ilike.%${search}%,email.ilike.%${search}%,order_number.ilike.%${search}%,school_name.ilike.%${search}%,organization_name.ilike.%${search}%,department_office.ilike.%${search}%,company_name.ilike.%${search}%,company_department.ilike.%${search}%,grade.ilike.%${search}%,classroom.ilike.%${search}%`
     )
   }
+  if (order_status === 'active') summaryQuery = summaryQuery.neq('order_status', 'cancelled')
+  else if (order_status) summaryQuery = summaryQuery.eq('order_status', order_status)
   if (institution_type) summaryQuery = summaryQuery.eq('institution_type', institution_type)
   if (payment_status) summaryQuery = summaryQuery.eq('payment_status', payment_status)
   if (delivery_status) summaryQuery = summaryQuery.eq('delivery_status', delivery_status)

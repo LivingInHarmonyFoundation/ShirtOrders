@@ -53,6 +53,10 @@ export async function GET(request: NextRequest) {
   let query = adminSupabase
     .from('orders')
     .select('quantity, total_amount, payment_status, delivery_status, institution_type, shirt_size, created_at, catalog_item_name, payment_method, school_name, organization_name, company_name')
+    // Cancelled orders are excluded from ALL dashboard numbers — they aren't
+    // real demand (cancelled+paid orders end up refunded, which revenue already
+    // excludes via payment_status).
+    .neq('order_status', 'cancelled')
 
   // 'all' is the UI sentinel for "no campaign filter" — treat it as unfiltered
   if (campaign_id && campaign_id !== 'all') {
