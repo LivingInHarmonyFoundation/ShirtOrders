@@ -130,6 +130,69 @@ export async function PATCH(
     }
   }
 
+  // ─── Per-item size changes (admin swap, e.g. customer tried M, needs L) ───
+  // body.item_sizes: [{ id, shirt_size }] — updates order_items rows, keeps the
+  // legacy flat orders.shirt_size in sync with the first item, adjusts inventory
+  // best-effort (return old size, take new size), and writes audit entries.
+  // Allowed at any payment status — swaps happen after purchase by design.
+  if (Array.isArray(body.item_sizes) && body.item_sizes.length > 0) {
+    const { data: items } = await adminSupabase
+      .from('order_items')
+      .select('id, catalog_item_id, catalog_item_name, shirt_size, quantity, created_at')
+      .eq('order_id', id)
+      .order('created_at', { ascending: true })
+
+    for (const change of body.item_sizes) {
+      const item = items?.find(i => i.id === change.id)
+      const newSize = typeof change.shirt_size === 'string' ? change.shirt_size.trim() : ''
+      if (!item || !newSize || newSize.length > 30 || newSize === item.shirt_size) continue
+
+      const { error: itemError } = await adminSupabase
+        .from('order_items')
+        .update({ shirt_size: newSize })
+        .eq('id', item.id)
+      if (itemError) continue
+
+      auditEntries.push({
+        order_id: id,
+        field_changed: `item_size (${item.catalog_item_name})`,
+        old_value: item.shirt_size,
+        new_value: newSize,
+        changed_by: user.email || user.id,
+      })
+
+      // Inventory swap, best-effort and non-fatal: the physical exchange already
+      // happened, so a missing inventory row must never block the size change.
+      try {
+        const invFor = async (size: string) => {
+          const { data: rows } = await adminSupabase
+            .from('shirt_inventory')
+            .select('id, quantity')
+            .eq('shirt_size', size)
+            .or(item.catalog_item_id ? `catalog_item_id.eq.${item.catalog_item_id},catalog_item_id.is.null` : 'catalog_item_id.is.null')
+            .order('catalog_item_id', { ascending: false, nullsFirst: false })
+          return rows?.[0] ?? null
+        }
+        const oldRow = await invFor(item.shirt_size)
+        if (oldRow) {
+          await adminSupabase.from('shirt_inventory').update({ quantity: oldRow.quantity + item.quantity }).eq('id', oldRow.id)
+        }
+        const newRow = await invFor(newSize)
+        if (newRow) {
+          // RPC refuses to go below zero (returns -1); that's fine — skip silently.
+          await adminSupabase.rpc('decrement_shirt_inventory', { p_inventory_id: newRow.id, p_quantity: item.quantity })
+        }
+      } catch { /* inventory is advisory here */ }
+
+      item.shirt_size = newSize
+    }
+
+    // Keep the legacy flat field aligned with the primary (first) item.
+    if (items && items.length > 0 && items[0].shirt_size !== currentOrder.shirt_size && !('shirt_size' in updateData)) {
+      updateData.shirt_size = items[0].shirt_size
+    }
+  }
+
   // Auto-set date_paid when payment_status becomes paid/manual
   if (updateData.payment_status === 'paid' || updateData.payment_status === 'manual') {
     if (!currentOrder.date_paid) {
@@ -144,16 +207,22 @@ export async function PATCH(
     }
   }
 
-  const { data: order, error } = await adminSupabase
-    .from('orders')
-    .update(updateData)
-    .eq('id', id)
-    .select()
-    .single()
+  // Only touch the orders row when there's something to write — a pure item-size
+  // change (e.g. the second line item) may leave updateData empty.
+  let order = currentOrder
+  if (Object.keys(updateData).length > 0) {
+    const { data: updated, error } = await adminSupabase
+      .from('orders')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
 
-  if (error) {
-    console.error('Error updating order:', error)
-    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
+    if (error) {
+      console.error('Error updating order:', error)
+      return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
+    }
+    order = updated
   }
 
   // Insert audit log entries

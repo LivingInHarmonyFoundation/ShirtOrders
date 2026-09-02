@@ -59,6 +59,13 @@ export default function OrderDetailPage() {
   const [deliveryStatus, setDeliveryStatus] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [quantity, setQuantity] = useState(0)
+  // Editable shirt sizes: per line item (itemSizes) and the legacy flat field
+  // (flatSize, used only for old orders without line items). Admins can change
+  // sizes at ANY payment status — in-person swaps happen after purchase.
+  const [itemSizes, setItemSizes] = useState<Record<string, string>>({})
+  const [flatSize, setFlatSize] = useState('')
+  // catalog_item_id → its available sizes, for the size dropdowns
+  const [catalogSizes, setCatalogSizes] = useState<Record<string, string[]>>({})
 
   // ─── Data Fetching ────────────────────────────────────────────────────────
 
@@ -77,6 +84,8 @@ export default function OrderDetailPage() {
         setDeliveryStatus(order.delivery_status)
         setAdminNotes(order.admin_notes || '')
         setQuantity(order.quantity)
+        setItemSizes(Object.fromEntries((order.items || []).map((i: OrderItem) => [i.id, i.shirt_size])))
+        setFlatSize(order.shirt_size || '')
       }
     } catch {
       toast.error('Failed to load order')
@@ -86,6 +95,26 @@ export default function OrderDetailPage() {
   }, [orderId])
 
   useEffect(() => { fetchOrder() }, [fetchOrder])
+
+  // Size options for the dropdowns come from each shirt's own catalog size list.
+  useEffect(() => {
+    fetch('/api/catalog')
+      .then(r => r.json())
+      .then(({ items }) => {
+        const map: Record<string, string[]> = {}
+        for (const it of items || []) if (it.available_sizes?.length) map[it.id] = it.available_sizes
+        setCatalogSizes(map)
+      })
+      .catch(() => {})
+  }, [])
+
+  const DEFAULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  // Dropdown options: the item's catalog sizes (fallback: defaults), always
+  // including the currently stored size so it can't disappear from the list.
+  const sizeOptions = (catalogItemId: string | null, current: string) => {
+    const base = (catalogItemId && catalogSizes[catalogItemId]) || DEFAULT_SIZES
+    return base.includes(current) ? base : [current, ...base]
+  }
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
@@ -104,6 +133,11 @@ export default function OrderDetailPage() {
           delivery_status: deliveryStatus,
           admin_notes: adminNotes,
           quantity: Number(quantity),
+          // Only send sizes that actually changed
+          ...(orderItems.length === 0 && flatSize && order.shirt_size !== flatSize ? { shirt_size: flatSize } : {}),
+          item_sizes: orderItems
+            .filter(i => (itemSizes[i.id] ?? i.shirt_size) !== i.shirt_size)
+            .map(i => ({ id: i.id, shirt_size: itemSizes[i.id] })),
         }),
       })
       if (res.ok) {
@@ -310,9 +344,20 @@ export default function OrderDetailPage() {
                               {item.catalog_item_name}
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md font-bold text-[#00352F] bg-[#E5F2F0] text-xs">
-                                {item.shirt_size}
-                              </span>
+                              <select
+                                value={itemSizes[item.id] ?? item.shirt_size}
+                                onChange={e => setItemSizes(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                className={`px-1.5 py-0.5 rounded-md font-bold text-xs border cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00352F]/30 ${
+                                  (itemSizes[item.id] ?? item.shirt_size) !== item.shirt_size
+                                    ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                    : 'bg-[#E5F2F0] text-[#00352F] border-[#CEDC00]/40'
+                                }`}
+                                title="Change size (saves with Save Changes)"
+                              >
+                                {sizeOptions(item.catalog_item_id, item.shirt_size).map(sz => (
+                                  <option key={sz} value={sz}>{sz}</option>
+                                ))}
+                              </select>
                             </td>
                             <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">{item.quantity}</td>
                             <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{formatCurrency(item.unit_price)}</td>
@@ -326,8 +371,16 @@ export default function OrderDetailPage() {
               ) : (
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Shirt Size</p>
-                    <p className="font-bold text-gray-900 dark:text-white mt-0.5 text-base">{order.shirt_size}</p>
+                    <Label className="text-xs text-gray-500">Shirt Size</Label>
+                    <select
+                      value={flatSize || order.shirt_size}
+                      onChange={e => setFlatSize(e.target.value)}
+                      className="mt-0.5 block h-8 px-2 rounded-md border border-input bg-background text-sm font-bold text-gray-900 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00352F]/30"
+                    >
+                      {sizeOptions(order.catalog_item_id, order.shirt_size).map(sz => (
+                        <option key={sz} value={sz}>{sz}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <Label className="text-xs text-gray-500">Quantity</Label>

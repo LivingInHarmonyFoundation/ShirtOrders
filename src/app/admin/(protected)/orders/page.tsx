@@ -555,7 +555,17 @@ export default function AdminOrdersPage() {
                   <TableRow
                     key={order.id}
                     onClick={() => router.push(`/admin/orders/${order.id}`)}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-900/30 cursor-pointer"
+                    // Row wash reflects delivery progress at a glance:
+                    // green = delivered, amber = partially delivered, red = cancelled view.
+                    className={`cursor-pointer transition-colors ${
+                      order.order_status === 'cancelled'
+                        ? 'bg-red-50/50 hover:bg-red-50 dark:bg-red-900/10 dark:hover:bg-red-900/20'
+                        : order.delivery_status === 'delivered'
+                          ? 'bg-green-50/80 hover:bg-green-100/70 dark:bg-green-900/15 dark:hover:bg-green-900/25'
+                          : order.delivery_status === 'partially_delivered'
+                            ? 'bg-amber-50/70 hover:bg-amber-100/60 dark:bg-amber-900/10 dark:hover:bg-amber-900/20'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-900/30'
+                    }`}
                   >
                     <TableCell className="pl-4" onClick={e => e.stopPropagation()}>
                       <Checkbox
