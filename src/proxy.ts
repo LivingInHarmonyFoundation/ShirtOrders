@@ -97,11 +97,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (pathname === '/admin/login' && user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/admin/dashboard'
-    return NextResponse.redirect(url)
-  }
+  // NOTE: deliberately NO redirect away from /admin/login when a session exists.
+  // On a shared computer that redirect silently bounced a second admin into the
+  // first admin's dashboard, making it look like only one admin could ever log
+  // in. The login page itself now shows "signed in as X" with an explicit
+  // choice: continue to the dashboard, or sign out and log in as someone else.
 
   return supabaseResponse
 }

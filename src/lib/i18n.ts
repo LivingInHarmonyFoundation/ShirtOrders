@@ -302,6 +302,10 @@ export const translations: Record<Lang, {
       signingIn: 'Signing in...',
       backToHome: 'Back to home',
       adminOnly: 'Admin access only. Unauthorized access is prohibited.',
+      alreadySignedInAs: 'This browser is already signed in as',
+      continueToDashboard: 'Continue to the dashboard',
+      signOutAndSwitch: 'Sign out and use another account',
+      signingOut: 'Signing out...',
       inviteExpired: 'Your invite link has expired or is invalid. Please ask to be re-invited.',
       // Sidebar nav
       menu: 'Menu',
@@ -1128,6 +1132,10 @@ export const translations: Record<Lang, {
       signingIn: 'Iniciando sesión...',
       backToHome: 'Volver al inicio',
       adminOnly: 'Solo acceso administrativo. El acceso no autorizado está prohibido.',
+      alreadySignedInAs: 'Este navegador ya tiene una sesión activa como',
+      continueToDashboard: 'Continuar al panel',
+      signOutAndSwitch: 'Cerrar sesión y entrar con otra cuenta',
+      signingOut: 'Cerrando sesión...',
       inviteExpired: 'Tu enlace de invitación expiró o no es válido. Pide que te inviten de nuevo.',
       // Sidebar nav
       menu: 'Menú',

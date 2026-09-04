@@ -21,7 +21,27 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  // When this browser already holds a session (shared office computer), show an
+  // explicit choice instead of silently bouncing into that person's dashboard.
+  const [existingEmail, setExistingEmail] = useState<string | null>(null)
+  const [signingOut, setSigningOut] = useState(false)
   const t = useT()
+
+  useEffect(() => {
+    createClient().auth.getUser()
+      .then(({ data }) => { if (data.user?.email) setExistingEmail(data.user.email) })
+      .catch(() => {})
+  }, [])
+
+  const handleSignOutSwitch = async () => {
+    setSigningOut(true)
+    try {
+      await createClient().auth.signOut()
+      setExistingEmail(null)
+    } finally {
+      setSigningOut(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,6 +55,38 @@ function LoginForm() {
     }
     router.push('/admin/dashboard')
     router.refresh()
+  }
+
+  // A session already exists in this browser: offer to continue as that person
+  // or sign out so the next admin can log in with their OWN account.
+  if (existingEmail) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl bg-[#E5F2F0] border border-[#CEDC00]/40 px-4 py-3">
+          <p className="text-xs text-gray-500">{t('admin', 'alreadySignedInAs')}</p>
+          <p className="text-sm font-semibold text-[#00352F] break-all">{existingEmail}</p>
+        </div>
+        <Button
+          type="button"
+          onClick={() => { router.push('/admin/dashboard'); router.refresh() }}
+          className="w-full h-11 text-white font-semibold rounded-xl"
+          style={{ backgroundColor: '#00352F' }}
+        >
+          {t('admin', 'continueToDashboard')}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={signingOut}
+          onClick={handleSignOutSwitch}
+          className="w-full h-11 font-semibold rounded-xl"
+        >
+          {signingOut
+            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('admin', 'signingOut')}</>
+            : t('admin', 'signOutAndSwitch')}
+        </Button>
+      </div>
+    )
   }
 
   return (
