@@ -504,9 +504,15 @@ export default function GovernmentPage() {
                                   </button>
                                 </div>
 
-                                {/* Regions for this department */}
+                                {/* Regions for this department — when every entry is an
+                                    office ("Oficina Hon. ..."), label the editor "Oficinas"
+                                    to match what customers see (e.g. Senado parties). */}
                                 <div className="mt-2 pl-1">
-                                  <p className="text-[11px] font-medium text-gray-500 mb-1.5">{t('admin', 'regionsLabel')}</p>
+                                  <p className="text-[11px] font-medium text-gray-500 mb-1.5">
+                                    {regions.length > 0 && regions.every(r => r.startsWith('Oficina '))
+                                      ? t('admin', 'officesLabel')
+                                      : t('admin', 'regionsLabel')}
+                                  </p>
                                   <div className="flex flex-wrap gap-1.5 mb-2">
                                     {regions.length === 0 ? (
                                       <p className="text-[11px] text-gray-400">{t('admin', 'noRegionsYet')}</p>
@@ -531,7 +537,9 @@ export default function GovernmentPage() {
                                   </div>
                                   <div className="flex gap-2">
                                     <Input
-                                      placeholder={t('admin', 'newRegionPlaceholder')}
+                                      placeholder={regions.length > 0 && regions.every(r => r.startsWith('Oficina '))
+                                        ? t('admin', 'newOfficePlaceholder')
+                                        : t('admin', 'newRegionPlaceholder')}
                                       value={newRegion[rkey] || ''}
                                       onChange={e => setNewRegion(prev => ({ ...prev, [rkey]: e.target.value }))}
                                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddRegion(org, dept) } }}
