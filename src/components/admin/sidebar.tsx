@@ -60,7 +60,10 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
 
   const handleLogout = async () => {
     const supabase = createClient()
-    await supabase.auth.signOut()
+    // scope 'local': log out THIS device only. The default (global) revokes the
+    // account's sessions on every device — which kicked coworkers sharing an
+    // account off their own computers.
+    await supabase.auth.signOut({ scope: 'local' })
     router.push('/admin/login')
   }
 

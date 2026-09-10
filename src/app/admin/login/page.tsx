@@ -36,7 +36,9 @@ function LoginForm() {
   const handleSignOutSwitch = async () => {
     setSigningOut(true)
     try {
-      await createClient().auth.signOut()
+      // Local scope: switching accounts here must not kill the person's
+      // sessions on their other devices.
+      await createClient().auth.signOut({ scope: 'local' })
       setExistingEmail(null)
     } finally {
       setSigningOut(false)
