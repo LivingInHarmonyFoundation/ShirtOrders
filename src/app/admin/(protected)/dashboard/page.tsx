@@ -10,6 +10,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useT } from '@/contexts/LanguageContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -67,6 +68,7 @@ export default function DashboardPage() {
   const t = useT()
 
   // ── State ──
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -143,11 +145,18 @@ export default function DashboardPage() {
     }
     try {
       const res = await fetch(`/api/admin/stats?${params}`)
+      if (res.status === 403) {
+        // Staff role has no reports permission — the dashboard is all reports,
+        // so send them to their working area instead of crashing on {error}.
+        router.replace('/admin/orders')
+        return
+      }
       const data = await res.json()
-      setStats(data)
+      // Never let an error payload masquerade as stats (render would crash).
+      if (res.ok && data && typeof data.total_orders === 'number') setStats(data)
     } catch { /* ignore */ }
     finally { setLoading(false) }
-  }, [selectedCampaign, datePreset, customFrom, customTo])
+  }, [selectedCampaign, datePreset, customFrom, customTo, router])
 
   useEffect(() => { fetchStats() }, [fetchStats])
 

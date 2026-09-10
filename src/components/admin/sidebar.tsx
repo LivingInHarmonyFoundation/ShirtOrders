@@ -40,7 +40,7 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
   const t = useT()
 
   const allNavItems = [
-    { href: '/admin/dashboard',  label: t('admin', 'dashboard'),  icon: LayoutDashboard, show: true },
+    { href: '/admin/dashboard',  label: t('admin', 'dashboard'),  icon: LayoutDashboard, show: permissions.canViewReports },
     { href: '/admin/orders',     label: t('admin', 'orders'),     icon: List,            show: true },
     { href: '/admin/catalog',    label: t('admin', 'catalog'),    icon: Shirt,           show: permissions.canManageSettings },
     { href: '/admin/government', label: t('admin', 'government'), icon: Building2,       show: permissions.canManageSettings },
