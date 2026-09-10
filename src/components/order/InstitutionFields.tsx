@@ -288,16 +288,20 @@ export default function InstitutionFields({
           {(() => {
             const regions = selectedDepartment ? (selectedGovOrg?.department_regions?.[selectedDepartment] || []) : []
             if (regions.length === 0) return null
+            // Some departments use this third level for OFFICES rather than
+            // geographic regions (e.g. Senado parties → "Oficina Hon. <name>").
+            // Label it accordingly so senators pick an "Oficina", not a "Región".
+            const isOffices = regions.every(r => r.startsWith('Oficina '))
             return (
               <div>
-                <Label htmlFor="region">{t('order', 'region')} *</Label>
+                <Label htmlFor="region">{t('order', isOffices ? 'office' : 'region')} *</Label>
                 <select
                   id="region"
                   {...register('region')}
                   aria-invalid={!!errors.region}
                   className={NATIVE_SELECT_CLASS}
                 >
-                  <option value="">{t('order', 'selectRegion')}</option>
+                  <option value="">{t('order', isOffices ? 'selectOffice' : 'selectRegion')}</option>
                   {regions.map(r => (
                     <option key={r} value={r}>{r}</option>
                   ))}
