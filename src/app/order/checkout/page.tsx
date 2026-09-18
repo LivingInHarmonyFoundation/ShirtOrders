@@ -1,17 +1,25 @@
 /**
  * @file page.tsx
- * @description Payment checkout page. Reached after cart items are saved and
- * the order record has been created by CartDrawer. No authentication required;
- * the order_id query parameter from the URL is the capability token — only
- * someone who completed the order form has it.
+ * @description Payment checkout page. No authentication required; the query
+ * parameter is the capability token — only someone who completed the order
+ * form has it. Two modes:
  *
- * Fetches the order by ID and the app settings (for payment method config).
- * Redirects to /order/confirmation if the order is already paid or manual.
+ *   ?session=<id>  — PAY BEFORE ORDER (normal flow since Sep 2026). CartDrawer
+ *                    opened a checkout session; NO order row exists yet. The
+ *                    order is created by the server the moment PayPal captures,
+ *                    the staff member confirms ATH Móvil, or the customer presses
+ *                    "Pay with cash". Abandoning this page creates nothing.
+ *   ?order_id=<id> — legacy: an existing pending order (older orders, copied
+ *                    pay links, the resume-payment banner). Pays that order.
+ *
+ * Both are rendered from one `CheckoutOrder` view model; `order.id` being null
+ * means "still a session". After a cash commitment on a session, the state is
+ * swapped for the real order so the order number can be shown.
  *
  * Payment method availability is driven by two layers:
  *   1. order.order_allowed_payment_methods — per-order restrictions set at
  *      institution/school/company level.
- *   2. settings.cash_enabled — global cash toggle.
+ *   2. settings.cash_enabled_* — per-type cash toggles.
  *
  * The PayPal JS SDK is loaded client-side. `CheckoutContent` is wrapped in
  * Suspense because useSearchParams() requires it in Next.js 16.
@@ -28,8 +36,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote, Tag, X, RotateCcw, Smartphone } from 'lucide-react'
-import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { CreditCard, ArrowLeft, Loader2, AlertCircle, Banknote, Tag, X, RotateCcw, Smartphone, Clock } from 'lucide-react'
+import { formatCurrency, formatDateTime, isCashAllowed } from '@/lib/utils'
 import Image from 'next/image'
 import LanguageSelector from '@/components/shared/LanguageSelector'
 import PoweredByFooter from '@/components/shared/PoweredByFooter'
@@ -37,16 +45,25 @@ import { clearPendingOrder } from '@/components/shared/PendingOrderBanner'
 import { useT } from '@/contexts/LanguageContext'
 import type { Order, AppSettings } from '@/types'
 
+/** An order row, or a checkout session shaped like one (id/order_number null). */
+type CheckoutOrder = Omit<Order, 'id' | 'order_number'> & {
+  id: string | null
+  order_number: string | null
+}
+
 function CheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const orderId = searchParams.get('order_id')
+  const sessionId = searchParams.get('session')
+  const orderIdParam = searchParams.get('order_id')
   const t = useT()
 
   // ── State ──
-  const [order, setOrder] = useState<Order | null>(null)
+  const [order, setOrder] = useState<CheckoutOrder | null>(null)
   const [settings, setSettings] = useState<Partial<AppSettings> | null>(null)
   const [loading, setLoading] = useState(true)
+  const [expired, setExpired] = useState(false)
+  const [paidNoOrder, setPaidNoOrder] = useState(false)
   const [cashConfirmed, setCashConfirmed] = useState(false)
   const [cashLoading, setCashLoading] = useState(false)
   const [athLoading, setAthLoading] = useState(false)
@@ -57,20 +74,45 @@ function CheckoutContent() {
   // ── Effects ──
 
   useEffect(() => {
-    if (!orderId) { router.push('/order'); return }
+    if (!sessionId && !orderIdParam) { router.push('/order'); return }
+
+    // Keep the spinner up while navigating to the receipt — otherwise the
+    // "order not found" card flashes for a frame before the redirect lands.
+    let redirecting = false
+    const load = sessionId
+      ? fetch(`/api/checkout-sessions/${sessionId}`).then(r => r.json()).then(data => {
+          // Session already turned into an order (retry / back button) → receipt.
+          if (data.session?.status === 'completed' && data.session.order_id) {
+            redirecting = true
+            router.replace(`/order/confirmation?order_id=${data.session.order_id}`)
+            return null
+          }
+          if (data.session?.expired) setExpired(true)
+          // Claimed without an order: a payment went through but the order row
+          // could not be written (admin was alerted). Never show "not found".
+          if (data.session?.status === 'completed' && !data.session.order_id) setPaidNoOrder(true)
+          return (data.order ?? null) as CheckoutOrder | null
+        })
+      : fetch(`/api/orders/${orderIdParam}`).then(r => r.json()).then(data => (data.order ?? null) as CheckoutOrder | null)
 
     Promise.all([
-      fetch(`/api/orders/${orderId}`).then(r => r.json()),
+      load,
       fetch('/api/admin/settings').then(r => r.json()),
     ]).then(([orderData, settingsData]) => {
-      setOrder(orderData.order ?? null)
+      setOrder(orderData)
       setSettings(settingsData.settings ?? null)
     }).catch(() => {
       toast.error('Could not load order')
-    }).finally(() => setLoading(false))
-  }, [orderId, router])
+    }).finally(() => { if (!redirecting) setLoading(false) })
+  }, [sessionId, orderIdParam, router])
 
   // ── Handlers ──
+
+  // While the checkout is still a session, discounts/cash/ATH act on the
+  // session; once an order row exists (legacy link, or after cash) they act on it.
+  const discountEndpoint = order?.id
+    ? `/api/orders/${order.id}/discount`
+    : `/api/checkout-sessions/${sessionId}/discount`
 
   const handleApplyDiscount = async () => {
     if (!order || !discountCode.trim()) return
@@ -88,8 +130,8 @@ function CheckoutContent() {
         setDiscountError(validateData.error || t('checkout', 'discountCodeInvalid'))
         return
       }
-      // Apply it to the order server-side
-      const applyRes = await fetch(`/api/orders/${order.id}/discount`, {
+      // Apply it server-side
+      const applyRes = await fetch(discountEndpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ discount_code: validateData.discount.code }),
@@ -112,7 +154,7 @@ function CheckoutContent() {
   const handleRemoveDiscount = async () => {
     if (!order) return
     try {
-      const res = await fetch(`/api/orders/${order.id}/discount`, {
+      const res = await fetch(discountEndpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ discount_code: null }),
@@ -129,22 +171,31 @@ function CheckoutContent() {
   }
 
   // Staff-only: confirms the in-person ATH Móvil transfer was received → the
-  // server marks the order PAID (method ath_movil) and we jump to the receipt.
+  // server creates/marks the order PAID (method ath_movil) and we jump to the receipt.
   const handleAthSelect = async () => {
     if (!order) return
     if (!confirm(t('checkout', 'athConfirmPrompt'))) return
     setAthLoading(true)
     try {
-      const res = await fetch(`/api/orders/${order.id}/payment-method`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payment_method: 'ath_movil' }),
-      })
-      if (!res.ok) throw new Error()
+      let paidOrderId = order.id
+      if (order.id) {
+        const res = await fetch(`/api/orders/${order.id}/payment-method`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_method: 'ath_movil' }),
+        })
+        if (!res.ok) throw new Error()
+      } else {
+        // Session → order born paid
+        const res = await fetch(`/api/checkout-sessions/${sessionId}/ath`, { method: 'POST' })
+        const data = await res.json()
+        if (!res.ok || !data.order?.id) throw new Error(data.error)
+        paidOrderId = data.order.id
+      }
       clearPendingOrder()
-      router.push(`/order/confirmation?order_id=${order.id}`)
-    } catch {
-      toast.error(t('errors', 'somethingWentWrong'))
+      router.push(`/order/confirmation?order_id=${paidOrderId}`)
+    } catch (e) {
+      toast.error((e as Error)?.message || t('errors', 'somethingWentWrong'))
     } finally {
       setAthLoading(false)
     }
@@ -154,17 +205,26 @@ function CheckoutContent() {
     if (!order) return
     setCashLoading(true)
     try {
-      const res = await fetch(`/api/orders/${order.id}/payment-method`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payment_method: 'cash' }),
-      })
-      if (!res.ok) throw new Error()
+      if (order.id) {
+        const res = await fetch(`/api/orders/${order.id}/payment-method`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_method: 'cash' }),
+        })
+        if (!res.ok) throw new Error()
+      } else {
+        // Session → the ONE place an unpaid order is still created: an explicit
+        // cash commitment. The response is the real order (with its number).
+        const res = await fetch(`/api/checkout-sessions/${sessionId}/cash`, { method: 'POST' })
+        const data = await res.json()
+        if (!res.ok || !data.order?.id) throw new Error(data.error)
+        setOrder({ ...data.order, items: order.items })
+      }
       // Choosing cash is a commitment — stop the resume-payment banner from nagging.
       clearPendingOrder()
       setCashConfirmed(true)
-    } catch {
-      toast.error(t('errors', 'somethingWentWrong'))
+    } catch (e) {
+      toast.error((e as Error)?.message || t('errors', 'somethingWentWrong'))
     } finally {
       setCashLoading(false)
     }
@@ -176,6 +236,38 @@ function CheckoutContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F4F0]">
         <Loader2 className="w-8 h-8 animate-spin text-[#00352F]" />
+      </div>
+    )
+  }
+
+  if (paidNoOrder) {
+    return (
+      <div className="min-h-screen bg-[#F5F4F0] flex items-center justify-center">
+        <Card className="max-w-sm w-full mx-4">
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+            <h2 className="font-semibold text-gray-900 mb-2">{t('checkout', 'paidNoOrderTitle')}</h2>
+            <p className="text-sm text-gray-500 mb-2">{t('checkout', 'paidNoOrderDesc')}</p>
+            <p className="text-xs font-mono text-gray-500 break-all">{sessionId}</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (expired) {
+    return (
+      <div className="min-h-screen bg-[#F5F4F0] flex items-center justify-center">
+        <Card className="max-w-sm w-full mx-4">
+          <CardContent className="p-6 text-center">
+            <Clock className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+            <h2 className="font-semibold text-gray-900 mb-2">{t('checkout', 'sessionExpired')}</h2>
+            <p className="text-sm text-gray-500 mb-2">{t('checkout', 'sessionExpiredDesc')}</p>
+            <Button onClick={() => router.push('/order')} variant="outline" className="mt-2">
+              {t('checkout', 'startNewOrder')}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -196,7 +288,7 @@ function CheckoutContent() {
     )
   }
 
-  if (order.payment_status === 'paid' || order.payment_status === 'manual') {
+  if (order.id && (order.payment_status === 'paid' || order.payment_status === 'manual')) {
     router.push(`/order/confirmation?order_id=${order.id}`)
     return null
   }
@@ -234,12 +326,8 @@ function CheckoutContent() {
   const paypalEnabled = !hasRestrictions || allowedMethods.includes('paypal')
   const venmoEnabled = !hasRestrictions || allowedMethods.includes('venmo')
   const cardEnabled = !hasRestrictions || allowedMethods.includes('card')
-  const cashEnabledForType =
-    order.institution_type === 'school' ? !!settings?.cash_enabled_school
-    : order.institution_type === 'government' ? !!settings?.cash_enabled_government
-    : order.institution_type === 'private_company' ? !!settings?.cash_enabled_private_company
-    : true // personal: cash availability is fully controlled by order_allowed_payment_methods
-  const cashAllowed = (!hasRestrictions || allowedMethods.includes('cash')) && cashEnabledForType
+  // Same rule the cash route enforces server-side (src/lib/utils.ts isCashAllowed).
+  const cashAllowed = isCashAllowed(order.institution_type, allowedMethods, settings)
 
   const enableFundingParts: string[] = []
   if (venmoEnabled) enableFundingParts.push('venmo')
@@ -287,8 +375,15 @@ function CheckoutContent() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">{t('checkout', 'orderSummary')}</CardTitle>
-                <Badge variant="outline" className="text-xs font-mono">{order.order_number}</Badge>
+                {order.order_number && (
+                  <Badge variant="outline" className="text-xs font-mono">{order.order_number}</Badge>
+                )}
               </div>
+              {!order.order_number && (
+                <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1">
+                  <Clock className="w-3.5 h-3.5 shrink-0" /> {t('checkout', 'orderNumberAfterPayment')}
+                </p>
+              )}
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -535,9 +630,12 @@ function CheckoutContent() {
                         const res = await fetch('/api/paypal/create-order', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ orderId: order.id }),
+                          // Session: amount comes from the server-priced session; the
+                          // order row is created only after capture.
+                          body: JSON.stringify(order.id ? { orderId: order.id } : { sessionId }),
                         })
                         const { paypalOrderId, error } = await res.json()
+                        if (res.status === 410) { setExpired(true); throw new Error(error) }
                         if (error) throw new Error(error)
                         return paypalOrderId
                       }}
@@ -545,14 +643,19 @@ function CheckoutContent() {
                         const res = await fetch('/api/paypal/capture-order', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ paypalOrderId: data.orderID, orderId: order.id }),
+                          body: JSON.stringify({
+                            paypalOrderId: data.orderID,
+                            ...(order.id ? { orderId: order.id } : { sessionId }),
+                          }),
                         })
+                        const json = await res.json().catch(() => ({}))
+                        if (res.status === 410) { setExpired(true); return } // nothing was captured
                         if (!res.ok) {
                           toast.error(t('checkout', 'paymentCaptureFailed'))
                           return
                         }
                         clearPendingOrder()
-                        router.push(`/order/confirmation?order_id=${order.id}`)
+                        router.push(`/order/confirmation?order_id=${json.orderId ?? order.id}`)
                       }}
                       onError={() => {
                         toast.error(t('checkout', 'paymentFailed'))

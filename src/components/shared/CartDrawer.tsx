@@ -9,7 +9,6 @@ import { Loader2, Minus, Plus, Trash2, X, ShoppingBag, Megaphone, ArrowRight } f
 import { useCart } from '@/contexts/CartContext'
 import { useT } from '@/contexts/LanguageContext'
 import { formatCurrency } from '@/lib/utils'
-import { rememberPendingOrder } from '@/components/shared/PendingOrderBanner'
 import type { CartItem, Campaign } from '@/types'
 
 interface CheckoutPayload {
@@ -184,7 +183,10 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
         })),
       }
 
-      const res = await fetch('/api/orders', {
+      // Pay-before-order: this only validates + prices the cart and opens a
+      // checkout session. The real order row is created when the customer pays
+      // (or explicitly commits to cash) on the checkout page.
+      const res = await fetch('/api/checkout-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -199,10 +201,7 @@ export default function CartDrawer({ checkoutPayload, onCheckoutValidate }: Cart
 
       clearCart()
       closeCart()
-      // Remember the order on this device so the customer can resume payment
-      // later (PendingOrderBanner) instead of re-ordering and creating a duplicate.
-      rememberPendingOrder(json.order.id)
-      router.push(`/order/checkout?order_id=${json.order.id}`)
+      router.push(`/order/checkout?session=${json.sessionId}`)
     } catch {
       toast.error(t('errors', 'somethingWentWrong'))
     } finally {

@@ -7,7 +7,11 @@ import { createServerClient } from '@supabase/ssr'
 const rateLimitStore = new Map<string, number[]>()
 
 const RATE_LIMITED_ROUTES: Record<string, { limit: number; windowMs: number }> = {
-  '/api/orders':                       { limit: 8,  windowMs: 60_000 }, // 8 orders/min
+  '/api/orders':                       { limit: 8,  windowMs: 60_000 }, // 8 orders/min (retired, 410)
+  '/api/checkout-sessions':            { limit: 8,  windowMs: 60_000 }, // 8 checkouts/min
+  '/api/checkout-sessions/[id]/discount': { limit: 15, windowMs: 60_000 }, // brute-force guard
+  '/api/checkout-sessions/[id]/cash':  { limit: 8,  windowMs: 60_000 },
+  '/api/checkout-sessions/[id]/ath':   { limit: 10, windowMs: 60_000 },
   '/api/discount-codes/validate':      { limit: 15, windowMs: 60_000 }, // 15 checks/min
   '/api/orders/[id]/discount':         { limit: 15, windowMs: 60_000 }, // 15 code applies/min (brute-force guard)
   '/api/paypal/create-order':          { limit: 10, windowMs: 60_000 }, // 10/min
@@ -21,6 +25,8 @@ const RATE_LIMITED_ROUTES: Record<string, { limit: number; windowMs: number }> =
 function rateLimitKeyForPath(pathname: string): string | null {
   if (pathname in RATE_LIMITED_ROUTES) return pathname
   if (/^\/api\/orders\/[^/]+\/discount$/.test(pathname)) return '/api/orders/[id]/discount'
+  const cs = /^\/api\/checkout-sessions\/[^/]+\/(discount|cash|ath)$/.exec(pathname)
+  if (cs) return `/api/checkout-sessions/[id]/${cs[1]}`
   return null
 }
 
@@ -111,6 +117,10 @@ export const config = {
     '/admin/:path*',
     '/api/orders',
     '/api/orders/:id/discount',
+    '/api/checkout-sessions',
+    '/api/checkout-sessions/:id/discount',
+    '/api/checkout-sessions/:id/cash',
+    '/api/checkout-sessions/:id/ath',
     '/api/discount-codes/validate',
     '/api/paypal/create-order',
     '/api/paypal/capture-order',

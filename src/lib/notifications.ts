@@ -115,3 +115,31 @@ export async function sendLowInventoryNotification(
     console.error('Low inventory notification failed:', e)
   }
 }
+
+/**
+ * sendPaymentWithoutOrderAlert — URGENT push when money was captured (PayPal /
+ * ATH) but the order row could not be written. There is no order for the admin
+ * to see, so this notification is the only visible trace besides server logs.
+ * Silently no-ops when notifications are disabled or the topic is not configured.
+ */
+export async function sendPaymentWithoutOrderAlert(
+  info: { sessionId: string; paypalOrderId?: string | null; fullName: string; email: string; totalAmount: number; reason: string },
+  settings: { admin_phone?: string | null; sms_notifications_enabled?: boolean }
+) {
+  if (!settings.sms_notifications_enabled || !settings.admin_phone) return
+  try {
+    await fetch(`https://ntfy.sh/${settings.admin_phone}`, {
+      method: 'POST',
+      headers: {
+        'Title': `🚨 Pago recibido SIN pedido — revisar`,
+        'Priority': 'urgent',
+        'Tags': 'rotating_light,moneybag',
+        'Content-Type': 'text/plain',
+      },
+      body: `${info.fullName} <${info.email}> pagó $${info.totalAmount.toFixed(2)} pero el pedido no se pudo crear.\n` +
+        `Sesión: ${info.sessionId}\nPayPal: ${info.paypalOrderId ?? 'n/a (ATH)'}\nError: ${info.reason}`,
+    })
+  } catch (e) {
+    console.error('Payment-without-order alert failed:', e)
+  }
+}

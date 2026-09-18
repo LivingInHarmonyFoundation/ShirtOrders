@@ -235,6 +235,11 @@ export const translations: Record<Lang, {
       removeDiscount: 'Remove',
       discountCodeInvalid: 'Invalid code',
       discount: 'Discount',
+      orderNumberAfterPayment: 'Your order number is assigned once payment is completed.',
+      sessionExpired: 'Checkout Expired',
+      sessionExpiredDesc: 'This checkout link has expired and no order was created. Please place your order again.',
+      paidNoOrderTitle: 'Payment received — we need to finish your order',
+      paidNoOrderDesc: 'Your payment went through but we hit a problem saving the order. Do NOT pay again. Please contact us and mention this reference:',
     },
     confirmation: {
       orderConfirmed: 'Order Confirmed!',
@@ -1069,6 +1074,11 @@ export const translations: Record<Lang, {
       removeDiscount: 'Quitar',
       discountCodeInvalid: 'Código inválido',
       discount: 'Descuento',
+      orderNumberAfterPayment: 'Tu número de pedido se asigna al completar el pago.',
+      sessionExpired: 'Checkout Expirado',
+      sessionExpiredDesc: 'Este enlace de pago expiró y no se creó ningún pedido. Por favor, vuelve a hacer tu pedido.',
+      paidNoOrderTitle: 'Pago recibido — falta completar tu pedido',
+      paidNoOrderDesc: 'Tu pago se procesó pero hubo un problema guardando el pedido. NO vuelvas a pagar. Contáctanos y menciona esta referencia:',
     },
     confirmation: {
       orderConfirmed: '¡Pedido Confirmado!',

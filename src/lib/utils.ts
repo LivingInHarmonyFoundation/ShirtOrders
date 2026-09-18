@@ -91,6 +91,37 @@ export function generateOrderNumber(): string {
   return `ORD-${date}-${random}`
 }
 
+// ─── Payment Method Rules ─────────────────────────────────────
+
+/**
+ * isCashAllowed — whether "pay with cash" may be offered for an order/session.
+ *   Layer 1: order_allowed_payment_methods (entity restrictions; null/[] = none).
+ *            The global cash_enabled toggle is already folded in here at pricing
+ *            time (prepareOrder strips 'cash' from the list when it is off).
+ *   Layer 2: the per-type cash toggles in app_settings (school / government /
+ *            private_company). Other types (personal, staff, municipality) rely
+ *            on layer 1 alone.
+ * Client-safe (no server imports). Shared by the checkout page (shows the button)
+ * and /api/checkout-sessions/[id]/cash (enforces it) so the two can never disagree.
+ */
+export function isCashAllowed(
+  institutionType: string,
+  allowedMethods: string[] | null | undefined,
+  settings: {
+    cash_enabled_school?: boolean | null
+    cash_enabled_government?: boolean | null
+    cash_enabled_private_company?: boolean | null
+  } | null | undefined,
+): boolean {
+  const hasRestrictions = Array.isArray(allowedMethods) && allowedMethods.length > 0
+  const cashEnabledForType =
+    institutionType === 'school'          ? !!settings?.cash_enabled_school :
+    institutionType === 'government'      ? !!settings?.cash_enabled_government :
+    institutionType === 'private_company' ? !!settings?.cash_enabled_private_company :
+    true
+  return (!hasRestrictions || allowedMethods.includes('cash')) && cashEnabledForType
+}
+
 // ─── Status Config Objects ────────────────────────────────────
 // These are the single source of truth for badge labels and Tailwind classes.
 // status-badge.tsx reads from these maps — do not duplicate styling elsewhere.

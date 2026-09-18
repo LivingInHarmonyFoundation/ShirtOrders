@@ -3,25 +3,26 @@
  * @description Public endpoint for applying or removing a discount code on a pending order.
  * No authentication required — customers apply discounts at checkout using their order ID.
  *
+ * Still needed after "pay before order": pending orders that already exist
+ * (cash commitments, older orders paid later via link) are discounted here.
+ * New checkouts use /api/checkout-sessions/[id]/discount. Both share the
+ * validator in src/lib/discounts.ts.
+ *
  * Key invariants:
  * - Only unpaid (payment_status = 'pending') orders can have a discount applied or removed.
- * - Applying a discount: validates the code (same logic as /api/discount-codes/validate),
- *   calculates discount_amount, and updates total_amount = total_amount - discount_amount.
- * - Removing a discount (discount_code: null): restores total_amount by adding back the
- *   stored discount_amount, then zeroes out discount_code and discount_amount.
+ * - Applying: calculates discount_amount and sets total_amount = base − discount_amount.
+ * - Removing (discount_code: null): restores total_amount by adding back discount_amount.
  * - Uses createAdminClient() (bypasses RLS) because no user session is present.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { validateDiscountForTarget, computeDiscountAmount } from '@/lib/discounts'
 
-// ─── PATCH /api/orders/[id]/discount ─────────────────────────
+const ORDER_SELECT = '*, order_items(id, shirt_size, quantity, catalog_item_name, unit_price, subtotal, created_at)'
 
 /**
  * PATCH /api/orders/[id]/discount — apply or remove a discount code on an order.
- * Public endpoint — no auth required.
  * Body: { discount_code: string | null }
- *   - string: apply this discount code (validates it first)
- *   - null: remove the currently applied discount
  * Response: { order: Order } with updated totals
  */
 export async function PATCH(
@@ -33,142 +34,39 @@ export async function PATCH(
 
   const admin = await createAdminClient()
 
-  // Fetch current order
   const { data: order, error: orderError } = await admin
     .from('orders')
-    .select('id, payment_status, total_amount, discount_code, discount_amount, institution_type, school_name, organization_name, company_name, order_items(id, shirt_size, quantity, catalog_item_name, unit_price, subtotal, created_at)')
+    .select('id, payment_status, total_amount, discount_code, discount_amount, institution_type, school_name, organization_name, company_name')
     .eq('id', id)
     .single()
 
-  if (orderError || !order) {
-    return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-  }
-
+  if (orderError || !order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   if (order.payment_status !== 'pending') {
     return NextResponse.json({ error: 'Cannot apply discount to a paid order' }, { status: 400 })
   }
 
-  // ── Remove discount ────────────────────────────────────────
-  if (discount_code === null || discount_code === '') {
-    const restoredTotal = (order.total_amount || 0) + (order.discount_amount || 0)
-
-    const { data: updatedRaw, error: updateError } = await admin
-      .from('orders')
-      .update({
-        discount_code: null,
-        discount_amount: 0,
-        total_amount: restoredTotal,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select('*, order_items(id, shirt_size, quantity, catalog_item_name, unit_price, subtotal, created_at)')
-      .single()
-
-    if (updateError) {
-      console.error('Error removing discount:', updateError)
-      return NextResponse.json({ error: 'Failed to remove discount' }, { status: 500 })
-    }
-
-    const { order_items, ...rest } = updatedRaw as typeof updatedRaw & { order_items: unknown[] }
-    return NextResponse.json({ order: { ...rest, items: order_items || [] } })
-  }
-
-  // ── Apply discount ─────────────────────────────────────────
-  // Validate the code
-  const { data: discountCode, error: codeError } = await admin
-    .from('discount_codes')
-    .select('id, code, type, value, expires_at, enabled, max_uses, restricted_to_type, restricted_to_name')
-    .ilike('code', String(discount_code).trim())
-    .maybeSingle()
-
-  if (codeError) {
-    console.error('Error looking up discount code:', codeError)
-    return NextResponse.json({ error: 'Failed to validate code' }, { status: 500 })
-  }
-
-  if (!discountCode) {
-    return NextResponse.json({ error: 'Discount code not found' }, { status: 404 })
-  }
-
-  if (!discountCode.enabled) {
-    return NextResponse.json({ error: 'Code is disabled' }, { status: 400 })
-  }
-
-  if (discountCode.expires_at && new Date(discountCode.expires_at) < new Date()) {
-    return NextResponse.json({ error: 'Code has expired' }, { status: 400 })
-  }
-
-  // Usage limit check — count all non-cancelled orders that carry this code
-  if (discountCode.max_uses != null) {
-    const { count } = await admin
-      .from('orders')
-      .select('id', { count: 'exact', head: true })
-      .eq('discount_code', discountCode.code)
-      .not('payment_status', 'in', '("failed","refunded")')
-
-    if ((count ?? 0) >= discountCode.max_uses) {
-      return NextResponse.json({ error: 'This code has reached its usage limit' }, { status: 400 })
-    }
-  }
-
-  // Institution restriction check
-  if (discountCode.restricted_to_type) {
-    if (order.institution_type !== discountCode.restricted_to_type) {
-      const typeLabel: Record<string, string> = {
-        school: 'school',
-        government: 'government agency',
-        personal: 'personal',
-        private_company: 'company',
-      }
-      return NextResponse.json(
-        { error: `This code is restricted to ${typeLabel[discountCode.restricted_to_type] ?? discountCode.restricted_to_type} orders` },
-        { status: 400 }
-      )
-    }
-
-    if (discountCode.restricted_to_name && order.institution_type !== 'personal') {
-      const entityName: string | null =
-        order.institution_type === 'school'           ? order.school_name :
-        order.institution_type === 'government'       ? order.organization_name :
-        order.institution_type === 'private_company'  ? order.company_name :
-        null
-
-      if (!entityName || entityName.toLowerCase() !== discountCode.restricted_to_name.toLowerCase()) {
-        return NextResponse.json(
-          { error: `This code is restricted to: ${discountCode.restricted_to_name}` },
-          { status: 400 }
-        )
-      }
-    }
-  }
-
-  // If a discount was already applied, first restore the total before applying the new one
+  // Pre-discount total (a previously applied discount is restored first)
   const baseTotal = (order.total_amount || 0) + (order.discount_amount || 0)
 
-  // Calculate discount amount
-  let discountAmount: number
-  if (discountCode.type === 'percentage') {
-    discountAmount = Math.round(baseTotal * (discountCode.value / 100) * 100) / 100
+  let patch: { discount_code: string | null; discount_amount: number; total_amount: number }
+  if (discount_code === null || discount_code === '') {
+    patch = { discount_code: null, discount_amount: 0, total_amount: baseTotal }
   } else {
-    discountAmount = Math.min(discountCode.value, baseTotal)
+    const result = await validateDiscountForTarget(admin, String(discount_code), order)
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status })
+    const discountAmount = computeDiscountAmount(result.discount, baseTotal)
+    patch = { discount_code: result.discount.code, discount_amount: discountAmount, total_amount: Math.max(0, baseTotal - discountAmount) }
   }
-
-  const newTotal = Math.max(0, baseTotal - discountAmount)
 
   const { data: updatedRaw, error: updateError } = await admin
     .from('orders')
-    .update({
-      discount_code: discountCode.code,
-      discount_amount: discountAmount,
-      total_amount: newTotal,
-      updated_at: new Date().toISOString(),
-    })
+    .update({ ...patch, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .select('*, order_items(id, shirt_size, quantity, catalog_item_name, unit_price, subtotal, created_at)')
+    .select(ORDER_SELECT)
     .single()
 
-  if (updateError) {
-    console.error('Error applying discount:', updateError)
+  if (updateError || !updatedRaw) {
+    console.error('Error updating discount:', updateError)
     return NextResponse.json({ error: 'Failed to apply discount' }, { status: 500 })
   }
 
