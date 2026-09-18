@@ -635,7 +635,27 @@ export default function AdminOrdersPage() {
                     <TableCell><PaymentStatusBadge status={order.payment_status} /></TableCell>
                     <TableCell><OrderStatusBadge status={order.order_status} /></TableCell>
                     <TableCell><DeliveryStatusBadge status={order.delivery_status} /></TableCell>
-                    <TableCell className="text-xs text-gray-400">{formatDate(order.created_at)}</TableCell>
+                    {/* The date that matters operationally: when it was PAID, or when
+                        it was placed if it still isn't. An order from August paid today
+                        shows today and sorts to the top; its original date stays visible
+                        underneath (and in full on the order detail / receipt). */}
+                    <TableCell className="text-xs">
+                      {(() => {
+                        const paidAt = (order.payment_status === 'paid' || order.payment_status === 'manual') ? order.date_paid : null
+                        if (!paidAt) return <span className="text-gray-400">{formatDate(order.created_at)}</span>
+                        const sameDay = formatDate(paidAt) === formatDate(order.created_at)
+                        return (
+                          <div className="leading-tight">
+                            <span className="text-gray-600 font-medium whitespace-nowrap">{formatDate(paidAt)}</span>
+                            {!sameDay && (
+                              <p className="text-[10px] text-gray-400 whitespace-nowrap">
+                                {t('admin', 'orderedOn')} {formatDate(order.created_at)}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })()}
+                    </TableCell>
                     <TableCell onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-0.5">
                         {order.payment_status === 'pending' && (

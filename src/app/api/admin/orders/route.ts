@@ -102,9 +102,13 @@ export async function GET(request: NextRequest) {
   if (company_name) query = query.eq('company_name', company_name)
   if (campaign_id && campaign_id !== 'all') query = query.eq('campaign_id', campaign_id)
 
+  // NOTE: the default ordering is by `activity_at` (= date_paid ?? created_at,
+  // a generated column — migration 040), not by created_at. An order placed in
+  // August and paid today belongs at the TOP of the list: that payment is what
+  // the admins have to act on. The order's own date is never modified.
   switch (sort) {
     case 'oldest':
-      query = query.order('created_at', { ascending: true })
+      query = query.order('activity_at', { ascending: true })
       break
     case 'paid':
       query = query.eq('payment_status', 'paid').order('date_paid', { ascending: false })
@@ -119,7 +123,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('delivery_status', 'not_delivered').order('created_at', { ascending: false })
       break
     default:
-      query = query.order('created_at', { ascending: false })
+      query = query.order('activity_at', { ascending: false })
   }
 
   // Run paginated query and summary aggregation in parallel

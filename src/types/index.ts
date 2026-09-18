@@ -113,6 +113,8 @@ export interface Order {
   admin_notes: string | null
   created_at: string
   updated_at: string
+  /** date_paid ?? created_at — DB-generated (migration 040); drives the admin list order. */
+  activity_at?: string
   items?: OrderItem[]
 }
 
